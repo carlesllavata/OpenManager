@@ -1,0 +1,2924 @@
+{
+  "corona_bitmap": [
+    {
+      "name": "filename",
+      "class": "Filename",
+      "value": "",
+      "display": "Filename"
+    },
+    {
+      "name": "uAngle",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 360,
+      "display": "Horizontal rotation"
+    },
+    {
+      "name": "uvwOffset.y",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Vertical rotation"
+    },
+    {
+      "name": "filteringBlur",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.1,
+      "display": "Blur"
+    },
+    {
+      "name": "output.output_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Output amount"
+    }
+  ],
+  "corona_cam": [
+    {
+      "name": "fov",
+      "class": "Float",
+      "value": 45,
+      "min": 1,
+      "max": 179,
+      "display": "Field of View"
+    },
+    {
+      "name": "focalLength",
+      "class": "Float",
+      "value": 43.4558,
+      "min": 1,
+      "max": 200,
+      "display": "Focal length (mm)"
+    },
+    {
+      "name": "sensorWidth",
+      "class": "Float",
+      "value": 36,
+      "min": 0,
+      "max": 100,
+      "display": "Film width (mm)"
+    },
+    {
+      "name": "zoomFactor",
+      "class": "Float",
+      "value": 1,
+      "min": 0.01,
+      "max": 100,
+      "display": "Zoom factor"
+    },
+    {
+      "name": "ISO",
+      "class": "Float",
+      "value": 100,
+      "min": 0,
+      "max": 6400,
+      "display": "ISO"
+    },
+    {
+      "name": "fStop",
+      "class": "Float",
+      "value": 16,
+      "min": 0.01,
+      "max": 50,
+      "display": "F-stop"
+    },
+    {
+      "name": "shutterSpeed",
+      "class": "Float",
+      "value": 50,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Shutter speed"
+    },
+    {
+      "name": "enableCameraMb",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Camera Mo. Blur"
+    },
+    {
+      "name": "enableGeometryMb",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Geometry Mo. Blur"
+    },
+    {
+      "name": "autoVerticalTilt",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Auto vertical tilt"
+    },
+    {
+      "name": "verticalTilt",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Vertical tile"
+    },
+    {
+      "name": "verticalShift",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Vertical shift"
+    },
+    {
+      "name": "horizontalTilt",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Horizontal tilt"
+    },
+    {
+      "name": "horizontalShift",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Horizontal shift"
+    },
+    {
+      "name": "overrideBloomGlare",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Bloom override"
+    },
+    {
+      "name": "enableBloomGlare",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Bloom enable"
+    },
+    {
+      "name": "bloomIntensity",
+      "class": "Float",
+      "value": 1,
+      "display": "Bloom intensity"
+    },
+    {
+      "name": "glareIntensity",
+      "class": "Float",
+      "value": 1,
+      "display": "Glare intensity"
+    },
+    {
+      "name": "bloomGlareThreshold",
+      "class": "Float",
+      "value": 1,
+      "display": "Bloom/Glare threshold"
+    },
+    {
+      "name": "enableDof",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Dof enable"
+    },
+    {
+      "name": "overrideFocusDistance",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Enable override focus"
+    },
+    {
+      "name": "dofOverrideFocusDistance",
+      "class": "Float",
+      "value": 100,
+      "display": "Override focus distance"
+    },
+    {
+      "name": "clippingNear",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (camera)"
+    },
+    {
+      "name": "clippingFar",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (camera)"
+    },
+    {
+      "name": "enviroNear",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (envionment)"
+    },
+    {
+      "name": "enviroFar",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (envionment)"
+    }
+  ],
+  "corona_cc": [
+    {
+      "name": "brightness",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "display": "Brightness"
+    },
+    {
+      "name": "contrast",
+      "class": "Float",
+      "value": 1,
+      "min": 1,
+      "max": 99,
+      "step": 0.01,
+      "display": "Contrast"
+    },
+    {
+      "name": "saturation",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Saturation"
+    },
+    {
+      "name": "invert",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Invert"
+    },
+    {
+      "name": "hue",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 180,
+      "step": 0.01,
+      "display": "Hue"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 0,
+      "min": 0.1,
+      "max": 10,
+      "step": 0.01,
+      "display": "Gamma"
+    },
+    {
+      "name": "exposure",
+      "class": "Float",
+      "value": 1,
+      "min": -20,
+      "max": 20,
+      "step": 0.01,
+      "display": "Exposure"
+    },
+    {
+      "name": "temperature",
+      "class": "Float",
+      "value": 6500,
+      "min": 2000.0,
+      "max": 99999,
+      "step": 100,
+      "display": "Temperature"
+    },
+    {
+      "name": "greenMagentaTint",
+      "class": "Float",
+      "value": 1,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Green-Magenta Tint"
+    }
+  ],
+  "corona_cloud": [
+    {
+      "name": "intensityMultiplier",
+      "class": "Float",
+      "value": "1.0",
+      "min": 0,
+      "max": 1000.0,
+      "display": "Intensity"
+    },
+    {
+      "name": "turbidity",
+      "class": "Float",
+      "value": "2.5",
+      "min": 1.7,
+      "max": 10,
+      "display": "Turbidity"
+    },
+    {
+      "name": "HorizonBlur",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1,
+      "display": "Fake horizon blur"
+    },
+    {
+      "name": "altitude",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1,
+      "display": "Altitude"
+    },
+    {
+      "name": "enableVolumeEffect",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Volume Effect enabled"
+    },
+    {
+      "name": "volumeEffectScale",
+      "class": "Float",
+      "value": "1.0",
+      "min": 0,
+      "max": 100,
+      "display": "Volume Effect value"
+    },
+    {
+      "name": "cloudsEnable",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Clouds enabled"
+    },
+    {
+      "name": "cloudsAmount",
+      "class": "Float",
+      "value": "0.5",
+      "min": 0,
+      "max": 1,
+      "display": "Amount"
+    },
+    {
+      "name": "cloudsVariety",
+      "class": "Float",
+      "value": "0.5",
+      "min": 0,
+      "max": 1,
+      "display": "Variety"
+    },
+    {
+      "name": "cloudsCirrusAmount",
+      "class": "Float",
+      "value": "0.5",
+      "min": 0,
+      "max": 1,
+      "display": "Cirrus amount"
+    },
+    {
+      "name": "cloudsPhase",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1,
+      "display": "Phase"
+    },
+    {
+      "name": "cloudsSeed",
+      "class": "Integer",
+      "value": "0",
+      "min": 0,
+      "max": 10000.0,
+      "step": 1,
+      "display": "Seed"
+    },
+    {
+      "name": "cloudsAltitude",
+      "class": "Float",
+      "value": "1000.0",
+      "min": 500,
+      "max": 5000.0,
+      "display": "Clouds altitude"
+    },
+    {
+      "name": "cloudsHeight",
+      "class": "Float",
+      "value": "1000.0",
+      "min": 500,
+      "max": 5000.0,
+      "display": "Height"
+    },
+    {
+      "name": "cloudsContrailsEnable",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Contrails enable"
+    },
+    {
+      "name": "cloudsContrailsNumPlanes",
+      "class": "Integer",
+      "value": "5",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "display": "Plane count"
+    },
+    {
+      "name": "cloudsContrailsTime",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 100,
+      "display": "Time"
+    },
+    {
+      "name": "cloudsContrailsStrength",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1,
+      "display": "Strength"
+    },
+    {
+      "name": "cloudsContrailsDistortion",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1,
+      "display": "Distortion"
+    }
+  ],
+  "corona_light": [
+    {
+      "name": "name",
+      "class": "String",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Name",
+        "Name"
+      ]
+    },
+    {
+      "name": "on",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Enabled",
+        "Enabled"
+      ]
+    },
+    {
+      "name": "intensity",
+      "class": "Float",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Intensity",
+        "Intensity"
+      ]
+    },
+    {
+      "name": "transform",
+      "class": "Matrix3",
+      "value": null,
+      "display": [
+        "Transform",
+        "Transformation"
+      ]
+    },
+    {
+      "name": "visibleDirectly",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "V. directly",
+        "Visible directly"
+      ]
+    },
+    {
+      "name": "visibleRefl",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "V. reflection",
+        "Visible in reflection"
+      ]
+    },
+    {
+      "name": "visibleRefr",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "V. refraction",
+        "Visible in refraction"
+      ]
+    },
+    {
+      "name": "occludeOtherLights",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Occlude lights",
+        "Occlude other lights"
+      ]
+    },
+    {
+      "name": "blackbodyTemp",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Kelvin",
+        "Kelvin temp"
+      ]
+    },
+    {
+      "name": "height",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Height",
+        "Height"
+      ]
+    },
+    {
+      "name": "width",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Width/radius",
+        "Width/radius"
+      ]
+    },
+    {
+      "name": "directionality",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Direct.",
+        "Directionality"
+      ]
+    }
+  ],
+  "corona_render": [
+    {
+      "name": "progressive_passLimit",
+      "class": "Integer",
+      "value": null,
+      "min": 0,
+      "max": 500,
+      "display": "Pass limit",
+      "step": 1,
+      "enabled": true
+    },
+    {
+      "name": "adaptivity_targetError",
+      "class": "Float",
+      "value": null,
+      "min": 0,
+      "max": 100,
+      "display": "Noise level limit",
+      "enabled": true
+    },
+    {
+      "name": "progressive_timeLimit",
+      "class": "Integer",
+      "value": null,
+      "min": 0,
+      "max": 600,
+      "display": "Time limit (minutes)",
+      "unit": {
+        "method": "divide",
+        "val": 60000.0
+      },
+      "enabled": true
+    },
+    {
+      "name": "shading_giToAaRatio",
+      "class": "Integer",
+      "value": 16,
+      "min": 1,
+      "max": 64,
+      "display": "GI/AA balance"
+    },
+    {
+      "name": "lights_samplesMult",
+      "class": "Float",
+      "value": 2,
+      "display": "Light samples multiplier"
+    },
+    {
+      "name": "shading_maxSampleIntensity",
+      "class": "Float",
+      "value": 20,
+      "min": 0,
+      "max": 200,
+      "display": "Max sample intensity"
+    },
+    {
+      "name": "shading_maxRayDepth",
+      "class": "Integer",
+      "value": 25,
+      "min": 1,
+      "max": 100,
+      "display": "Max ray depth"
+    },
+    {
+      "name": "caustics_use",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Caustics solver"
+    },
+    {
+      "name": "lights_renderHidden",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Render hidden lights"
+    }
+  ],
+  "corona_select": [
+    {
+      "name": "selected",
+      "class": "Integer",
+      "value": 0,
+      "min": 0,
+      "max": 24,
+      "step": 1,
+      "display": "Selected"
+    }
+  ],
+  "corona_sun": [
+    {
+      "name": "intensity",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "category": "",
+      "display": "Intensity"
+    },
+    {
+      "name": "sizeMultiplier",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "category": "",
+      "display": "Size"
+    },
+    {
+      "name": "visibleDirectly",
+      "class": "BooleanClass",
+      "value": true,
+      "category": "",
+      "display": "Visible directly"
+    },
+    {
+      "name": "visibleRefl",
+      "class": "BooleanClass",
+      "value": true,
+      "category": "",
+      "display": "Visible in reflections"
+    },
+    {
+      "name": "visibleRefr",
+      "class": "BooleanClass",
+      "value": true,
+      "category": "",
+      "display": "Visible in refractions"
+    },
+    {
+      "name": "visibleCaustics",
+      "class": "BooleanClass",
+      "value": true,
+      "category": "",
+      "display": "Generates caustics"
+    }
+  ],
+  "fstorm_bitmap": [
+    {
+      "name": "filename",
+      "class": "Filename",
+      "value": "",
+      "display": "Filename"
+    },
+    {
+      "name": "rotation.z",
+      "class": "Float",
+      "value": 0,
+      "min": -360,
+      "max": 360,
+      "display": "Horizontal rotation"
+    },
+    {
+      "name": "rotation.x",
+      "class": "Float",
+      "value": 0,
+      "min": -180,
+      "max": 180,
+      "display": "Vertical rotation"
+    },
+    {
+      "name": "offset.x",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "display": "Horizontal offset"
+    },
+    {
+      "name": "offset.y",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Vertical offset"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Gamma"
+    },
+    {
+      "name": "output.output_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Output amount"
+    }
+  ],
+  "fstorm_cam": [
+    {
+      "name": "type",
+      "class": "Integer",
+      "value": 0,
+      "min": 0,
+      "max": 3,
+      "display": "Type"
+    },
+    {
+      "name": "fov_type",
+      "class": "Integer",
+      "value": 1,
+      "min": 0,
+      "max": 1,
+      "display": "Fov type"
+    },
+    {
+      "name": "fov",
+      "class": "Float",
+      "value": 60,
+      "min": 1,
+      "max": 179,
+      "display": "Field of View"
+    },
+    {
+      "name": "lens",
+      "class": "Float",
+      "value": 72,
+      "min": 1,
+      "max": 200,
+      "display": "Focal length (mm)"
+    },
+    {
+      "name": "targeted",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Targeted"
+    },
+    {
+      "name": "targ_dist",
+      "class": "Float",
+      "value": 100,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Target distance"
+    },
+    {
+      "name": "hor_shift",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Horizontal shift"
+    },
+    {
+      "name": "ver_shift",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Vertical shift"
+    },
+    {
+      "name": "hor_tilt",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Horizontal tilt"
+    },
+    {
+      "name": "ver_tilt",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Vertical tilt"
+    },
+    {
+      "name": "near_clipping",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near"
+    },
+    {
+      "name": "dof_override",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Override DOF"
+    },
+    {
+      "name": "dof_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Enable DOF"
+    },
+    {
+      "name": "dof_radius",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "display": "DOF radius"
+    },
+    {
+      "name": "dof_blades",
+      "class": "Integer",
+      "value": 32,
+      "min": 0,
+      "max": 100,
+      "display": "DOF blades"
+    },
+    {
+      "name": "dof_rotation",
+      "class": "Float",
+      "value": 0.1,
+      "min": 0,
+      "max": 360,
+      "display": "DOF rotation"
+    },
+    {
+      "name": "dof_targeted",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "DOF targeted"
+    },
+    {
+      "name": "dof_focaldist",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 1000.0,
+      "display": "DOF focal distance"
+    },
+    {
+      "name": "dof_type",
+      "class": "Integer",
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "display": "DOF type"
+    },
+    {
+      "name": "dof_fnumber",
+      "class": "Float",
+      "value": 2.8,
+      "min": 0,
+      "max": 50,
+      "display": "DOF f-number"
+    },
+    {
+      "name": "tonemap_override",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Tonemap override"
+    },
+    {
+      "name": "exposure",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 20,
+      "display": "Exposure"
+    },
+    {
+      "name": "saturation",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Saturation"
+    },
+    {
+      "name": "high_saturation",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "High saturation"
+    },
+    {
+      "name": "do_tonemapping",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Tonemapped"
+    },
+    {
+      "name": "contrast",
+      "class": "Float",
+      "value": 0.3,
+      "min": 0,
+      "max": 1,
+      "display": "Contrast"
+    },
+    {
+      "name": "burn_value",
+      "class": "Float",
+      "value": 0.2,
+      "min": -10,
+      "max": 1,
+      "display": "Burn Value"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 1,
+      "min": 0.1,
+      "max": 10,
+      "display": "Gamma"
+    },
+    {
+      "name": "vignetting",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "display": "Vignetting"
+    },
+    {
+      "name": "image_blur",
+      "class": "Float",
+      "value": 0.1,
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "display": "Image blur"
+    },
+    {
+      "name": "image_sharp",
+      "class": "Float",
+      "value": 0.1,
+      "min": 0,
+      "max": 0.9,
+      "step": 0.01,
+      "display": "Image sharp"
+    }
+  ],
+  "fstorm_cc": [
+    {
+      "name": "invert",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Invert"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 0,
+      "min": 0.1,
+      "max": 10,
+      "step": 0.01,
+      "display": "Gamma"
+    },
+    {
+      "name": "saturation",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.01,
+      "display": "Saturation"
+    },
+    {
+      "name": "hue",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10,
+      "step": 0.01,
+      "display": "Hue"
+    },
+    {
+      "name": "offset",
+      "class": "Float",
+      "value": 0.5,
+      "min": 0.01,
+      "max": 0.99,
+      "step": 0.01,
+      "display": "Offset"
+    },
+    {
+      "name": "contrast",
+      "class": "Float",
+      "value": 0.5,
+      "min": 0.01,
+      "max": 0.99,
+      "step": 0.01,
+      "display": "Contrast"
+    }
+  ],
+  "fstorm_light": [
+    {
+      "name": "name",
+      "class": "String",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Name",
+        "Name"
+      ]
+    },
+    {
+      "name": "enabled",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Enabled",
+        "Enabled"
+      ]
+    },
+    {
+      "name": "power",
+      "class": "Float",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Power",
+        "Power"
+      ]
+    },
+    {
+      "name": "transform",
+      "class": "Matrix3",
+      "value": null,
+      "display": [
+        "Transform",
+        "Transformation"
+      ]
+    },
+    {
+      "name": "visible",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Visible",
+        "Visible"
+      ]
+    },
+    {
+      "name": "size_x",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Size X",
+        "Size X"
+      ]
+    },
+    {
+      "name": "size_y",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Size Y",
+        "Size Y"
+      ]
+    },
+    {
+      "name": "temperature",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Temperature",
+        "Temperature"
+      ]
+    }
+  ],
+  "fstorm_render": [
+    {
+      "name": "max_samples",
+      "class": "Integer",
+      "value": 1000.0,
+      "min": 100,
+      "max": 3000.0,
+      "display": "Render samples",
+      "enabled": true
+    },
+    {
+      "name": "time_limit",
+      "class": "Float",
+      "value": 10000.0,
+      "min": 0.1,
+      "max": 1000.0,
+      "display": "Timit limit (minutes)",
+      "enabled": true
+    },
+    {
+      "name": "light_samples",
+      "class": "Integer",
+      "value": 4,
+      "min": 1,
+      "max": 64,
+      "display": "Light samples"
+    },
+    {
+      "name": "max_depth",
+      "class": "Integer",
+      "value": 8,
+      "min": 1,
+      "max": 63,
+      "display": "Max depth"
+    },
+    {
+      "name": "noise_threshold",
+      "class": "Float",
+      "value": 0.01,
+      "min": 0,
+      "max": 0.5,
+      "display": "Noise threshold",
+      "enabled": true
+    },
+    {
+      "name": "min_samples_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Enable min samples"
+    },
+    {
+      "name": "min_samples_ratio",
+      "class": "Float",
+      "value": 3,
+      "min": 0,
+      "max": 100,
+      "display": "Min samples ratio"
+    },
+    {
+      "name": "process_alpha",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Process alpha"
+    },
+    {
+      "name": "rendermask_on",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Render mask on"
+    },
+    {
+      "name": "rendermask_ids",
+      "class": "String",
+      "value": "",
+      "display": "Render mask ids"
+    },
+    {
+      "name": "do_tonemapping",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Tonemapped"
+    },
+    {
+      "name": "exposure",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 20,
+      "display": "Exposure"
+    },
+    {
+      "name": "saturation",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Saturation"
+    },
+    {
+      "name": "high_saturation",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "High saturation"
+    },
+    {
+      "name": "contrast",
+      "class": "Float",
+      "value": 0.3,
+      "min": 0,
+      "max": 1,
+      "display": "Contrast"
+    },
+    {
+      "name": "burn_value",
+      "class": "Float",
+      "value": 0.2,
+      "min": -10,
+      "max": 1,
+      "display": "Burn value"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Gamma"
+    },
+    {
+      "name": "white_balance",
+      "class": "Color",
+      "value": null,
+      "display": "White Balance"
+    },
+    {
+      "name": "vignetting",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "display": "Vignetting"
+    },
+    {
+      "name": "image_blur",
+      "class": "Float",
+      "value": 0.1,
+      "min": 0,
+      "max": 1,
+      "display": "Blur image"
+    },
+    {
+      "name": "image_sharp",
+      "class": "Float",
+      "value": 0.1,
+      "min": 0,
+      "max": 0.9,
+      "step": 0.01,
+      "display": "Sharp image"
+    },
+    {
+      "name": "lut_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "LUT enabled"
+    },
+    {
+      "name": "lut_powr",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 1,
+      "display": "LUT power"
+    },
+    {
+      "name": "lut_file",
+      "class": "Filename",
+      "value": "",
+      "display": "LUT file"
+    },
+    {
+      "name": "kernel_exposure",
+      "class": "Float",
+      "value": 1,
+      "display": "Kernel Exposure"
+    },
+    {
+      "name": "environment_power",
+      "class": "Float",
+      "value": 1,
+      "display": "Environment multiplier"
+    },
+    {
+      "name": "environment_texture_on",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Environment texture on"
+    },
+    {
+      "name": "environment_sampling_on",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Direct lighting enabled"
+    },
+    {
+      "name": "environment_atmoshpere_on",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Atmoshpere on"
+    },
+    {
+      "name": "environment_atmoshpere_height",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 100000.0,
+      "display": "Atmoshpere height"
+    },
+    {
+      "name": "environment_atmoshpere_distance",
+      "class": "Float",
+      "value": 10000.0,
+      "min": 0,
+      "max": 100000.0,
+      "display": "Atmoshpere distance"
+    }
+  ],
+  "fstorm_sun": [
+    {
+      "name": "power",
+      "class": "Float",
+      "value": 2,
+      "min": 0,
+      "max": 50,
+      "display": "Power"
+    },
+    {
+      "name": "turbidity",
+      "class": "Float",
+      "value": 0.1,
+      "min": 0,
+      "max": 10,
+      "display": "Turbinity"
+    },
+    {
+      "name": "density",
+      "class": "Float",
+      "value": 0.2,
+      "min": 0,
+      "max": 10,
+      "display": "Densitry"
+    },
+    {
+      "name": "size",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "display": "Size"
+    },
+    {
+      "name": "targeted",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Targeted"
+    },
+    {
+      "name": "target_distance",
+      "class": "Float",
+      "value": 100,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Target distance"
+    },
+    {
+      "name": "hour",
+      "class": "Float",
+      "value": 15,
+      "min": 0,
+      "max": 24,
+      "display": "Hour"
+    },
+    {
+      "name": "month",
+      "class": "Float",
+      "value": 8,
+      "min": 0,
+      "max": 12,
+      "display": "Month"
+    },
+    {
+      "name": "latitude",
+      "class": "Float",
+      "value": 45,
+      "min": -90,
+      "max": 90,
+      "display": "Latitude"
+    },
+    {
+      "name": "north_direction",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 360,
+      "display": "North direction"
+    }
+  ],
+  "max_bitmap": [
+    {
+      "name": "filename",
+      "class": "Filename",
+      "value": "",
+      "display": "Filename"
+    },
+    {
+      "name": "coords.U_Offset",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "display": "Horizontal rotation"
+    },
+    {
+      "name": "coords.V_Offset",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "step": 0.01,
+      "display": "Vertical rotation"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Gamma"
+    },
+    {
+      "name": "output.output_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Output amount"
+    }
+  ],
+  "max_cc": [
+    {
+      "name": "hueShift",
+      "class": "Float",
+      "value": 0,
+      "min": -180,
+      "max": 180,
+      "step": 0.01,
+      "display": "Hue"
+    },
+    {
+      "name": "saturation",
+      "class": "Float",
+      "value": 0,
+      "min": -100,
+      "max": 100,
+      "step": 0.01,
+      "display": "Saturation"
+    },
+    {
+      "name": "brightness",
+      "class": "Float",
+      "value": 0,
+      "min": -100,
+      "max": 100,
+      "step": 0.01,
+      "display": "Brightness"
+    },
+    {
+      "name": "contrast",
+      "class": "Float",
+      "value": 0,
+      "min": -100,
+      "max": 100,
+      "step": 0.01,
+      "display": "Contrast"
+    }
+  ],
+  "max_daylight": [
+    {
+      "name": "controller.solar_time.controller.value",
+      "class": "Float",
+      "value": 12,
+      "min": 0,
+      "max": 24,
+      "fn": "DaylightProperty",
+      "display": "Time"
+    },
+    {
+      "name": "controller.solar_date.controller.value",
+      "class": "Date",
+      "value": 0,
+      "fn": "DaylightProperty",
+      "display": "Date"
+    },
+    {
+      "name": "controller.latitude",
+      "class": "Float",
+      "value": 52.383,
+      "min": 0,
+      "max": 90,
+      "fn": "DaylightProperty",
+      "display": "Latitude"
+    },
+    {
+      "name": "controller.longitude",
+      "class": "Float",
+      "value": 4.917,
+      "min": -180,
+      "max": 180,
+      "fn": "DaylightProperty",
+      "display": "Longitude"
+    }
+  ],
+  "max_layers": [
+    {
+      "name": "name",
+      "class": "String",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Name",
+        "Layer Name"
+      ]
+    },
+    {
+      "name": "on",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Visible",
+        "Visibility"
+      ]
+    },
+    {
+      "name": "current",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Current",
+        "Current"
+      ]
+    },
+    {
+      "name": "isfrozen",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Freeze",
+        "Freeze"
+      ]
+    },
+    {
+      "name": "renderable",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Render",
+        "Render"
+      ]
+    },
+    {
+      "name": "primaryVisibility",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "V. to Cam",
+        "Visible to Camera"
+      ]
+    },
+    {
+      "name": "secondaryVisibility",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "V. to Refl/Refr.",
+        "Visible to Reflection/Refraction"
+      ]
+    },
+    {
+      "name": "receiveShadows",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "R. Shadows",
+        "Receive Shadows"
+      ]
+    },
+    {
+      "name": "castShadows",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "C. Shadows",
+        "Cast Shadows"
+      ]
+    },
+    {
+      "name": "applyAtmospherics",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Atmos.",
+        "Apply Atmospherics"
+      ]
+    },
+    {
+      "name": "boxmode",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Box Mode",
+        "Display as Box"
+      ]
+    }
+  ],
+  "max_objects": [
+    {
+      "name": "name",
+      "class": "String",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Name",
+        "Object Name"
+      ]
+    },
+    {
+      "name": "isNodeHidden",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Visible",
+        "Visibility"
+      ]
+    },
+    {
+      "name": "transform",
+      "class": "Matrix3",
+      "value": null,
+      "display": [
+        "Transform",
+        "Transformation"
+      ]
+    },
+    {
+      "name": "isNodeFrozen",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Freeze",
+        "Freeze"
+      ]
+    },
+    {
+      "name": "renderable",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Render",
+        "Render"
+      ]
+    },
+    {
+      "name": "primaryVisibility",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "V. to Cam",
+        "Visible to Camera"
+      ]
+    },
+    {
+      "name": "secondaryVisibility",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "V. to Refl/Refr.",
+        "Visible to Reflection/Refraction"
+      ]
+    },
+    {
+      "name": "receiveShadows",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "R. Shadows",
+        "Receive Shadows"
+      ]
+    },
+    {
+      "name": "castShadows",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "C. Shadows",
+        "Cast Shadows"
+      ]
+    },
+    {
+      "name": "applyAtmospherics",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Atmos.",
+        "Apply Atmospherics"
+      ]
+    },
+    {
+      "name": "boxmode",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Box Mode",
+        "Display as Box"
+      ]
+    },
+    {
+      "name": "material",
+      "class": "Material",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Material",
+        "Material"
+      ]
+    }
+  ],
+  "max_physical_cam": [
+    {
+      "name": "target_distance",
+      "class": "Float",
+      "value": 100,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Target distance"
+    },
+    {
+      "name": "film_width_mm",
+      "class": "Float",
+      "value": 36,
+      "min": 0,
+      "max": 100,
+      "display": "Film width (mm)"
+    },
+    {
+      "name": "focal_length_mm",
+      "class": "Float",
+      "value": 42.714,
+      "min": 1,
+      "max": 200,
+      "display": "Focal length (mm)"
+    },
+    {
+      "name": "specify_fov",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Specify fov"
+    },
+    {
+      "name": "fov",
+      "class": "Float",
+      "value": 45,
+      "min": 0,
+      "max": 180,
+      "display": "Field of View"
+    },
+    {
+      "name": "zoom_factor",
+      "class": "Float",
+      "value": 1,
+      "min": 0.01,
+      "max": 100,
+      "display": "Zoom factor"
+    },
+    {
+      "name": "f_number",
+      "class": "Float",
+      "value": 8,
+      "min": 0.01,
+      "max": 50,
+      "display": "F-stop"
+    },
+    {
+      "name": "use_dof",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Use DOF"
+    },
+    {
+      "name": "focus_distance",
+      "class": "Float",
+      "value": "500.0",
+      "min": 1,
+      "max": 1000.0,
+      "display": "Focus distance"
+    },
+    {
+      "name": "lens_breathing_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "display": "Lens breathing"
+    },
+    {
+      "name": "shutter_length_seconds",
+      "class": "Float",
+      "value": 0.001,
+      "min": 0,
+      "max": 10,
+      "display": "Shutter speed (1/s)"
+    },
+    {
+      "name": "shutter_offset_seconds",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10,
+      "display": "Shutter offset (s)"
+    },
+    {
+      "name": "shutter_length_frames",
+      "class": "Float",
+      "value": 0.5,
+      "min": 0,
+      "max": 10,
+      "display": "Shutter speed (frames)"
+    },
+    {
+      "name": "shutter_offset_frames",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10,
+      "display": "Shutter offset (frames)"
+    },
+    {
+      "name": "shutter_offset_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Shutter offset enabled"
+    },
+    {
+      "name": "motion_blur_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Motion blur enabled"
+    },
+    {
+      "name": "iso",
+      "class": "Float",
+      "value": 100,
+      "min": 0,
+      "max": 6400,
+      "display": "ISO"
+    },
+    {
+      "name": "exposure_value",
+      "class": "Float",
+      "value": 6,
+      "min": 0,
+      "max": 20,
+      "display": "Exposure (EV)"
+    },
+    {
+      "name": "white_balance_kelvin",
+      "class": "Float",
+      "value": 6500,
+      "min": 2000.0,
+      "max": 10000.0,
+      "display": "White balance (K)"
+    },
+    {
+      "name": "vignetting_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Vignette enabled"
+    },
+    {
+      "name": "vignetting_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Vignette amount"
+    },
+    {
+      "name": "horizontal_shift",
+      "class": "Float",
+      "value": 0,
+      "min": -100,
+      "max": 100,
+      "display": "Horizontal shift (%)"
+    },
+    {
+      "name": "vertical_shift",
+      "class": "Float",
+      "value": 0,
+      "min": -100,
+      "max": 100,
+      "display": "Vertical shift (%)"
+    },
+    {
+      "name": "horizontal_tilt_correction",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Horizontal correction"
+    },
+    {
+      "name": "vertical_tilt_correction",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Vertical correction"
+    },
+    {
+      "name": "clip_on",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Enable Clipping"
+    },
+    {
+      "name": "clip_near",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (camera)"
+    },
+    {
+      "name": "clip_far",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (camera)"
+    },
+    {
+      "name": "environment_near",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (envionment)"
+    },
+    {
+      "name": "environment_far",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (envionment)"
+    }
+  ],
+  "max_standard_cam": [
+    {
+      "name": "fov",
+      "class": "Float",
+      "value": 45,
+      "min": 0,
+      "max": 180,
+      "display": "Field of View"
+    },
+    {
+      "name": "orthoProjection",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Orthographic projection"
+    },
+    {
+      "name": "showRanges",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Show environment range"
+    },
+    {
+      "name": "nearrange",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (envionment)"
+    },
+    {
+      "name": "farrange",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (envionment)"
+    },
+    {
+      "name": "clipManually",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Clip manually"
+    },
+    {
+      "name": "near_clip",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (camera)"
+    },
+    {
+      "name": "far_clip",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (camera)"
+    }
+  ],
+  "vray_bitmap": [
+    {
+      "name": "HDRIMapName",
+      "class": "Filename",
+      "value": "",
+      "display": "Filename"
+    },
+    {
+      "name": "multiplier",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Overall multiplier"
+    },
+    {
+      "name": "renderMultiplier",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Render multiplier"
+    },
+    {
+      "name": "horizontalRotation",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 360,
+      "display": "Horizontal rotation"
+    },
+    {
+      "name": "verticalRotation",
+      "class": "Float",
+      "value": 0,
+      "min": -180,
+      "max": 180,
+      "display": "Vertical rotation"
+    },
+    {
+      "name": "gamma",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Gamma"
+    },
+    {
+      "name": "output.output_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Output amount"
+    }
+  ],
+  "vray_cam": [
+    {
+      "name": "target_distance",
+      "class": "Float",
+      "value": 200,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Target distance"
+    },
+    {
+      "name": "focus_distance",
+      "class": "Float",
+      "value": 200,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Focus distance"
+    },
+    {
+      "name": "fov",
+      "class": "Float",
+      "value": 60,
+      "min": 0,
+      "max": 180,
+      "display": "Field of View"
+    },
+    {
+      "name": "film_width",
+      "class": "Float",
+      "value": 36,
+      "min": 0,
+      "max": 100,
+      "display": "Film width (mm)"
+    },
+    {
+      "name": "focal_length",
+      "class": "Float",
+      "value": 30,
+      "min": 1,
+      "max": 200,
+      "display": "Focal length (mm)"
+    },
+    {
+      "name": "zoom_factor",
+      "class": "Float",
+      "value": 1,
+      "min": 0.01,
+      "max": 100,
+      "display": "Zoom factor"
+    },
+    {
+      "name": "ISO",
+      "class": "Float",
+      "value": 100,
+      "min": 0,
+      "max": 6400,
+      "display": "ISO"
+    },
+    {
+      "name": "f_number",
+      "class": "Float",
+      "value": 8,
+      "min": 0.01,
+      "max": 50,
+      "display": "F-stop"
+    },
+    {
+      "name": "shutter_speed",
+      "class": "Float",
+      "value": 200,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Shutter speed"
+    },
+    {
+      "name": "use_dof",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Use dof"
+    },
+    {
+      "name": "use_moblur",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Use motion blur"
+    },
+    {
+      "name": "exposure_value",
+      "class": "Float",
+      "value": 13,
+      "min": 0,
+      "max": 20,
+      "display": "Exposure (EV)"
+    },
+    {
+      "name": "vignetting",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Vignette enabled"
+    },
+    {
+      "name": "vignetting_amount",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Vignette amount"
+    },
+    {
+      "name": "temperature",
+      "class": "Float",
+      "value": 6500,
+      "min": 2000.0,
+      "max": 10000.0,
+      "display": "Temperature (K)"
+    },
+    {
+      "name": "horizontal_shift",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Horizontal shift (%)"
+    },
+    {
+      "name": "vertical_shift",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Vertical shift (%)"
+    },
+    {
+      "name": "lens_tilt",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Horizontal correction"
+    },
+    {
+      "name": "lens_horTilt",
+      "class": "Float",
+      "value": 0,
+      "min": -1,
+      "max": 1,
+      "display": "Vertical correction"
+    },
+    {
+      "name": "clip_on",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Enable Clipping"
+    },
+    {
+      "name": "clip_near",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (camera)"
+    },
+    {
+      "name": "clip_far",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (camera)"
+    },
+    {
+      "name": "environment_near",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip near (envionment)"
+    },
+    {
+      "name": "environment_far",
+      "class": "Float",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "display": "Clip far (envionment)"
+    }
+  ],
+  "vray_cloud": [
+    {
+      "name": "clouds_on",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Clouds on"
+    },
+    {
+      "name": "ground_shadows",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Ground shadows"
+    },
+    {
+      "name": "cloud_density",
+      "class": "Float",
+      "value": "0.5",
+      "min": 0,
+      "max": 1,
+      "display": "Density"
+    },
+    {
+      "name": "clouds_density_multiplier",
+      "class": "Float",
+      "value": "1.0",
+      "min": 0,
+      "max": 10,
+      "display": "Density multiplier"
+    },
+    {
+      "name": "cloud_variety",
+      "class": "Float",
+      "value": "0.3",
+      "min": 0,
+      "max": 1,
+      "display": "Variety"
+    },
+    {
+      "name": "clouds_seed",
+      "class": "Integer",
+      "value": "0",
+      "min": 0,
+      "max": 1000.0,
+      "step": 1,
+      "display": "Seed"
+    },
+    {
+      "name": "cirrus_amount",
+      "class": "Float",
+      "value": "0.2",
+      "min": 0,
+      "max": 1,
+      "display": "Cirrus amount"
+    },
+    {
+      "name": "offset_X",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 10000.0,
+      "display": "Offset X (m)"
+    },
+    {
+      "name": "offset_Y",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 10000.0,
+      "display": "Offset Y (m)"
+    },
+    {
+      "name": "height",
+      "class": "Float",
+      "value": "1000.0",
+      "min": 500,
+      "max": 5000.0,
+      "display": "Height (m)"
+    },
+    {
+      "name": "thickness",
+      "class": "Float",
+      "value": "500.0",
+      "min": 10,
+      "max": 1000.0,
+      "display": "Thickness (m)"
+    },
+    {
+      "name": "phase_X",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1000.0,
+      "display": "Phase X (%)"
+    },
+    {
+      "name": "phase_Y",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 1000.0,
+      "display": "Phase Y (%)"
+    },
+    {
+      "name": "clouds_contrails_enabled",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Enable contrails"
+    },
+    {
+      "name": "clouds_contrails_num_planes",
+      "class": "Integer",
+      "value": "5",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "display": "Number of contrails"
+    },
+    {
+      "name": "clouds_contrails_strength",
+      "class": "Float",
+      "value": "0.5",
+      "min": 0,
+      "max": 1,
+      "display": "Contrails strength"
+    },
+    {
+      "name": "clouds_contrails_distortion",
+      "class": "Float",
+      "value": "0.5",
+      "min": 0,
+      "max": 1,
+      "display": "Contrails distortion"
+    },
+    {
+      "name": "clouds_contrails_offset_X",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 10000.0,
+      "display": "Contrails offset X (m)"
+    },
+    {
+      "name": "clouds_contrails_offset_Y",
+      "class": "Float",
+      "value": "0.0",
+      "min": 0,
+      "max": 10000.0,
+      "display": "Contrails offset Y (m)"
+    },
+    {
+      "name": "clouds_contrails_time",
+      "class": "Float",
+      "value": "0.0",
+      "min": -1000.0,
+      "max": 1000.0,
+      "display": "Contrails time"
+    }
+  ],
+  "vray_dome": [
+    {
+      "name": "multiplier",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Multiplier"
+    },
+    {
+      "name": "rotation.z_rotation",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 360,
+      "fn": "rotateDome",
+      "display": "Rotation"
+    },
+    {
+      "name": "castShadows",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Cast shadow"
+    },
+    {
+      "name": "invisible",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Invisible"
+    },
+    {
+      "name": "affect_diffuse",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Affect diffuse"
+    },
+    {
+      "name": "affect_specualr",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Affect specular"
+    },
+    {
+      "name": "affect_reflections",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Affect reflection"
+    },
+    {
+      "name": "texmap_locktodome",
+      "class": "Integer",
+      "value": 0,
+      "min": 0,
+      "max": 1,
+      "display": "Lock to dome"
+    },
+    {
+      "name": "dome_spherical",
+      "class": "BooleanClass",
+      "value": true,
+      "display": "Dome spherical"
+    },
+    {
+      "name": "dome_affect_alpha",
+      "class": "BooleanClass",
+      "value": false,
+      "display": "Dome affect alpha"
+    }
+  ],
+  "vray_light": [
+    {
+      "name": "name",
+      "class": "String",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Name",
+        "Name"
+      ]
+    },
+    {
+      "name": "on",
+      "class": "BooleanClass",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Enabled",
+        "Enabled"
+      ]
+    },
+    {
+      "name": "multiplier",
+      "class": "Float",
+      "value": null,
+      "enabled": true,
+      "display": [
+        "Multiplier",
+        "Multiplier"
+      ]
+    },
+    {
+      "name": "transform",
+      "class": "Matrix3",
+      "value": null,
+      "display": [
+        "Transform",
+        "Transformation"
+      ]
+    },
+    {
+      "name": "sizeLength",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Length",
+        "Length"
+      ]
+    },
+    {
+      "name": "sizeWidth",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Width",
+        "Width"
+      ]
+    },
+    {
+      "name": "color_temperature",
+      "class": "Float",
+      "value": null,
+      "display": [
+        "Temperature",
+        "Temperature"
+      ]
+    },
+    {
+      "name": "castShadows",
+      "class": "BooleanClass",
+      "value": true,
+      "display": [
+        "Shadow",
+        "Cast shadow"
+      ]
+    },
+    {
+      "name": "invisible",
+      "class": "BooleanClass",
+      "value": false,
+      "display": [
+        "Invisible",
+        "Invisible"
+      ]
+    },
+    {
+      "name": "affect_diffuse",
+      "class": "BooleanClass",
+      "value": true,
+      "display": [
+        "Diffuse",
+        "Affect diffuse"
+      ]
+    },
+    {
+      "name": "affect_specualr",
+      "class": "BooleanClass",
+      "value": true,
+      "display": [
+        "Specular",
+        "Affect specular"
+      ]
+    },
+    {
+      "name": "affect_reflections",
+      "class": "BooleanClass",
+      "value": true,
+      "display": [
+        "Reflection",
+        "Affect reflection"
+      ]
+    }
+  ],
+  "vray_objects": [
+    {
+      "name": "VRay_Matte_Enable",
+      "class": "BooleanClass",
+      "value": null,
+      "display": [
+        "Matte Enable",
+        "V-Ray Matte Enable"
+      ]
+    },
+    {
+      "name": "VRay_Matte_Alpha",
+      "class": "Float",
+      "value": null,
+      "min": -1,
+      "max": 1,
+      "display": [
+        "Matte Alpha",
+        "V-Ray Matte Alpha"
+      ]
+    },
+    {
+      "name": "VRay_Matte_ReflectionAmount",
+      "class": "Float",
+      "value": null,
+      "min": 0,
+      "max": 1,
+      "display": [
+        "Matte Refl.",
+        "V-Ray Matte Reflection"
+      ]
+    },
+    {
+      "name": "VRay_Matte_RefractionAmount",
+      "class": "Float",
+      "value": null,
+      "min": 0,
+      "max": 1,
+      "display": [
+        "Matte Refr.",
+        "V-Ray Matte Refraction"
+      ]
+    },
+    {
+      "name": "VRay_Matte_GIAmount",
+      "class": "Float",
+      "value": null,
+      "min": 0,
+      "max": 1,
+      "display": [
+        "Matte GI",
+        "V-Ray Matte GI"
+      ]
+    }
+  ],
+  "vray_render": [
+    {
+      "name": "imageSampler_shadingRate",
+      "class": "Integer",
+      "value": 6,
+      "min": 1,
+      "max": 10000.0,
+      "step": 1,
+      "display": "Min shading rate"
+    },
+    {
+      "name": "twoLevel_baseSubdivs",
+      "class": "Integer",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "display": "Bucket min subdivs"
+    },
+    {
+      "name": "twoLevel_fineSubdivs",
+      "class": "Integer",
+      "value": 24,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "display": "Bucket max subdivs"
+    },
+    {
+      "name": "twoLevel_threshold",
+      "class": "Float",
+      "value": 0.01,
+      "min": 0,
+      "max": 100,
+      "display": "Bucket noise threshold"
+    },
+    {
+      "name": "progressive_minSamples",
+      "class": "Integer",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "display": "Prog. min subdivs",
+      "enabled": true
+    },
+    {
+      "name": "progressive_maxSamples",
+      "class": "Integer",
+      "value": 100,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "display": "Prog. max subdivs",
+      "enabled": true
+    },
+    {
+      "name": "progressive_noise_threshold",
+      "class": "Float",
+      "value": 0.01,
+      "min": 0,
+      "max": 100,
+      "display": "Prog. noise threshold",
+      "enabled": true
+    },
+    {
+      "name": "progressive_max_render_time",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 1000.0,
+      "display": "Prog. render time (min)",
+      "enabled": true
+    },
+    {
+      "name": "lightcache_subdivs",
+      "class": "Integer",
+      "value": 1000.0,
+      "min": 0,
+      "max": 10000.0,
+      "step": 1,
+      "display": "Lightcache subdivs"
+    }
+  ],
+  "vray_sun": [
+    {
+      "name": "intensity_multiplier",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 10,
+      "display": "Intensity"
+    },
+    {
+      "name": "size_multiplier",
+      "class": "Float",
+      "value": 1,
+      "min": 0,
+      "max": 100,
+      "display": "Size"
+    },
+    {
+      "name": "indirect_horiz_illum",
+      "class": "Float",
+      "value": 25000.0,
+      "min": 0,
+      "max": 100000.0,
+      "display": "Horizon illumination"
+    },
+    {
+      "name": "blend_angle",
+      "class": "Float",
+      "value": 0.5,
+      "min": 0,
+      "max": 90,
+      "display": "Blend angle"
+    },
+    {
+      "name": "horizon_offset",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 90,
+      "display": "Horizon offset"
+    },
+    {
+      "name": "turbidity",
+      "class": "Float",
+      "value": "2.5",
+      "min": 0,
+      "max": 20,
+      "display": "Turbinity"
+    },
+    {
+      "name": "ozone",
+      "class": "Float",
+      "value": "0.35",
+      "min": 0,
+      "max": 1,
+      "display": "Ozone"
+    }
+  ],
+  "vraygpu_render": [
+    {
+      "name": "max_render_time",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 60,
+      "step": 0.1,
+      "display": "Time limit (mins)",
+      "enabled": true
+    },
+    {
+      "name": "max_paths_per_pixel",
+      "class": "Integer",
+      "value": 0,
+      "min": 0,
+      "max": 2048,
+      "step": 1,
+      "display": "Sample limit",
+      "enabled": true
+    },
+    {
+      "name": "aa_threshold",
+      "class": "Float",
+      "value": 0,
+      "min": 0,
+      "max": 100,
+      "step": 0.01,
+      "display": "Noise limit",
+      "enabled": true
+    },
+    {
+      "name": "raysPerPixel",
+      "class": "Integer",
+      "value": 16,
+      "min": 1,
+      "max": 128,
+      "step": 1,
+      "display": "Rays per pixel"
+    },
+    {
+      "name": "bundleSize",
+      "class": "Integer",
+      "value": 192,
+      "min": 1,
+      "max": 4096,
+      "step": 1,
+      "display": "Rays bundle size"
+    },
+    {
+      "name": "ipr_raysPerPixel",
+      "class": "Integer",
+      "value": 1,
+      "min": 1,
+      "max": 128,
+      "step": 1,
+      "display": "IPR Rays per pixel"
+    },
+    {
+      "name": "undersampling",
+      "class": "Integer",
+      "value": 2,
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "display": "Undersampling"
+    }
+  ]
+}
