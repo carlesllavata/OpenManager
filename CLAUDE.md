@@ -84,9 +84,21 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
   with `omgr_objectsInfo` (`window.selected_objects`). `object_total` = geometry.count + shapes.count.
 - Reference (10k boxes, 200 materials, Max 2027): scene read ~170 ms, map list ~160 ms, cached map lookup ~0 ms.
 
+## References to nodes and layers
+- Node references (`model.node_refs`: camera, suns, dome, Objects entries) are dicts {handle, name, uid}; the
+  Lights card keeps plain handles plus `s["lights"]["uids"]` {str(handle): uid} and props keyed `26|handle|prop`
+  (`model.rekey_light` moves them). Layer references (`model.layer_refs`): Layers entries {name, uid}, Variants
+  `layers` + parallel `uids`.
+- The uid is a GUID in app data slot 1330465865 of the node / `layer.layerAsRefTarg` (survives save, rename and
+  merge; `copy` does not copy it). `window.stamp_uids()` runs in `save_setups` for references without one
+  (`omgr_stampNodes` re-IDs a node whose ID another node shares).
+- `window.resolve_all(setups, strict)` (file load, every scene re-read, activate, import with strict=True): one
+  `omgr_resolveNodes` call → `model.apply_resolved`. Node at the stored handle with the same uid (or no uid yet) →
+  kept; else by uid; else the only node with that name. -1 = missing (reference kept, it may come back), -2 = the
+  handle is another node (reference stops using it; strict drops such lights). Layers follow `omgr_layerUids`.
+
 ## Known issues (audit of 2026-11-09, not fixed yet)
 - The Script File card offers `.py` files, but render scripts run through `fileIn` (MAXScript only).
-- Objects/layers are tracked by handle/name only.
 - The scene is still re-read (~170 ms on 10k objects) each time the mouse enters the window, throttled to 0.8 s.
 
 ## Git

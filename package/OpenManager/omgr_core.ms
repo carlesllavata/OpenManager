@@ -1198,6 +1198,113 @@ fn omgr_selectedLayers =
 	names
 )
 
+-- ---------------------------------------------------------------- lasting IDs of objects and layers
+-- Node handles change when nodes are merged into another file, and names change when things are renamed. Every node
+-- and layer a setup uses gets an ID of its own in its app data, which travels with it (save, merge, rename).
+
+global omgr_uidSlot = 1330465865 -- app data slot ("OMUI")
+
+fn omgr_uidOf obj = (try ((getAppData obj omgr_uidSlot) as string) catch "undefined")
+fn omgr_hasUid obj = (local u = omgr_uidOf obj; u != "undefined" and u != "")
+
+-- every node with an ID, as uid -> list of nodes (two nodes can share one when a file is merged twice)
+fn omgr_uidIndex =
+(
+	local d = Dictionary #string
+	for o in objects do
+	(
+		local u = omgr_uidOf o
+		if (u != "undefined" and u != "") do
+		(
+			if (HasDictValue d u) then append (GetDictValue d u) o else PutDictValue d u #(o)
+		)
+	)
+	d
+)
+
+-- IDs for these node handles, made when a node has none (or shares its ID with another node); "" for a missing node
+fn omgr_stampNodes handles =
+(
+	local index = undefined
+	for h in handles collect
+	(
+		local n = maxOps.getNodeByHandle h
+		if (n == undefined) then ""
+		else
+		(
+			if (index == undefined) do index = omgr_uidIndex()
+			local u = omgr_uidOf n
+			local shared = (omgr_hasUid n) and (HasDictValue index u) and ((GetDictValue index u).count > 1)
+			if (not (omgr_hasUid n) or shared) do
+			(
+				u = genGuid()
+				setAppData n omgr_uidSlot u
+				PutDictValue index u #(n)
+			)
+			u
+		)
+	)
+)
+
+fn omgr_stampLayers names =
+(
+	for nm in names collect
+	(
+		local ly = LayerManager.getLayerFromName nm
+		if (ly == undefined) then ""
+		else
+		(
+			local r = ly.layerAsRefTarg
+			if (not (omgr_hasUid r)) do setAppData r omgr_uidSlot (genGuid())
+			omgr_uidOf r
+		)
+	)
+)
+
+-- where the nodes a setup uses are now. refs: #(#(handle, uid, name), ...). For each: #(handle, name), handle -1 when
+-- it can't be found. The node at the stored handle is kept when it carries the same ID (or, for references made
+-- before IDs existed, when it exists); else the node with that ID; else the only node with that name.
+fn omgr_resolveNodes refs =
+(
+	local index = undefined
+	for r in refs collect
+	(
+		local h = r[1]
+		local uid = r[2]
+		local nm = r[3]
+		local n = if (h != undefined and h >= 0) then (maxOps.getNodeByHandle h) else undefined
+		local found = undefined
+		if (n != undefined and (uid == "" or (omgr_uidOf n) == uid)) do found = n
+		if (found == undefined and uid != "") do
+		(
+			if (index == undefined) do index = omgr_uidIndex()
+			if (HasDictValue index uid) do found = (GetDictValue index uid)[1]
+		)
+		if (found == undefined and nm != "") do
+		(
+			local same = getNodeByName nm all:true
+			if (same.count == 1) do found = same[1]
+		)
+		-- -2: the stored handle is now another node (setups brought from another file): don't use it
+		if (found != undefined) then #(found.inode.handle, found.name)
+		else if (n != undefined) then #(-2, nm)
+		else #(-1, nm)
+	)
+)
+
+-- every layer with an ID, as "uid|name" lines
+fn omgr_layerUids =
+(
+	local ss = stringStream ""
+	for i = 0 to (LayerManager.count - 1) do
+	(
+		local ly = LayerManager.getLayer i
+		local u = omgr_uidOf ly.layerAsRefTarg
+		if (u != "undefined" and u != "") do format "%|%\n" u ly.name to:ss
+	)
+	ss as string
+)
+
 -- ---------------------------------------------------------------- base state (what a setup changed, to put it back)
 
 -- any value of a property (undefined when there is none); the Python side decides what it can store

@@ -6,6 +6,17 @@ What each version of OpenManager adds, newest first.
 
 ### 9 November 2026
 
+- **Setups keep their objects and layers through renames and merges.** Every camera, sun, dome, light, object and
+  layer a setup uses now gets an ID of its own, stored with it in the scene, so OpenManager finds it again:
+  - **Renamed layers** stay in the Layers and Variants cards (before, a renamed layer was simply lost).
+  - **Renamed objects** keep working, and their new name shows in the cards.
+  - **Merged nodes**, which get new handles in the file they are merged into, are found by their ID, so setups you
+    import (.smp) into a file where the scene was merged apply to the right nodes, light settings included.
+  - **Another object that took the old handle is never touched by mistake:** before, an imported setup could hide
+    or change whatever object happened to have the same handle in the new file.
+  - A deleted object stays in its setups and is found again if it comes back (Undo, or merged again).
+  - Older setups get their IDs the next time the file is saved; until then they work as before, and an object
+    re-created with the same name is still found by its name.
 - **Much faster on big scenes.** Measured on a scene with 10,000 objects and 200 materials:
   - The map list of texture-map settings (camera overrides…) took **41 seconds**, with 3ds Max frozen; now
     **0.2 s**. OpenManager now finds maps by walking from the materials, the environment, the Material Editors and

@@ -1006,6 +1006,120 @@ def import_pulze(data, first_id):
     return out
 
 
+# ---------------------------------------------------------------- references to nodes and layers
+#
+# A setup points at nodes by handle (camera, suns, dome, objects, lights) and at layers by name. Handles change when
+# nodes are merged into another file and names change on rename, so each reference also keeps a lasting ID ("uid",
+# stored in the node's / layer's app data by omgr_stampNodes / omgr_stampLayers) and the name.
+
+def node_refs(s):
+    """The dicts of a setup that point at a node ({"handle", "name", "uid"}): camera, suns, dome, objects."""
+    refs = [s["camera"]] + entries(s["sun"]) + [s["dome"]]
+    refs += [o for o in s.get("objects", {}).get("set", []) if isinstance(o, dict)]
+    return refs
+
+
+def light_uids(s):
+    """IDs of the Lights card's lights: {str(handle): uid} (the card keeps plain handles)."""
+    return s["lights"].setdefault("uids", {})
+
+
+def rekey_light(s, old, new):
+    """A light of the Lights card is now another handle: its place in the list, its settings and its ID follow."""
+    lst = s["lights"]["set"]
+    s["lights"]["set"] = [new if h == old else h for h in lst]
+    props = s.get("props", {})
+    prefix = "26|%s|" % old
+    for k in [k for k in props if k.startswith(prefix)]:
+        props["26|%s|%s" % (new, k[len(prefix):])] = props.pop(k)
+    uids = light_uids(s)
+    if str(old) in uids:
+        uids[str(new)] = uids.pop(str(old))
+
+
+def drop_light(s, h):
+    s["lights"]["set"] = [x for x in s["lights"]["set"] if x != h]
+    prefix = "26|%s|" % h
+    for k in [k for k in s.get("props", {}) if k.startswith(prefix)]:
+        del s["props"][k]
+    light_uids(s).pop(str(h), None)
+
+
+def apply_resolved(setups, results, strict=False):
+    """Updates the node references of `setups` with what omgr_resolveNodes found, in the order resolve_query made
+    them: (handle, name) each. handle -1: not in the scene now (left as it is, it may come back); -2: the stored
+    handle is another node now (references made in another file): the reference stops using it, or, with strict
+    (setups just imported), a light is taken off the Lights card."""
+    it = iter(results)
+    changed = False
+    for s in setups:
+        for r in node_refs(s):
+            h, name = next(it)
+            if h >= 0:
+                if r.get("handle") != h or (name and r.get("name") != name):
+                    changed = True
+                r["handle"] = h
+                if name:
+                    r["name"] = name
+            elif h == -2 and r.get("handle") is not None:
+                r["handle"] = None
+                changed = True
+        for old in list(s["lights"]["set"]):
+            h, _ = next(it)
+            if h >= 0 and h != old:
+                rekey_light(s, old, h)
+                changed = True
+            elif h == -2 and strict:
+                drop_light(s, old)
+                changed = True
+    return changed
+
+
+def resolve_query(setups):
+    """[handle or -1, uid, name] for every node reference of the setups (node_refs, then the Lights card)."""
+    q = []
+    for s in setups:
+        for r in node_refs(s):
+            h = r.get("handle")
+            q.append([int(h) if h is not None else -1, r.get("uid") or "", r.get("name") or ""])
+        uids = light_uids(s)
+        for h in s["lights"]["set"]:
+            q.append([int(h), uids.get(str(h), ""), ""])
+    return q
+
+
+def layer_refs(s):
+    """[(entry, key)] of a setup's layer names that follow renames: Layers card entries ({"name", "uid"}), and the
+    layers of each Variants set (names in "layers", IDs in a parallel "uids" list)."""
+    out = [(e, None) for e in s.get("layers", {}).get("set", []) if isinstance(e, dict)]
+    for vs in s.get("variants", {}).get("set", []):
+        names = vs.get("layers") or []
+        uids = vs.setdefault("uids", [])
+        uids.extend([""] * (len(names) - len(uids)))
+        del uids[len(names):]
+        out += [(vs, i) for i in range(len(names))]
+    return out
+
+
+def layer_ref_get(ref):
+    e, i = ref
+    return (e.get("name"), e.get("uid") or "") if i is None else (e["layers"][i], e["uids"][i])
+
+
+def layer_ref_set(ref, name=None, uid=None):
+    e, i = ref
+    if i is None:
+        if name is not None:
+            e["name"] = name
+        if uid is not None:
+            e["uid"] = uid
+    else:
+        if name is not None:
+            e["layers"][i] = name
+        if uid is not None:
+            e["uids"][i] = uid
+
+
 def clone(s, new_id):
     c = copy.deepcopy(s)
     c["id"] = new_id

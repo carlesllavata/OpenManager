@@ -116,20 +116,30 @@ def read_scene(handles=()):
     return Scene(parse_scene(read_scene_raw(handles)))
 
 
-def resolve(setup, scene):
-    """Handles change when a scene is merged or nodes are re-created: fall back to the stored name."""
-    for key, items in (("camera", scene.cameras), ("sun", scene.lights), ("dome", scene.lights)):
-        for c in model.entries(setup[key]):
-            h = c.get("handle")
-            found = None
-            if h is not None:
-                found = next((x for x in items if x["handle"] == h), None)
-            if found is None and c.get("name"):
-                found = scene.find_by_name(items, c["name"])
-                if found is not None:
-                    c["handle"] = found["handle"]
-            if found is not None:
-                c["name"] = found["name"]
+def resolve_nodes(query):
+    """Where the referenced nodes are now (omgr_resolveNodes): [(handle, name)], handle -1 missing, -2 another node."""
+    if not query:
+        return []
+    return [(int(r[0]), str(r[1])) for r in rt.omgr_resolveNodes(query)]
+
+
+def stamp_nodes(handles):
+    """The lasting ID of each node (made when it has none); "" for a missing node."""
+    return [str(u) for u in rt.omgr_stampNodes([int(h) for h in handles])] if handles else []
+
+
+def stamp_layers(names):
+    return [str(u) for u in rt.omgr_stampLayers(list(names))] if names else []
+
+
+def layer_uids():
+    """{uid: current name} of every layer that has an ID."""
+    out = {}
+    for line in str(rt.omgr_layerUids()).splitlines():
+        uid, _, name = line.partition("|")
+        if uid:
+            out[uid] = name
+    return out
 
 
 # ---------------------------------------------------------------- values
