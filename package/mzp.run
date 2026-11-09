@@ -1,5 +1,5 @@
 name "OpenManager"
-version 0.1.0
+version 0.2.0
 description "Open-source scene states and batch render manager for 3ds Max"
 run "install.ms"
 drop "install.ms"

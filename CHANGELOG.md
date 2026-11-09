@@ -4,7 +4,14 @@ What each version of OpenManager adds, newest first.
 
 ## In development
 
-### 9 November 2026
+Nothing yet.
+
+## 0.2.0 — 9 November 2026
+
+The first release of OpenManager: the tool gets its new name, and the problems found when it was reviewed are fixed.
+Batch Render never renders without saving, setups no longer leave their changes behind and can be undone, scripts
+that come with a file ask before they run, big scenes are much faster, and setups keep their objects and layers
+through renames and merges.
 
 - **Setups keep their objects and layers through renames and merges.** Every camera, sun, dome, light, object and
   layer a setup uses now gets an ID of its own, stored with it in the scene, so OpenManager finds it again:
@@ -70,7 +77,7 @@ What each version of OpenManager adds, newest first.
   - **One setup failing doesn't stop the batch:** it is marked as failed and the next one renders.
   - **The file is checked after each render**, and at the end a report lists every setup: saved (and where),
     skipped or failed, and why. It is also printed in the MAXScript Listener.
-- **OpenManager is born.** The tool, until now *Puzles · Scene Manager*, is renamed **OpenManager** (version 0.1.0)
+- **OpenManager is born.** The tool, until now *Puzles · Scene Manager*, is renamed **OpenManager**
   and becomes open source. No account or login: install it and use it.
 - **New name all over 3ds Max.** The action is in *Customize User Interface* > **Category: OpenManager**, the
   window is titled OpenManager and MAXScript Listener errors carry that prefix. The settings files become
