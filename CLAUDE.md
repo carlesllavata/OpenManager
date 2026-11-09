@@ -101,6 +101,14 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
 - The Script File card offers `.py` files, but render scripts run through `fileIn` (MAXScript only).
 - The scene is still re-read (~170 ms on 10k objects) each time the mouse enters the window, throttled to 0.8 s.
 
+## Releases
+- Changes go under "## In development" in `CHANGELOG.md`. A release: bump `VERSION` in `openmanager/window.py`,
+  `package/mzp.run` and the README status line; turn the section into "## X.Y.Z — <date>" with a short summary
+  paragraph; `python -I tests\run.py`; `python -I tools\build.py`; commit "Release X.Y.Z"; tag `vX.Y.Z`; push with
+  tags; `gh release create vX.Y.Z dist/OpenManager.mzp --title "OpenManager X.Y.Z"` with that section as notes plus
+  an Install paragraph. After a batch of fixes, ask the user whether to publish a version.
+- 0.2.0 (9 November 2026) was the first release.
+
 ## Git
 - Branch `main`, remote `origin` = https://github.com/carlesllavata/OpenManager (private for now).
 - The repo is on a NAS, so it is listed in the global `safe.directory`.
