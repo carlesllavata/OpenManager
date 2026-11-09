@@ -1170,6 +1170,9 @@ fn omgr_getOn h =
 )
 fn omgr_setOn h onOff = (local n = omgr_node h; if (n != undefined) do omgr_switch n onOff; true)
 
+-- is the transform of this camera locked (as the Camera card's padlock sets it)
+fn omgr_isLocked h = (local n = omgr_node h; (n != undefined) and (try ((getTransformLockFlags n).numberset > 0) catch false))
+
 -- time output: #(range start, range end, slider, rendTimeType, rendStart, rendEnd, nth frame, frame list), in frames
 fn omgr_getTime = #(animationRange.start.frame, animationRange.end.frame, sliderTime.frame, rendTimeType, \
 	rendStart.frame, rendEnd.frame, rendNThFrame, rendPickupFrames)

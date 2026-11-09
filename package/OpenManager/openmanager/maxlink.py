@@ -619,8 +619,11 @@ def _run_one(a):
     elif k == "timeraw":
         rt.omgr_setTimeRaw(list(a[1:]))
     elif k == "lightson":
-        for h, on in a[1]:
+        for h, on in a[2]:
             rt.omgr_setOn(h, on)
+    elif k == "camraw":
+        if a[1] >= 0:
+            rt.omgr_setCamera(a[1], a[2], mode=a[3])
     elif k == "envraw":
         rt.omgr_setEnvRaw(a[1], a[2], a[3])
     elif k == "outputraw":
@@ -678,20 +681,28 @@ def capture(a):
             return None if v is None else ("map", a[1], a[2], a[3], v)
         if k == "res":
             return ("res", int(rt.renderWidth), int(rt.renderHeight))
-        if k == "time":
+        if k in ("time", "timeraw"):
             t = list(rt.omgr_getTime())
             return ("timeraw",) + tuple(int(round(float(x))) for x in t[:7]) + (str(t[7]),)
-        if k in ("sun", "dome"):
+        if k in ("sun", "dome", "lightson"):
+            kind, handles = (a[1], [h for h, _ in a[2]]) if k == "lightson" else (k, set(a[1]) | set(a[2]))
             states = []
-            for h in sorted(set(a[1]) | set(a[2])):
+            for h in sorted(handles):
                 on = rt.omgr_getOn(h)
                 if isinstance(on, bool):
                     states.append((int(h), on))
-            return ("lightson", tuple(states))
-        if k in ("env", "envmix", "envoff"):
+            return ("lightson", kind, tuple(states))
+        if k == "camera" or k == "camraw":
+            mode = a[3]
+            if mode == 2:
+                return None  # the locked render view: only used while rendering, never undone
+            h = viewport_camera()
+            locked = bool(rt.omgr_isLocked(h)) if h is not None else False
+            return ("camraw", -1 if h is None else h, locked, mode)
+        if k in ("env", "envmix", "envoff", "envraw"):
             cls, name, use = list(rt.omgr_getEnvRaw())
             return ("envraw", str(cls), str(name), bool(use))
-        if k == "output":
+        if k in ("output", "outputraw"):
             save, name, elems = list(rt.omgr_getOutputRaw())
             return ("outputraw", bool(save), str(name or ""), tuple(str(e) for e in elems))
         if k == "xref":

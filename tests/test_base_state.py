@@ -85,6 +85,31 @@ class BaseStep(unittest.TestCase):
         self.assertEqual(base, {})
 
 
+class Undo(unittest.TestCase):
+    def test_restore_changes_have_the_key_of_what_they_undo(self):
+        self.assertEqual(model.action_key(("timeraw", 0, 100, 0, 1, 0, 100, 1, "")), ("time",))
+        self.assertEqual(model.action_key(("lightson", "dome", ((1, True),))), ("dome",))
+        self.assertEqual(model.action_key(("envraw", "", "", True)), ("env",))
+        self.assertEqual(model.action_key(("outputraw", False, "", ())), ("output",))
+
+    def test_camera_is_undone_but_not_part_of_the_base(self):
+        self.assertIsNone(model.action_key(("camera", 5, False, 0)))
+        self.assertEqual(model.undo_key(("camera", 5, False, 0)), ("camera",))
+
+    def test_first_value_wins(self):
+        scene = FakeScene(res=(1920, 1080))
+        rec = model.undo_capture({}, [("res", 800, 600)], scene.capture)
+        scene.values["res"] = (800, 600)
+        model.undo_capture(rec, [("res", 640, 480), ("rs", "gi", 2)], scene.capture)
+        self.assertEqual(rec, {("res",): ("res", 1920, 1080)})  # gi can't be read in this fake scene
+        self.assertEqual(scene.reads, [("res",), ("rs", "gi")])
+
+    def test_things_that_cannot_be_undone_are_skipped(self):
+        scene = FakeScene()
+        self.assertEqual(model.undo_capture({}, [("code", "x"), ("preset", "a.rps")], scene.capture), {})
+        self.assertEqual(scene.reads, [])
+
+
 class Storage(unittest.TestCase):
     def test_round_trip_through_the_max_file_text(self):
         base = {("res",): ("res", 1920, 1080), ("node", 7, "fov"): ("node", 7, "fov", 45.0),

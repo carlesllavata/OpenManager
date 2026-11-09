@@ -6,6 +6,14 @@ What each version of OpenManager adds, newest first.
 
 ### 9 November 2026
 
+- **Undo and Redo for setups.** Applying a setup can now be undone: the new **Undo** and **Redo** buttons in the
+  top bar (and **Ctrl+Z** / **Ctrl+Y** while the OpenManager window has the focus) bring back the scene exactly as
+  it was before you clicked the setup, viewport camera included, and apply it again. Changes you make in the cards
+  of the active setup are undone together with it, and *Put back the scene as it was before the setups* is undoable
+  too. Before, nothing a setup did could be undone, not even with 3ds Max's Ctrl+Z.
+  - It undoes what happened in the scene, not your edits to the setups themselves.
+  - The history holds the last 30 steps and starts again when you open another file or run a batch.
+  - Scripts and render presets can't be undone; the button's tooltip says what the next Undo does.
 - **Setups no longer leave their changes behind.** A setup only changes what its cards control, so before, whatever
   one setup changed stayed for the next one: with setup A at frame 37 and setup B without a Time Output card, B also
   rendered frame 37, and results depended on the order you clicked. Now OpenManager remembers the value each setup

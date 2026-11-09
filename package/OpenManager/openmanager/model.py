@@ -609,7 +609,37 @@ def action_key(a):
         return ("env",)
     if k in ("xref", "atmos", "element"):
         return (k, a[1])
+    # the changes that put a value back control the same thing as the ones they undo
+    if k == "timeraw":
+        return ("time",)
+    if k == "lightson":
+        return (a[1],)  # "sun" or "dome"
+    if k == "envraw":
+        return ("env",)
+    if k == "outputraw":
+        return ("output",)
     return None
+
+
+def undo_key(a):
+    """Like action_key, for the undo history: the viewport camera is undone too (it is a view, so the base state
+    leaves it alone, but undoing a setup should bring back the camera that was shown)."""
+    if a[0] in ("camera", "camraw"):
+        return ("camera",)
+    return action_key(a)
+
+
+def undo_capture(record, acts, capture):
+    """Adds to an undo record (an ordered {undo_key: change that puts it back}) the current value of everything
+    `acts` is about to change that the record doesn't hold yet: the first value seen is the one undo brings back."""
+    for a in acts:
+        k = undo_key(a)
+        if k is None or k in record:
+            continue
+        r = capture(a)
+        if r is not None:
+            record[k] = r
+    return record
 
 
 def base_step(base, acts, capture):

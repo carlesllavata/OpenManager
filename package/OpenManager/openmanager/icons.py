@@ -22,6 +22,7 @@ GLYPH = {
     "view": "", "sync": "", "bake": "", "play": "", "pin": "",
     "wand": "", "magic": "", "gear": "", "folderopen": "", "minus": "",
 }
+GLYPH.update({"undo": "\ue7a7", "redo": "\ue7a6"})  # Segoe MDL2 Undo / Redo
 
 
 def _font(px):

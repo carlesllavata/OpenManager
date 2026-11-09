@@ -55,9 +55,17 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
   still knows what to put back. Setting `max.restore_base` (default on) turns it off.
 - A new change kind that a setup can make needs an `action_key`, a `capture` branch and, if needed, a restore kind.
 
+## Undo / redo
+- 3ds Max's undo stays off while a setup is applied (`maxlink.run` uses `pymxs.undo(False)`): it can't take back
+  globals like `renderWidth` or `rendOutputFilename`, and a partial Ctrl+Z would desync the base state.
+- Instead `window.activate` / `restore_scene` open a record (`begin_undo`/`end_undo`); `_apply` calls
+  `undo_capture(fresh)` before running, which fills it via `model.undo_capture` + `maxlink.capture` (first value
+  wins; `model.undo_key` adds the viewport camera, restored with `camraw`). Edits of the active setup extend the
+  last record. `undo()` runs the record and restores `base`/`active_id`; `redo()` re-activates. History is cleared
+  on file load and when a batch starts. Restore kinds carry their key (`lightson` has "sun"/"dome" as a[1]).
+
 ## Known issues (audit of 2026-11-09, not fixed yet)
 - Snippet/pre-render MAXScript stored in a `.max` runs on a single click.
-- Applying a setup is not undoable.
 - `omgr_texmaps` takes ~36 s with 10k objects; the scene is re-read on every mouse enter; Objects card caps at 5000.
 - Objects/layers are tracked by handle/name only.
 

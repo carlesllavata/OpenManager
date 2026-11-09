@@ -288,6 +288,9 @@ class SceneManager(QtWidgets.QDockWidget):
         self.todo = []
         self.rs_default = {}
         self.base = {}  # what the applied setup changed, to put it back (model.base_step)
+        self.undo_stack = []  # records of applied setups (see begin_undo), newest last
+        self.redo_stack = []
+        self._undo_rec = None
         self.active_id = None
         self.next_id = 1
         self.last_sent = []
@@ -362,6 +365,11 @@ class SceneManager(QtWidgets.QDockWidget):
             tl.addWidget(b)
         tl.addSpacing(6)
         tl.addWidget(self._top_tool("refresh", "Read the scene again", slot=self.reload_scene))
+        tl.addSpacing(6)
+        self.btn_undo = self._top_tool("undo", "Undo the last setup applied", slot=self.undo)
+        self.btn_redo = self._top_tool("redo", "Redo", slot=self.redo)
+        tl.addWidget(self.btn_undo)
+        tl.addWidget(self.btn_redo)
         tl.addStretch(1)
         self.status = QtWidgets.QLabel("")
         self.status.setEnabled(False)
@@ -402,6 +410,9 @@ class SceneManager(QtWidgets.QDockWidget):
         self.tree.reordered.connect(self._reordered)
         self.tree.customContextMenuRequested.connect(self._row_menu)
         QtGui.QShortcut(QtGui.QKeySequence.Delete, self.tree, self.remove_selected, context=QtCore.Qt.WidgetShortcut)
+        # Ctrl+Z / Ctrl+Y while the window has the focus (a text box keeps its own undo)
+        QtGui.QShortcut(QtGui.QKeySequence.Undo, root, self.undo, context=QtCore.Qt.WidgetWithChildrenShortcut)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Y"), root, self.redo, context=QtCore.Qt.WidgetWithChildrenShortcut)
         self.setup_columns()
         self.toast_label = Toast(root)
         self.setWidget(root)
@@ -568,6 +579,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self.todo = data["todo"]
         self.rs_default = data.get("rs_default") or {}
         self.base = data.get("base") or {}
+        self.clear_undo()
         self.next_id = max([s["id"] for s in self.setups] + [0]) + 1
         self.last_saved = self.encoded()
         if source == "pulze":
@@ -814,6 +826,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self.last_sent = acts
         if not fresh:
             return
+        self.undo_capture(fresh)
         o = self.opts()
         restart = False
         if o.get("ipr_corona_restart") and self.scene.engine_id == "corona" and maxlink.interactive_running():
@@ -835,32 +848,112 @@ class SceneManager(QtWidgets.QDockWidget):
             self.save_timer.start()
         return restore
 
-    def restore_scene(self):
+    def restore_scene(self, keep_redo=False):
         """Puts back everything the setups changed, as the scene was before them, and leaves no setup active."""
         if not self.base:
             self.toast("Nothing to put back: no setup has changed the scene")
             return
+        self.begin_undo("Put back the scene", "restore", keep_redo)
         restore, self.base = model.base_step(self.base, [], maxlink.capture)
+        self.undo_capture(restore)
         self.run_actions(restore)
         self.active_id = None
         self.last_sent = []
+        self.end_undo()
         self.save_timer.start()
         self.refresh_rows()
         self.refresh_cards()
         self.toast("The scene is back as it was before the setups (%d setting(s))" % len(restore))
 
-    def activate(self, sid):
-        self.active_id = sid
-        s = self.active()
+    def activate(self, sid, keep_redo=False):
+        s = next((x for x in self.setups if x["id"] == sid), None)
         if s is None:
             return
+        self.begin_undo("Apply %s" % self.setup_label(s), "activate", keep_redo)
+        self.active_id = sid
         maxlink.resolve(s, self.scene)
         self.last_sent = []
         self.query_values()
         self.apply_timer.stop()
-        self._apply()
+        try:
+            self._apply()
+        finally:
+            self.end_undo()
         self.refresh_rows()
         self.refresh_cards()
+
+    # ------------------------------------------------------------ undo / redo of applied setups
+    # 3ds Max's own undo can't take back render settings such as the resolution or the output file, so applying a
+    # setup keeps its own record: the value of everything it changes, taken just before (model.undo_capture).
+    # Card edits on the active setup add what they change to the same record, so Undo brings back the scene as it
+    # was before that setup was clicked. The setups' own data is never undone.
+
+    def begin_undo(self, label, kind, keep_redo=False):
+        self._undo_rec = {"label": label, "kind": kind, "restore": {}, "base_before": dict(self.base),
+                          "active_before": self.active_id}
+        if not keep_redo:
+            self.redo_stack = []
+
+    def undo_capture(self, acts):
+        """Before acts run: their current values go into the open record, or into the last one when the change is
+        an edit of the setup it applied."""
+        rec = self._undo_rec
+        if rec is None and self.active_id is not None and self.undo_stack \
+                and self.undo_stack[-1].get("active_after") == self.active_id:
+            rec = self.undo_stack[-1]
+        if rec is not None:
+            model.undo_capture(rec["restore"], acts, maxlink.capture)
+
+    def end_undo(self):
+        rec, self._undo_rec = self._undo_rec, None
+        if rec is None:
+            return
+        rec["active_after"] = self.active_id
+        if rec["restore"] or rec["base_before"] != self.base:
+            self.undo_stack = (self.undo_stack + [rec])[-30:]
+        self.update_undo_buttons()
+
+    def clear_undo(self):
+        self.undo_stack, self.redo_stack, self._undo_rec = [], [], None
+        self.update_undo_buttons()
+
+    def update_undo_buttons(self):
+        if not hasattr(self, "btn_undo"):
+            return
+        u = self.undo_stack[-1]["label"] if self.undo_stack else None
+        r = self.redo_stack[-1]["label"] if self.redo_stack else None
+        self.btn_undo.setEnabled(u is not None)
+        self.btn_redo.setEnabled(r is not None)
+        self.btn_undo.setToolTip("Undo: %s (Ctrl+Z)" % u if u else "Nothing to undo")
+        self.btn_redo.setToolTip("Redo: %s (Ctrl+Y)" % r if r else "Nothing to redo")
+
+    def undo(self):
+        if self.rendering or not self.undo_stack:
+            return
+        self.apply_timer.stop()
+        rec = self.undo_stack.pop()
+        self.run_actions(list(rec["restore"].values()))
+        self.base = dict(rec["base_before"])
+        self.active_id = rec["active_before"]
+        self.last_sent = []
+        self.redo_stack.append(rec)
+        self.save_timer.start()
+        self.update_undo_buttons()
+        self.refresh_rows()
+        self.refresh_cards()
+        self.toast("Undone: %s" % rec["label"])
+
+    def redo(self):
+        if self.rendering or not self.redo_stack:
+            return
+        rec = self.redo_stack.pop()
+        if rec["kind"] == "restore":
+            self.restore_scene(keep_redo=True)
+        elif any(s["id"] == rec["active_after"] for s in self.setups):
+            self.activate(rec["active_after"], keep_redo=True)
+        else:
+            self.toast("Can't redo: that setup was removed")
+        self.update_undo_buttons()
 
     def query_values(self):
         """Ticked settings with no value yet are read from the scene first, so sliders start at the real value."""
@@ -1437,6 +1530,7 @@ class SceneManager(QtWidgets.QDockWidget):
         if not setups or self.rendering:
             return 0
         self.rendering = True
+        self.clear_undo()  # a batch applies many setups: what came before it can no longer be undone
         keep = self.active_id
         dlg = dialogs.BatchDialog(self, len(setups), title, task)
         cancel = {"on": False}
@@ -1585,6 +1679,7 @@ class SceneManager(QtWidgets.QDockWidget):
 
     def _begin_render(self, jobs, skipped=()):
         self.rendering = True
+        self.clear_undo()  # a batch applies many setups: what came before it can no longer be undone
         self.render_jobs = list(jobs)
         self.render_done = 0
         self.render_cancel = False
