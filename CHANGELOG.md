@@ -24,3 +24,5 @@ Lo que va añadiendo cada versión de OpenManager, de la más reciente a la más
 - El desinstalador también borra la caché de miniaturas de HDRI.
 - El instalador ya compilado deja de estar en el repositorio: se genera con `python tools/build.py`
   (`dist/OpenManager.mzp`).
+- **Historial del repositorio reiniciado.** OpenManager empieza con un único commit propio, `OpenManager 0.1.0`; a
+  partir de aquí cada cambio queda en git y en este diario.
