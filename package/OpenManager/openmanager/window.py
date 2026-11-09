@@ -287,6 +287,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self.setups = []
         self.todo = []
         self.rs_default = {}
+        self.base = {}  # what the applied setup changed, to put it back (model.base_step)
         self.active_id = None
         self.next_id = 1
         self.last_sent = []
@@ -566,6 +567,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self.setups = data["setups"]
         self.todo = data["todo"]
         self.rs_default = data.get("rs_default") or {}
+        self.base = data.get("base") or {}
         self.next_id = max([s["id"] for s in self.setups] + [0]) + 1
         self.last_saved = self.encoded()
         if source == "pulze":
@@ -806,8 +808,9 @@ class SceneManager(QtWidgets.QDockWidget):
         if s is None or self.rendering:
             return
         acts = self.actions_for(s, False)
+        restore = self.base_restore(acts)
         sent = set(self.last_sent)
-        fresh = [a for a in acts if a not in sent]
+        fresh = restore + [a for a in acts if a not in sent]
         self.last_sent = acts
         if not fresh:
             return
@@ -819,6 +822,32 @@ class SceneManager(QtWidgets.QDockWidget):
         self.run_actions(fresh, redraw=bool(o.get("viewport_refresh", True)))
         if restart:
             maxlink.interactive_start()
+
+    def base_restore(self, acts):
+        """Before applying `acts`: the changes that put back what the setup applied before changed and this one
+        doesn't control, and the values this one is about to replace are kept (model.base_step)."""
+        if not self.opts().get("restore_base", True):
+            self.base = {}
+            return []
+        before = self.base
+        restore, self.base = model.base_step(self.base, acts, maxlink.capture)
+        if self.base != before:
+            self.save_timer.start()
+        return restore
+
+    def restore_scene(self):
+        """Puts back everything the setups changed, as the scene was before them, and leaves no setup active."""
+        if not self.base:
+            self.toast("Nothing to put back: no setup has changed the scene")
+            return
+        restore, self.base = model.base_step(self.base, [], maxlink.capture)
+        self.run_actions(restore)
+        self.active_id = None
+        self.last_sent = []
+        self.save_timer.start()
+        self.refresh_rows()
+        self.refresh_cards()
+        self.toast("The scene is back as it was before the setups (%d setting(s))" % len(restore))
 
     def activate(self, sid):
         self.active_id = sid
@@ -1112,6 +1141,8 @@ class SceneManager(QtWidgets.QDockWidget):
         m.addAction(icon("camera"), "Fetch current scene", self.fetch_scene)
         m.addAction("Render: all on", lambda: self._set_all_render(True))
         m.addAction("Render: all off", lambda: self._set_all_render(False))
+        m.addSeparator()
+        m.addAction(icon("refresh"), "Put back the scene as it was before the setups", self.restore_scene)
         m.exec(self.tree.viewport().mapToGlobal(pos))
 
     def _set_all_render(self, on):
@@ -1418,7 +1449,8 @@ class SceneManager(QtWidgets.QDockWidget):
                     break
                 dlg.set_job("[%s]" % (s["scenename"] or (self.scene.camera(s["camera"]["handle"]) or {}).get("name", "")), i, len(setups))
                 QtWidgets.QApplication.processEvents()
-                self.run_actions(self.actions_for(s, False))
+                acts = self.actions_for(s, False)
+                self.run_actions(self.base_restore(acts) + acts)
                 step(s, self.index_of(s))
                 done += 1
                 dlg.set_job("", done, len(setups))
@@ -1583,7 +1615,8 @@ class SceneManager(QtWidgets.QDockWidget):
         QtWidgets.QApplication.processEvents()
         status, details = "Failed", []
         try:
-            self.run_actions(self.actions_for(s, True))
+            acts = self.actions_for(s, True)
+            self.run_actions(self.base_restore(acts) + acts)
             target = maxlink.render_output()
             if not target:
                 # never render a frame that isn't saved
@@ -1645,7 +1678,12 @@ class SceneManager(QtWidgets.QDockWidget):
 
     # ------------------------------------------------------------ storing setups in the .max file
     def encoded(self):
-        return model.encode(self.setups, self.todo, {"rs_default": self.rs_default} if self.rs_default else None)
+        extra = {}
+        if self.rs_default:
+            extra["rs_default"] = self.rs_default
+        if self.base:
+            extra["base"] = model.base_to_json(self.base)
+        return model.encode(self.setups, self.todo, extra or None)
 
     def save_setups(self):
         if self.loading:

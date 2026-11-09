@@ -32,7 +32,7 @@ class Dialog(QtWidgets.QDialog):
 
 DEFAULT_SETTINGS_MAX = {
     "viewport_update_type": 0, "viewport_refresh": True, "ipr_corona_restart": False, "ipr_vray_resolution": True,
-    "update_time_output_type": False, "animate_camera": False,
+    "update_time_output_type": False, "animate_camera": False, "restore_base": True,
 }
 DEFAULT_THEME = {"main": "auto", "header": "colored"}
 COLUMNS = [("name", "Scene Name"), ("camera", "Camera"), ("resolution", "Resolution"), ("sun", "Sun"),
@@ -260,6 +260,13 @@ class SettingsDialog(Dialog):
         tl.addRow("Main", self.main)
         tl.addRow("Module Headers", self.header)
         form.addRow(section("Theme"), tw)
+        # Setups
+        self.restore_base = QtWidgets.QCheckBox("Put back what the previous setup changed and the new one doesn't control")
+        self.restore_base.setToolTip("On: every setup starts from the scene as it was before any setup.\n"
+                                     "Off: a setup only changes its own cards; the rest stays as the previous setup left it.\n"
+                                     "Viewport camera and background, scripts and render presets are never put back.")
+        self.restore_base.setChecked(bool(mx["restore_base"]))
+        form.addRow(section("Setups"), self.restore_base)
         # Time output
         self.time_type = QtWidgets.QCheckBox("Update Time Output Type (Single/Range/List) on setup change")
         self.time_type.setChecked(bool(mx["update_time_output_type"]))
@@ -351,7 +358,8 @@ class SettingsDialog(Dialog):
                       "header": "colored" if self.header.currentIndex() == 0 else "default"},
             "max": {"viewport_update_type": self.vp_group.checkedId(), "viewport_refresh": self.redraw.isChecked(),
                     "ipr_corona_restart": self.ipr_corona.isChecked(), "ipr_vray_resolution": self.ipr_vray.isChecked(),
-                    "update_time_output_type": self.time_type.isChecked(), "animate_camera": False},
+                    "update_time_output_type": self.time_type.isChecked(), "animate_camera": False,
+                    "restore_base": self.restore_base.isChecked()},
             "columns_visible": {k: cb.isChecked() for k, cb in self.col_boxes.items()},
             "resolution_presets": pres or [list(x) for x in model.RESOLUTION_PRESETS],
         }

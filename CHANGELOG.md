@@ -6,6 +6,18 @@ What each version of OpenManager adds, newest first.
 
 ### 9 November 2026
 
+- **Setups no longer leave their changes behind.** A setup only changes what its cards control, so before, whatever
+  one setup changed stayed for the next one: with setup A at frame 37 and setup B without a Time Output card, B also
+  rendered frame 37, and results depended on the order you clicked. Now OpenManager remembers the value each setup
+  replaces and puts it back when the next setup doesn't control it, so every setup starts from the scene as it was
+  before any setup: resolution, time output, suns and domes, environment, layers, objects, lights, render settings,
+  render output, XRefs, atmospherics, render elements and Corona post-production. It also works in Batch Render, and
+  it is saved with the `.max`, so it keeps working after you close and reopen the file.
+  - Changes you make by hand to something no setup controls are kept, and become the new starting point.
+  - The viewport camera and background, scripts and render presets are not put back.
+  - **Right-click in the setup list > Put back the scene as it was before the setups** undoes every setup at once.
+  - To keep the old behaviour, untick **Settings > Setups > Put back what the previous setup changed and the new one
+    doesn't control**.
 - **Batch Render never renders without saving any more.** Before, a setup whose output path wasn't complete
   (a camera named `CAM:Bad`, a missing Extension token...) switched saving off and rendered anyway, and the batch
   still said it had finished. Now:

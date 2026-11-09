@@ -45,8 +45,17 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
 - Live tests drive the batch with `w.check_render(jobs)` + `w._begin_render(runnable, skipped)`: `start_render`
   opens a modal dialog when a setup has problems, which would hang the bridge.
 
+## Base state (no leaks between setups)
+- Every way of applying a setup (`_apply`, batch `_next_job`, `_run_over_setups`) runs `window.base_restore(acts)`
+  first and prepends its result. `model.base_step` keeps `window.base` = {action_key: change that puts the value
+  back} for exactly the keys the applied setup controls; `maxlink.capture(action)` reads the value about to be
+  replaced. Keys come from `model.action_key` (None = never put back: camera, background, code, preset,
+  renderscripts, mkdir, renderview). Restore-only change kinds: `timeraw`, `lightson`, `envraw`, `outputraw`.
+- `window.base` is saved in the setups text (`"base"`, `model.base_to_json`), so a file saved with a setup applied
+  still knows what to put back. Setting `max.restore_base` (default on) turns it off.
+- A new change kind that a setup can make needs an `action_key`, a `capture` branch and, if needed, a restore kind.
+
 ## Known issues (audit of 2026-11-09, not fixed yet)
-- Setups only set what they control, so state leaks from one setup to the next.
 - Snippet/pre-render MAXScript stored in a `.max` runs on a single click.
 - Applying a setup is not undoable.
 - `omgr_texmaps` takes ~36 s with 10k objects; the scene is re-read on every mouse enter; Objects card caps at 5000.

@@ -426,7 +426,8 @@ def decode(text):
     if isinstance(data, dict) and isinstance(data.get("setups"), list):
         return {"setups": [normalize(s) for s in data["setups"] if isinstance(s, dict)],
                 "todo": [t for t in data.get("todo", []) if isinstance(t, dict)],
-                "rs_default": data.get("rs_default") or {}}
+                "rs_default": data.get("rs_default") or {},
+                "base": base_from_json(data.get("base"))}
     return None
 
 
@@ -583,6 +584,75 @@ def check_jobs(jobs):
             r["warnings"].append("Saves to the same file as %s, which it will overwrite" % jobs[seen[key]].get("label", "another setup"))
         else:
             seen[key] = i
+    return out
+
+
+# ---------------------------------------------------------------- base state
+#
+# A setup only sets what its cards control. So that nothing it changed stays behind when another setup is applied,
+# the value each change replaces is kept (the "base") while a setup controls it, and put back when the next setup
+# doesn't control it. The base only holds what the applied setup controls; anything else is the scene as it is.
+
+def action_key(a):
+    """What a change controls, so two changes of the same thing have the same key. None: not put back (the
+    viewport camera and background are views, not scene settings; scripts and render presets can't be undone)."""
+    k = a[0]
+    if k == "rs":
+        return ("rs", a[1])
+    if k in ("node", "layer"):
+        return (k, a[1], a[2])
+    if k == "map":
+        return ("map", a[1], a[2], a[3])
+    if k in ("res", "time", "sun", "dome", "output", "posttone", "postlm"):
+        return (k,)
+    if k in ("env", "envmix", "envoff"):
+        return ("env",)
+    if k in ("xref", "atmos", "element"):
+        return (k, a[1])
+    return None
+
+
+def base_step(base, acts, capture):
+    """Applying `acts` with `base` ({key: change that puts the value back}) for the setup applied before.
+    Returns (restore, new_base): restore puts back what the new setup doesn't control (run it before acts);
+    new_base keeps the saved values the new setup still controls and captures, through capture(action) -> change or
+    None, the current value of anything it starts to control."""
+    wanted = {}
+    for a in acts:
+        k = action_key(a)
+        if k is not None and k not in wanted:
+            wanted[k] = a
+    restore = [r for k, r in base.items() if k not in wanted and r is not None]
+    new = {}
+    for k, a in wanted.items():
+        if k in base:
+            new[k] = base[k]
+        else:
+            r = capture(a)
+            if r is not None:
+                new[k] = r
+    return restore, new
+
+
+def as_tuples(v):
+    """JSON lists back into the tuples changes are made of."""
+    if isinstance(v, list):
+        return tuple(as_tuples(x) for x in v)
+    return v
+
+
+def base_to_json(base):
+    return [[list(k), r] for k, r in base.items()]
+
+
+def base_from_json(data):
+    out = {}
+    for item in data or []:
+        try:
+            k, r = item
+            out[as_tuples(k)] = as_tuples(r)
+        except (TypeError, ValueError):
+            pass
     return out
 
 

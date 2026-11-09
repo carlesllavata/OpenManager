@@ -1138,6 +1138,106 @@ fn omgr_selectedLayers =
 	names
 )
 
+-- ---------------------------------------------------------------- base state (what a setup changed, to put it back)
+
+-- any value of a property (undefined when there is none); the Python side decides what it can store
+fn omgr_getRaw obj prop =
+(
+	if (obj == undefined) then undefined
+	else (try (omgr_getPath obj (filterString (omgr_cleanProp prop) ".") 1) catch undefined)
+)
+fn omgr_getRawNode h prop = omgr_getRaw (omgr_node h) prop
+fn omgr_getRawLayer nm prop = omgr_getRaw (LayerManager.getLayerFromName nm) prop
+fn omgr_getRawMap cls nm prop = omgr_getRaw (omgr_findMap cls nm) prop
+fn omgr_getRawRS prop = omgr_getRaw renderers.current prop
+
+-- on/off of a sun, dome or Daylight as omgr_switch sees it
+fn omgr_getOn h =
+(
+	local obj = omgr_node h
+	if (obj == undefined) do return undefined
+	local target = obj
+	local cls = (classof obj) as string
+	if (cls == "DaylightAssemblyHead" and obj.sun != undefined) then target = obj.sun
+	else if (cls == "Sun_Positioner" and obj.parent != undefined) then target = obj.parent
+	try
+	(
+		if (hasProperty target #on) then target.on
+		else if (hasProperty target #enabled) then target.enabled
+		else undefined
+	)
+	catch undefined
+)
+fn omgr_setOn h onOff = (local n = omgr_node h; if (n != undefined) do omgr_switch n onOff; true)
+
+-- time output: #(range start, range end, slider, rendTimeType, rendStart, rendEnd, nth frame, frame list), in frames
+fn omgr_getTime = #(animationRange.start.frame, animationRange.end.frame, sliderTime.frame, rendTimeType, \
+	rendStart.frame, rendEnd.frame, rendNThFrame, rendPickupFrames)
+fn omgr_setTimeRaw t =
+(
+	local s = (t[1] as integer) as time
+	local e = (t[2] as integer) as time
+	if (e > s) do animationRange = interval s e
+	sliderTime = (t[3] as integer) as time
+	rendTimeType = t[4] as integer
+	rendStart = (t[5] as integer) as time
+	rendEnd = (t[6] as integer) as time
+	rendNThFrame = amax 1 (t[7] as integer)
+	rendPickupFrames = t[8] as string
+	true
+)
+
+-- render output: #(save file, file name, #(file name of every render element))
+fn omgr_getOutputRaw =
+(
+	local re = maxOps.GetCurRenderElementMgr()
+	#(rendSaveFile, rendOutputFilename, for i = 0 to (re.NumRenderElements() - 1) collect ((re.GetRenderElementFilename i) as string))
+)
+fn omgr_setOutputRaw save nm elems =
+(
+	rendSaveFile = save
+	rendOutputFilename = nm
+	local re = maxOps.GetCurRenderElementMgr()
+	for i = 0 to (amin (re.NumRenderElements() - 1) (elems.count - 1)) do re.SetRenderElementFilename i elems[i + 1]
+	true
+)
+
+-- environment slot: #(class, name, use environment map); class "" when the slot is empty
+fn omgr_getEnvRaw =
+(
+	local m = if (omgr_isFStorm()) then (try renderers.current.environment_texture catch undefined) else environmentMap
+	if (m == undefined) then #("", "", useEnvironmentMap) else #((classof m) as string, m.name, useEnvironmentMap)
+)
+fn omgr_setEnvRaw cls nm use =
+(
+	if (cls == "") then omgr_envOff() else omgr_setEnv cls nm -1
+	useEnvironmentMap = use
+	true
+)
+
+fn omgr_getXref file =
+(
+	for i = 1 to (xrefs.getXRefFileCount()) do
+	(
+		local x = xrefs.getXRefFile i
+		if ((filenameFromPath x.filename) == file) do return (not x.disabled)
+	)
+	undefined
+)
+
+fn omgr_getAtmos nm =
+(
+	for i = 1 to numAtmospherics do (local a = getAtmospheric i; if (a.name == nm) do return (isActive a))
+	undefined
+)
+
+fn omgr_getElement nm =
+(
+	local re = maxOps.GetCurRenderElementMgr()
+	for i = 0 to (re.NumRenderElements() - 1) do (local e = re.GetRenderElement i; if (e.elementName == nm) do return e.enabled)
+	undefined
+)
+
 -- ---------------------------------------------------------------- scene events
 
 fn omgr_fire what = (if (omgr_notify != undefined) do (try (omgr_notify what) catch (format "OpenManager: %\n" (getCurrentException()))))

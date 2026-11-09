@@ -615,6 +615,101 @@ def _run_one(a):
         rt.omgr_setRenderScripts(a[1], a[2], a[3], a[4])
     elif k == "code":
         rt.omgr_runCode(a[1])
+    # the changes that put a base value back (see capture)
+    elif k == "timeraw":
+        rt.omgr_setTimeRaw(list(a[1:]))
+    elif k == "lightson":
+        for h, on in a[1]:
+            rt.omgr_setOn(h, on)
+    elif k == "envraw":
+        rt.omgr_setEnvRaw(a[1], a[2], a[3])
+    elif k == "outputraw":
+        rt.omgr_setOutputRaw(a[1], a[2], list(a[3]))
+
+
+# ---------------------------------------------------------------- base state: the value a change replaces
+
+def _stored(v, like):
+    """A value read from 3ds Max in the form a change carries (`like`: the value the change sets), or None when it
+    can't be stored."""
+    if isinstance(like, tuple) and like and like[0] == "$color":
+        try:
+            return ("$color", "#%02x%02x%02x" % (int(round(v.r)), int(round(v.g)), int(round(v.b))))
+        except Exception:
+            return None
+    if isinstance(like, tuple) and like and like[0] == "$texmap":
+        if v is None:
+            return ("$texmap", "")
+        try:
+            return ("$texmap", "%s|%s" % (rt.classOf(v), v.name))
+        except Exception:
+            return None
+    if isinstance(v, bool):
+        return bool(v)
+    if isinstance(v, (int, float, str)):
+        return v
+    return None
+
+
+def _pipeline_of(h, prop):
+    n = rt.maxOps.getNodeByHandle(h)
+    return None if n is None else ("$pipeline", json.dumps(read_pipeline(n, prop)))
+
+
+def capture(a):
+    """The change that puts back what action `a` is about to replace, read from the scene now; None when it can't
+    be read (then it isn't put back)."""
+    k = a[0]
+    try:
+        if k == "rs":
+            v = _stored(rt.omgr_getRawRS(a[1]), a[2])
+            return None if v is None else ("rs", a[1], v)
+        if k == "node":
+            if isinstance(a[3], tuple) and a[3] and a[3][0] == "$pipeline":
+                v = _pipeline_of(a[1], a[2])
+            else:
+                v = _stored(rt.omgr_getRawNode(a[1], a[2]), a[3])
+            return None if v is None else ("node", a[1], a[2], v)
+        if k == "layer":
+            v = _stored(rt.omgr_getRawLayer(a[1], a[2]), a[3])
+            return None if v is None else ("layer", a[1], a[2], v)
+        if k == "map":
+            v = _stored(rt.omgr_getRawMap(a[1], a[2], a[3]), a[4])
+            return None if v is None else ("map", a[1], a[2], a[3], v)
+        if k == "res":
+            return ("res", int(rt.renderWidth), int(rt.renderHeight))
+        if k == "time":
+            t = list(rt.omgr_getTime())
+            return ("timeraw",) + tuple(int(round(float(x))) for x in t[:7]) + (str(t[7]),)
+        if k in ("sun", "dome"):
+            states = []
+            for h in sorted(set(a[1]) | set(a[2])):
+                on = rt.omgr_getOn(h)
+                if isinstance(on, bool):
+                    states.append((int(h), on))
+            return ("lightson", tuple(states))
+        if k in ("env", "envmix", "envoff"):
+            cls, name, use = list(rt.omgr_getEnvRaw())
+            return ("envraw", str(cls), str(name), bool(use))
+        if k == "output":
+            save, name, elems = list(rt.omgr_getOutputRaw())
+            return ("outputraw", bool(save), str(name or ""), tuple(str(e) for e in elems))
+        if k == "xref":
+            v = rt.omgr_getXref(a[1])
+            return None if not isinstance(v, bool) else ("xref", a[1], v)
+        if k == "atmos":
+            v = rt.omgr_getAtmos(a[1])
+            return None if not isinstance(v, bool) else ("atmos", a[1], v)
+        if k == "element":
+            v = rt.omgr_getElement(a[1])
+            return None if not isinstance(v, bool) else ("element", a[1], v)
+        if k == "posttone":
+            return ("posttone", json.dumps(read_post("tonemap")["ops"], sort_keys=True))
+        if k == "postlm":
+            return ("postlm", json.dumps(read_post("lightmix")["arrays"], sort_keys=True))
+    except Exception as ex:
+        print("OpenManager: can't read %s to put it back later -> %s" % (str(a)[:120], ex))
+    return None
 
 
 def read_value(kind, a, b, c=None):
