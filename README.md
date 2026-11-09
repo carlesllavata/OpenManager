@@ -4,7 +4,7 @@ An open-source scene setups and batch render manager that lives inside **3ds Max
 (the Python + PySide6 that ships with Max, plus a MAXScript library). No separate program, no browser and
 **no account or login**: install it and start using it.
 
-> Status: early (v0.1.0). See the [changelog](CHANGELOG.md) (in Spanish).
+> Status: early (v0.1.0). See the [changelog](CHANGELOG.md).
 
 A **setup** stores, for one `.max` file: camera, resolution, frames, sun, dome, environment, layers, objects,
 lights, XRefs, output path, render settings, Corona VFB post-production and more. Click a setup and it is applied

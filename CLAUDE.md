@@ -2,8 +2,8 @@
 
 Open-source scene setups / batch render manager for 3ds Max (2025+). The user's environment: 3ds Max 2027,
 Python 3.13 (bundled with Max), PySide6, Corona 14 and V-Ray. The repo lives on a NAS share (`Z:` maps to
-`\\192.168.2.10\...`). Talk to the user in Spanish. The app, code, comments, commit messages, README and GitHub
-texts are in English, as in Open3DS; only `CHANGELOG.md` (the diary) and release notes are in Spanish.
+`\\192.168.2.10\...`). Talk to the user in Spanish; everything in the repo and on GitHub is in English, as in
+Open3DS: app, code, comments, commit messages, README, `CHANGELOG.md` and release notes.
 
 ## Scope decisions
 - Name: OpenManager. No accounts, licensing or login: install and use.
@@ -23,7 +23,7 @@ texts are in English, as in Open3DS; only `CHANGELOG.md` (the diary) and release
 - `tools/build.py` draws the icons and writes `dist/OpenManager.mzp`; `tools/make_props.py` regenerates `props.json`.
 - Custom attribute IDs: data `#(0x4f4d4752, 0x5f446174)`, maps `#(0x4f4d4752, 0x5f4d6170)`. Never reuse the old
   Puzles IDs (`0x7a3e5c11/12`): redefining a stored scripted attribute with other parameters loses its data.
-- `CHANGELOG.md` – the user's version diary, **in Spanish**, newest first, written for users (what changed for them,
+- `CHANGELOG.md` – the user's version diary, **in English** (it was Spanish until 9 November 2026), newest first, written for users (what changed for them,
   not code details). Add an entry for every change that is committed.
 
 ## Commands
