@@ -71,6 +71,77 @@ class BatchDialog(Dialog):
         self.bar.setValue(done)
 
 
+STATUS_COLORS = {"Ready": "#23d160", "Saved": "#23d160", "Warning": "#ffb020", "Skipped": "#ff3860",
+                 "Failed": "#ff3860", "Not rendered": "#9a9a9a"}
+
+
+def _job_table(rows):
+    """rows: (label, status, details); details is a list of lines."""
+    t = QtWidgets.QTreeWidget()
+    t.setColumnCount(3)
+    t.setHeaderLabels(["Setup", "Status", "Details"])
+    t.setRootIsDecorated(False)
+    t.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+    t.setWordWrap(True)
+    for label, status, details in rows:
+        it = QtWidgets.QTreeWidgetItem([label, status, "\n".join(details)])
+        it.setForeground(1, QtGui.QBrush(QtGui.QColor(STATUS_COLORS.get(status, "#9a9a9a"))))
+        it.setToolTip(2, "\n".join(details))
+        t.addTopLevelItem(it)
+    h = t.header()
+    h.setStretchLastSection(True)
+    t.resizeColumnToContents(0)
+    t.resizeColumnToContents(1)
+    t.setColumnWidth(0, min(260, t.columnWidth(0) + 12))
+    t.setColumnWidth(1, t.columnWidth(1) + 16)
+    return t
+
+
+class BatchCheckDialog(Dialog):
+    """Shown before a batch when some setup can't be rendered as asked: what is skipped and why."""
+
+    def __init__(self, parent, rows, runnable):
+        super(BatchCheckDialog, self).__init__(parent)
+        self.setWindowTitle("Batch Render: check")
+        self.resize(760, 360)
+        v = QtWidgets.QVBoxLayout(self)
+        skipped = sum(1 for r in rows if r[1] == "Skipped")
+        msg = QtWidgets.QLabel(("%d setup(s) can't be rendered and will be skipped. " % skipped if skipped else "")
+                               + "Fix them in their cards, or render the others now.")
+        msg.setWordWrap(True)
+        v.addWidget(msg)
+        v.addWidget(_job_table(rows), 1)
+        bb = QtWidgets.QDialogButtonBox()
+        self.go = bb.addButton("Render %d setup(s)" % runnable, QtWidgets.QDialogButtonBox.AcceptRole)
+        self.go.setEnabled(runnable > 0)
+        self.go.setDefault(runnable > 0)
+        bb.addButton(QtWidgets.QDialogButtonBox.Cancel)
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+
+
+class BatchReportDialog(Dialog):
+    """Shown when a batch ends: what every setup did, where it saved, what went wrong."""
+
+    def __init__(self, parent, rows, summary):
+        super(BatchReportDialog, self).__init__(parent)
+        self.setWindowTitle("Batch Render: report")
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.resize(820, 380)
+        v = QtWidgets.QVBoxLayout(self)
+        head = QtWidgets.QLabel(summary)
+        head.setWordWrap(True)
+        v.addWidget(head)
+        v.addWidget(_job_table(rows), 1)
+        bb = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Close)
+        bb.rejected.connect(self.close)
+        v.addWidget(bb)
+
+    def close_from_title_bar(self):
+        self.close()
+
+
 class PropertySelector(Dialog):
     def __init__(self, parent, title, tabs, checked, start_tab):
         super(PropertySelector, self).__init__(parent)

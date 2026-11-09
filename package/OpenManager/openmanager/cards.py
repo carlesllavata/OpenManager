@@ -1357,10 +1357,14 @@ class OutputCard(Card):
         self.update_final(s)
 
     def update_final(self, s):
-        path, valid = self.sm.final_path(s)
-        color = "#23d160" if valid else "#ff3860"
-        self.final.setText('<span style="color:%s">%s</span> %s' % (color, "●", path.replace("<", "&lt;") or "(empty)"))
-        self.final.setToolTip("This path is used when rendering" if valid else "Not a complete file path yet: the render output is left as it is")
+        path, problem = self.sm.build_path(s)
+        color = "#23d160" if problem is None else "#ff3860"
+        text = '<span style="color:%s">%s</span> %s' % (color, "●", path.replace("<", "&lt;") or "(empty)")
+        if problem:
+            text += '<br><span style="color:%s">%s</span>' % (color, problem.replace("<", "&lt;"))
+        self.final.setText(text)
+        self.final.setToolTip("This path is used when rendering" if problem is None else
+                              "Not a complete file path yet: the render output is left as it is, and Batch Render skips this setup")
 
     def _build_tokens(self, s):
         while self.tok_layout.count():

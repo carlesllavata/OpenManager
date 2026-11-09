@@ -6,6 +6,19 @@ What each version of OpenManager adds, newest first.
 
 ### 9 November 2026
 
+- **Batch Render never renders without saving any more.** Before, a setup whose output path wasn't complete
+  (a camera named `CAM:Bad`, a missing Extension token...) switched saving off and rendered anyway, and the batch
+  still said it had finished. Now:
+  - **Names are cleaned.** Characters Windows doesn't allow in file names (`: * ? " < > |`) become `_`, so the
+    camera `CAM:Bad` saves as `CAM_Bad.png`. Folder names lose the trailing dots and spaces Windows would drop.
+  - **The Render Output card says what is missing** under the red path ("The Camera token has no value (the
+    setup has no camera)", "No Extension token"...). Clicking such a setup leaves the scene's own output as it is.
+  - **Every setup is checked before the batch starts.** If one would save nothing (incomplete path, or the card
+    off and no output in the scene) or its camera is gone, a window lists them and why; you can render the others
+    or cancel. It also warns when two setups would save to the same file.
+  - **One setup failing doesn't stop the batch:** it is marked as failed and the next one renders.
+  - **The file is checked after each render**, and at the end a report lists every setup: saved (and where),
+    skipped or failed, and why. It is also printed in the MAXScript Listener.
 - **OpenManager is born.** The tool, until now *Puzles · Scene Manager*, is renamed **OpenManager** (version 0.1.0)
   and becomes open source. No account or login: install it and use it.
 - **New name all over 3ds Max.** The action is in *Customize User Interface* > **Category: OpenManager**, the

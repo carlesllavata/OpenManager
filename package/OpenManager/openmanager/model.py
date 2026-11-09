@@ -458,63 +458,162 @@ def format_date(fmt, now=None):
     return now.strftime(f)
 
 
+INVALID_NAME_CHARS = '<>:"/\\|?*'
+
+
 def is_valid_file_path(p):
-    return not any(c in p for c in '*?"<>|') and p.count(":") <= 1
+    return not any(c in p for c in '*?"<>|') and p.count(":") <= 1 and not any(ord(c) < 32 for c in p)
+
+
+def clean_name(text, keep_folders=False):
+    """A token value made safe for a Windows file name: characters Windows refuses (and control characters) become
+    "_", and each folder level loses the trailing dots and spaces Windows would drop silently. With keep_folders,
+    "/" and "\\" stay as folder separators (typed tokens may build sub-folders)."""
+    out = []
+    for c in text or "":
+        if keep_folders and c in "/\\":
+            out.append("/")
+        elif ord(c) < 32 or c in INVALID_NAME_CHARS:
+            out.append("_")
+        else:
+            out.append(c)
+    parts = "".join(out).split("/")
+    # a piece can sit in the middle of a name ("." between two tokens), so only finished folder levels are trimmed
+    return "/".join([p.rstrip(" .") for p in parts[:-1]] + parts[-1:])
+
+
+def build_path(out, file_name, camera_name, scene_name, index, pc_name, user_name):
+    """Project path + the tokens in order. Returns (path, problem): problem is None when the path is a complete file
+    path, else a short sentence saying why it isn't (a token with no value stops the build)."""
+    project = (out.get("project_path") or "").strip()
+    if not project:
+        return "", "No project path"
+    path = project.replace("\\", "/")
+    if not path.endswith("/"):
+        path += "/"
+    ext = ""
+    for t in out.get("preset", []):
+        kind = t.get("kind")
+        val = (t.get("value") or "").strip()
+        digits = int(t.get("digits") or 1)
+        if kind == "Camera":
+            piece = clean_name(camera_name) or None
+        elif kind == "Version":
+            piece = clean_name(val).zfill(digits) if val else None
+        elif kind == "Index":
+            piece = str(index + 1).zfill(digits)
+        elif kind == "FileName (Full)":
+            piece = clean_name(_strip_ext(file_name)) or None
+        elif kind == "FileName (Filtered)":
+            piece = clean_name(filtered_file_name(file_name)) or None
+        elif kind == "FileVersion":
+            piece = file_version(file_name) or None
+        elif kind == "PcName":
+            piece = clean_name(pc_name) or None
+        elif kind == "UserName":
+            piece = clean_name(user_name) or None
+        elif kind == "SceneName":
+            piece = clean_name((scene_name or "").strip()) or None
+        elif kind == "Extension":
+            ext = clean_name(t.get("value") or "")
+            piece = ext or None
+        elif kind == "Date":
+            piece = format_date(val)
+        elif kind == "Date (Folder)":
+            piece = format_date(val) + "/"
+        else:  # Text, Folder
+            piece = clean_name(val, keep_folders=True) or None
+        if piece is None:
+            why = {"Camera": "the setup has no camera", "FileName (Full)": "the scene is not saved yet",
+                   "FileName (Filtered)": "the scene is not saved yet",
+                   "FileVersion": "the scene name doesn't end in a number",
+                   "SceneName": "the setup has no scene name"}.get(kind, "it is empty")
+            return path, "The %s token has no value (%s)" % (kind, why)
+        path += piece
+        if t.get("folder") and not path.endswith("/"):
+            path = path.rstrip(" .") + "/"  # Windows drops trailing dots and spaces of a folder name
+    if not ext:
+        return path, "No Extension token"
+    stem = path[path.rfind("/") + 1:]
+    if not stem.endswith(ext) or not stem[:-len(ext)].strip(" ."):
+        return path, "The file name is empty"
+    if not is_valid_file_path(path):
+        return path, "The project path has characters Windows doesn't allow"
+    return path, None
 
 
 def final_path(out, file_name, camera_name, scene_name, index, pc_name, user_name):
-    """Project path + the tokens in order; a token with no value stops the build. Returns (path, valid)."""
-    path = ""
-    ext = ""
-    complete = True
-    project = (out.get("project_path") or "").strip()
-    if project:
-        path = project.replace("\\", "/")
-        if not path.endswith("/"):
-            path += "/"
-        for t in out.get("preset", []):
-            kind = t.get("kind")
-            val = (t.get("value") or "").strip()
-            digits = int(t.get("digits") or 1)
-            if kind == "Camera":
-                piece = camera_name or None
-            elif kind == "Version":
-                piece = val.zfill(digits) if val else None
-            elif kind == "Index":
-                piece = str(index + 1).zfill(digits)
-            elif kind == "FileName (Full)":
-                piece = _strip_ext(file_name) or None
-            elif kind == "FileName (Filtered)":
-                piece = filtered_file_name(file_name) or None
-            elif kind == "FileVersion":
-                piece = file_version(file_name) or None
-            elif kind == "PcName":
-                piece = pc_name or None
-            elif kind == "UserName":
-                piece = user_name or None
-            elif kind == "SceneName":
-                piece = (scene_name or "").strip() or None
-            elif kind == "Extension":
-                ext = t.get("value") or ""
-                piece = ext or None
-            elif kind == "Date":
-                piece = format_date(val)
-            elif kind == "Date (Folder)":
-                piece = format_date(val) + "/"
-            else:  # Text, Folder
-                piece = val or None
-            if piece is None:
-                complete = False
-                break
-            path += piece
-            if t.get("folder") and not path.endswith("/"):
-                path += "/"
-    else:
-        complete = False
-    last_slash = path.rfind("/")
-    ext_pos = path.rfind(ext) if ext else -1
-    valid = complete and bool(path.strip()) and bool(ext) and last_slash + 1 < ext_pos and is_valid_file_path(path)
-    return path, valid
+    """Like build_path, but returns (path, valid)."""
+    path, problem = build_path(out, file_name, camera_name, scene_name, index, pc_name, user_name)
+    return path, problem is None
+
+
+# ---------------------------------------------------------------- batch render checks
+
+def check_jobs(jobs):
+    """Checks every setup of a batch before anything renders. jobs: dicts with
+        label           text shown for the setup
+        output          True when its Render Output card is on
+        path, problem   what build_path gave (output on)
+        scene_output    the scene's own render output file, "" when the scene saves nothing (output off)
+        camera_missing  name of a camera the setup uses that is not in the scene, else ""
+    Returns one dict per job: {"path": file it would write or "", "errors": [...], "warnings": [...]}.
+    A job with errors is skipped: it would render without saving, or render the wrong view."""
+    out = []
+    for j in jobs:
+        errors, warnings = [], []
+        if j.get("camera_missing"):
+            errors.append("Camera '%s' is not in the scene" % j["camera_missing"])
+        if j.get("output"):
+            path = j.get("path") or ""
+            if j.get("problem"):
+                errors.append("Output path is not valid: %s" % j["problem"])
+                path = ""
+        else:
+            path = j.get("scene_output") or ""
+            if not path:
+                errors.append("Nothing would be saved: the Render Output card is off and the scene has no output file")
+        out.append({"path": path, "errors": errors, "warnings": warnings})
+    seen = {}
+    for i, r in enumerate(out):
+        if r["errors"] or not r["path"]:
+            continue
+        key = r["path"].replace("\\", "/").lower()
+        if key in seen:
+            r["warnings"].append("Saves to the same file as %s, which it will overwrite" % jobs[seen[key]].get("label", "another setup"))
+        else:
+            seen[key] = i
+    return out
+
+
+def find_written(path, since):
+    """Files a render wrote for this output path since `since` (time.time()): the file itself, or the numbered frames
+    3ds Max makes from it for an animation (name0000.png...). Empty when nothing was written."""
+    if not path:
+        return []
+    path = os.path.normpath(path)
+    try:
+        if os.path.isfile(path) and os.path.getmtime(path) >= since - 2:
+            return [path]
+    except OSError:
+        pass
+    folder = os.path.dirname(path)
+    stem, ext = os.path.splitext(os.path.basename(path))
+    found = []
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return []
+    for n in names:
+        s, e = os.path.splitext(n)
+        if e.lower() == ext.lower() and s.lower().startswith(stem.lower()) and s[len(stem):].isdigit():
+            full = os.path.join(folder, n)
+            try:
+                if os.path.getmtime(full) >= since - 2:
+                    found.append(full)
+            except OSError:
+                pass
+    return sorted(found)
 
 
 # ---------------------------------------------------------------- HDRI folder

@@ -708,10 +708,15 @@ class SceneManager(QtWidgets.QDockWidget):
     def resolution_presets(self):
         return [tuple(x) for x in self.settings.get("resolution_presets") or model.RESOLUTION_PRESETS]
 
-    def final_path(self, s):
+    def build_path(self, s):
+        """(path, problem) of the setup's Render Output card; problem is None when the path is complete."""
         cam = self.scene.camera(s["camera"]["handle"])
-        return model.final_path(s["output"], self.scene.file, cam["name"] if cam else None, s["scenename"],
+        return model.build_path(s["output"], self.scene.file, cam["name"] if cam else None, s["scenename"],
                                 self.index_of(s), self.pc_name, self.user_name)
+
+    def final_path(self, s):
+        path, problem = self.build_path(s)
+        return path, problem is None
 
     def toast(self, text):
         self.toast_label.show_text(text)
@@ -781,7 +786,9 @@ class SceneManager(QtWidgets.QDockWidget):
         out_path = None
         if s["output"]["enabled"]:
             path, valid = self.final_path(s)
-            out_path = path if valid else ""
+            # an incomplete path leaves the scene's render output as it is (it used to switch saving off, so a
+            # batch rendered without saving); the batch checks every setup before it starts
+            out_path = path if valid else None
         return maxlink.actions(s, self.scene, self.enabled_rows, out_path, rendering, self.opts(), self.rs_default)
 
     def run_actions(self, acts, redraw=True):
@@ -1500,19 +1507,58 @@ class SceneManager(QtWidgets.QDockWidget):
             self.toast("Please enable one or more scene setups to Render..." if chosen is None else "Select one or more setups first")
             return
         self.save_setups()
+        self.reload_scene()
+        checks = self.check_render(jobs)
+        runnable = [s for s, c in zip(jobs, checks) if not c["errors"]]
+        if any(c["errors"] or c["warnings"] for c in checks):
+            rows = [self._check_row(s, c) for s, c in zip(jobs, checks)]
+            if dialogs.BatchCheckDialog(self, rows, len(runnable)).exec() != QtWidgets.QDialog.Accepted:
+                return
+        skipped = [(s, c) for s, c in zip(jobs, checks) if c["errors"]]
+        if not runnable:
+            return
         try:
-            self._begin_render(jobs)
+            self._begin_render(runnable, skipped)
         except Exception:
             traceback.print_exc()
             self.rendering = False
             self.widget().setEnabled(True)
             self.toast("The batch could not start (see the MAXScript Listener)")
 
-    def _begin_render(self, jobs):
+    def setup_label(self, s):
+        cam = self.scene.camera(s["camera"].get("handle"))
+        name = s["scenename"] or (cam["name"] if cam else s["camera"].get("name") or "")
+        return "#%d %s" % (self.index_of(s) + 1, name)
+
+    def check_render(self, jobs):
+        """What each setup of a batch would save, and why one can't be rendered (model.check_jobs)."""
+        scene_out = maxlink.render_output()
+        info = []
+        for s in jobs:
+            c = s["camera"]
+            missing = ""
+            if c["enabled"] and c.get("handle") is not None and self.scene.camera(c["handle"]) is None:
+                missing = c.get("name") or "#%s" % c["handle"]
+            path, problem = self.build_path(s) if s["output"]["enabled"] else ("", None)
+            info.append({"label": self.setup_label(s), "output": bool(s["output"]["enabled"]), "path": path,
+                         "problem": problem, "scene_output": scene_out, "camera_missing": missing})
+        return model.check_jobs(info)
+
+    def _check_row(self, s, c):
+        if c["errors"]:
+            return (self.setup_label(s), "Skipped", c["errors"] + c["warnings"])
+        if c["warnings"]:
+            return (self.setup_label(s), "Warning", c["warnings"] + [c["path"]])
+        return (self.setup_label(s), "Ready", [c["path"]])
+
+    def _begin_render(self, jobs, skipped=()):
         self.rendering = True
         self.render_jobs = list(jobs)
         self.render_done = 0
         self.render_cancel = False
+        # one row per setup for the report: skipped ones first get their reason, the others are filled as they render
+        self.render_results = {id(s): (self.setup_label(s), "Skipped", c["errors"]) for s, c in skipped}
+        self.render_order = [s for s in self.setups if any(s is x for x in jobs) or any(s is x for x, _ in skipped)]
         self.active_id = None
         self.last_sent = []
         self.refresh_rows()
@@ -1532,21 +1578,37 @@ class SceneManager(QtWidgets.QDockWidget):
         if self.render_cancel or self.render_done >= total:
             return self._end_render()
         s = self.render_jobs[self.render_done]
+        label = self.setup_label(s)
         self.batch.set_job(self._job_label(s), self.render_done, total)
         QtWidgets.QApplication.processEvents()
+        status, details = "Failed", []
         try:
             self.run_actions(self.actions_for(s, True))
-            result = maxlink.render()
+            target = maxlink.render_output()
+            if not target:
+                # never render a frame that isn't saved
+                result = "no output file is set after applying the setup"
+            else:
+                started = time.time()
+                result = maxlink.render()
+            if result == "done":
+                files = model.find_written(target, started)
+                if files:
+                    status = "Saved"
+                    details = [files[0]] if len(files) == 1 else ["%d files: %s ..." % (len(files), files[0])]
+                else:
+                    details = ["The render finished but no file was written to %s" % target]
+            elif result == "canceled" or maxlink.canceled():
+                self.render_cancel = True
+                status, details = "Not rendered", ["Canceled"]
+            else:
+                details = [str(result)]
         except Exception as ex:
             traceback.print_exc()
-            result = str(ex)
-        if result == "canceled" or maxlink.canceled():
-            self.render_cancel = True
-        elif result != "done":
-            self.toast("The render stopped: %s" % result)
-            self.render_cancel = True
-        else:
-            self.render_done += 1
+            details = [str(ex)]
+        self.render_results[id(s)] = (label, status, details)
+        print("OpenManager batch: %s -> %s %s" % (label, status, "; ".join(details)))
+        self.render_done += 1  # a failed setup does not stop the batch: the next one renders
         self.batch.set_job(self._job_label(s), self.render_done, total)
         QtCore.QTimer.singleShot(30, self._next_job)
 
@@ -1558,7 +1620,6 @@ class SceneManager(QtWidgets.QDockWidget):
             pass
 
     def _end_render(self):
-        total = len(self.render_jobs)
         self.rendering = False
         try:
             self.batch.close()
@@ -1567,10 +1628,20 @@ class SceneManager(QtWidgets.QDockWidget):
             pass
         self.widget().setEnabled(True)
         self.refresh_cards()
-        if self.render_cancel and self.render_done < total:
-            self.toast("Batch Render canceled (%d of %d done)" % (self.render_done, total))
+        rows = [self.render_results.get(id(s), (self.setup_label(s), "Not rendered", ["Canceled before it started"]))
+                for s in self.render_order]
+        count = lambda st: sum(1 for r in rows if r[1] == st)
+        summary = "%d saved, %d failed, %d skipped" % (count("Saved"), count("Failed"), count("Skipped"))
+        if self.render_cancel:
+            summary = "Batch Render canceled: " + summary + ", %d not rendered" % count("Not rendered")
         else:
-            self.toast("Batch Render finished: %d setup(s)" % total)
+            summary = "Batch Render finished: " + summary
+        print("OpenManager: " + summary)
+        self.last_report = rows
+        self.toast(summary)
+        if any(r[1] != "Saved" for r in rows) or len(rows) > 1:
+            self.report = dialogs.BatchReportDialog(self, rows, summary)
+            self.report.show()
 
     # ------------------------------------------------------------ storing setups in the .max file
     def encoded(self):

@@ -35,8 +35,17 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
   unsaved scene (the user's open scene is real work) and must not leave modal dialogs (they hang the bridge).
 - Do not run `install.ms` in the user's Max without asking: it installs a startup script and macro in their profile.
 
+## Batch render rules
+- Never render a frame that isn't saved: `window.start_render` checks every setup with `model.check_jobs`
+  (incomplete path, nothing saved, missing camera, two setups on one file), shows `dialogs.BatchCheckDialog` when
+  something is wrong, renders only the clean ones, checks the written file with `model.find_written`, and ends with
+  `dialogs.BatchReportDialog` (non-modal; rows also kept in `window.last_report`). One failure doesn't stop the batch.
+- An incomplete output path leaves the scene's render output untouched (`actions_for` passes `None`).
+- Token values go through `model.clean_name`. Tests without Max: `python -I tests\run.py`.
+- Live tests drive the batch with `w.check_render(jobs)` + `w._begin_render(runnable, skipped)`: `start_render`
+  opens a modal dialog when a setup has problems, which would hang the bridge.
+
 ## Known issues (audit of 2026-11-09, not fixed yet)
-- Batch renders without saving when the output path is invalid (e.g. a camera named `CAM:Bad`).
 - Setups only set what they control, so state leaks from one setup to the next.
 - Snippet/pre-render MAXScript stored in a `.max` runs on a single click.
 - Applying a setup is not undoable.

@@ -786,6 +786,15 @@ def render():
     return str(rt.omgr_render())
 
 
+def render_output():
+    """The file the next render saves to, or "" when 3ds Max is set not to save it."""
+    try:
+        name = str(rt.rendOutputFilename or "")
+        return name if (bool(rt.rendSaveFile) and name) else ""
+    except Exception:
+        return ""
+
+
 def stop_render():
     rt.omgr_stop()
 
