@@ -1,54 +1,54 @@
 # OpenManager
 
-Gestor de *setups* (estados de escena) y render por lotes **open source** que vive dentro de **3ds Max 2025+**
-(Python + PySide6 que ya trae Max, más una librería MAXScript). Sin programas aparte, sin navegador y **sin cuentas
-ni login**: lo instalas y ya puedes usarlo.
+An open-source scene setups and batch render manager that lives inside **3ds Max 2025 and later**
+(the Python + PySide6 that ships with Max, plus a MAXScript library). No separate program, no browser and
+**no account or login**: install it and start using it.
 
-> **Estado:** en desarrollo (0.1.0). Ver el [diario de cambios](CHANGELOG.md).
+> Status: early (v0.1.0). See the [changelog](CHANGELOG.md) (in Spanish).
 
-Un **setup** guarda, para un mismo `.max`: cámara, resolución, frames, sol, domo, entorno, capas, objetos, luces,
-xrefs, ruta de salida, ajustes de render, post-producción del VFB (Corona) y más. Al clicar un setup se aplica a la
-escena; el **Batch Render** renderiza todos los marcados.
+A **setup** stores, for one `.max` file: camera, resolution, frames, sun, dome, environment, layers, objects,
+lights, XRefs, output path, render settings, Corona VFB post-production and more. Click a setup and it is applied
+to the scene; **Batch Render** renders every ticked setup, one after the other.
 
-**Motores:** Corona y V-Ray. FStorm funciona pero con menos pruebas.
+**Renderers:** Corona and V-Ray. FStorm works too, with less testing.
 
-## Instalar (versión de desarrollo)
+## Install (development build)
 
-1. Compila el instalador: `python tools/build.py` (Python 3 normal, sin dependencias). Crea `dist/OpenManager.mzp`.
-2. Arrastra el `.mzp` a un visor de 3ds Max.
-3. *Customize > Customize User Interface > Toolbars*, **Group: Main UI**, **Category: OpenManager**: arrastra la
-   acción **OpenManager** a una barra o un menú.
+1. Build the installer: `python tools/build.py` (plain Python 3, no dependencies). It writes `dist/OpenManager.mzp`.
+2. Drag the `.mzp` onto a 3ds Max viewport.
+3. *Customize > Customize User Interface > Toolbars*, **Group: Main UI**, **Category: OpenManager**: drag the
+   **OpenManager** action to a toolbar or a menu.
 
-Para quitarlo: *Scripting > Run Script…* > `uninstall.ms` y reinicia Max. Los setups guardados en los `.max` no se tocan.
+To remove it: *Scripting > Run Script…* > `uninstall.ms`, then restart Max. Setups saved inside `.max` files are
+left untouched.
 
-- Los setups se guardan **dentro del .max** (atributo `OpenManager_Dat` de `rootNode`).
-- Se leen y convierten los setups de **Pulze Scene Manager** y los de las versiones anteriores de esta herramienta
-  (cuando se llamaba *Puzles · Scene Manager*). El instalador también retira esa versión anterior si la encuentra y
-  conserva sus ajustes.
-- Ajustes de la ventana: `plugcfg\OpenManager.json`.
+- Setups are saved **inside the .max file** (the `OpenManager_Dat` attribute of `rootNode`).
+- Setups made with **Pulze Scene Manager** and with the previous version of this tool (*Puzles · Scene Manager*)
+  are read and converted. The installer also removes that previous version if it finds it, keeping its settings.
+- Window settings: `plugcfg\OpenManager.json`.
 
-## Módulos
+## Modules
 
-Scene Name, Camera, Resolution, Time Output, Sun, Lights, Hdri Quick Browser, Environment, Dome, Background,
-Atmosphere, Layers, Objects, Xref, Variants, Render Output, Render Settings (Custom, Override, Preset),
-Render Elements, Post-Production / VFB (Corona), Script File / Editor, Thumbnail, Todo y Notes.
+Scene Name, Camera, Resolution, Time Output, Sun, Lights, HDRI Quick Browser, Environment, Dome, Background,
+Atmosphere, Layers, Objects, XRef, Variants, Render Output, Render Settings (Custom, Override, Preset),
+Render Elements, Post-Production / VFB (Corona), Script File / Editor, Thumbnail, Todo and Notes.
 
-## Estructura
+## Layout
 
-| ruta | qué es |
+| path | what it is |
 |---|---|
-| `uninstall.ms` | desinstalador |
-| `package/install.ms`, `mzp.run`, `OpenManager.mcr` | instalador y botón de Max |
-| `package/OpenManager/omgr_core.ms` | funciones MAXScript (prefijo `omgr_`) que leen y cambian la escena |
-| `package/OpenManager/OpenManager_startup.ms` | aviso al abrir un `.max` con setups de Pulze |
-| `package/OpenManager/openmanager/` | la ventana (Python): `window.py`, tarjetas en `cards.py` / `cards2.py`, `maxlink.py` (setup → cambios en Max), `model.py` (datos, sin Max ni Qt) |
-| `tools/` | `build.py` (genera el .mzp y los iconos) y `make_props.py` (tabla del Selector de propiedades) |
+| `uninstall.ms` | uninstaller |
+| `package/install.ms`, `mzp.run`, `OpenManager.mcr` | installer and the 3ds Max action |
+| `package/OpenManager/omgr_core.ms` | MAXScript functions (prefix `omgr_`) that read and change the scene |
+| `package/OpenManager/OpenManager_startup.ms` | offers to open the window when a `.max` with Pulze setups is opened |
+| `package/OpenManager/openmanager/` | the window (Python): `window.py`, cards in `cards.py` / `cards2.py`, `maxlink.py` (setup → changes in Max), `model.py` (data, no Max or Qt) |
+| `tools/` | `build.py` (builds the .mzp and the icons) and `make_props.py` (the Property Selector table) |
 
-## Si algo falla
+## If something goes wrong
 
-Copia lo que salga en el **MAXScript Listener** (F11): los errores llevan el prefijo `OpenManager`.
+Copy what appears in the **MAXScript Listener** (F11): errors are prefixed with `OpenManager`.
 
-## Límites actuales
+## Current limits
 
-- Post-Production / VFB solo con Corona.
-- Probado en 3ds Max 2026.3 y 2027 con Corona 14.
+- Post-Production / VFB works with Corona only.
+- Tested on 3ds Max 2026.3 and 2027 with Corona 14.

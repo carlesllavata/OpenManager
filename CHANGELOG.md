@@ -26,3 +26,5 @@ Lo que va añadiendo cada versión de OpenManager, de la más reciente a la más
   (`dist/OpenManager.mzp`).
 - **Historial del repositorio reiniciado.** OpenManager empieza con un único commit propio, `OpenManager 0.1.0`; a
   partir de aquí cada cambio queda en git y en este diario.
+- **El repositorio, en inglés.** Como en Open3DS, la app, el código, el README y los textos de GitHub están en
+  inglés; este diario sigue en español.

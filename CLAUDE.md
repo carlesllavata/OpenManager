@@ -2,7 +2,8 @@
 
 Open-source scene setups / batch render manager for 3ds Max (2025+). The user's environment: 3ds Max 2027,
 Python 3.13 (bundled with Max), PySide6, Corona 14 and V-Ray. The repo lives on a NAS share (`Z:` maps to
-`\\192.168.2.10\...`). Talk to the user in Spanish; code, comments and docs in English (README and CHANGELOG in Spanish).
+`\\192.168.2.10\...`). Talk to the user in Spanish. The app, code, comments, commit messages, README and GitHub
+texts are in English, as in Open3DS; only `CHANGELOG.md` (the diary) and release notes are in Spanish.
 
 ## Scope decisions
 - Name: OpenManager. No accounts, licensing or login: install and use.
