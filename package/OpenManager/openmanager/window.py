@@ -571,13 +571,13 @@ class SceneManager(QtWidgets.QDockWidget):
     # ------------------------------------------------------------ reading the scene and its setups
     def reload_all(self):
         """A file was opened (or the window just opened): read the scene and the setups stored in it."""
+        data, source = maxlink.read_setups(1)
         try:
-            raw = maxlink.read_scene_raw()
+            raw = maxlink.read_scene_raw(self.object_handles(data["setups"]))
             self.scene = maxlink.Scene(maxlink.parse_scene(raw))
             self._scene_raw = raw
         except Exception:
             traceback.print_exc()
-        data, source = maxlink.read_setups(1)
         self.setups = data["setups"]
         self.todo = data["todo"]
         self.rs_default = data.get("rs_default") or {}
@@ -602,10 +602,19 @@ class SceneManager(QtWidgets.QDockWidget):
         self.refresh_cards()
         self.update_status()
 
+    def object_handles(self, setups=None):
+        """Objects the setups use: the only ones the scene read lists (a big scene has far too many to list)."""
+        hs = set()
+        for s in (self.setups if setups is None else setups):
+            for o in s.get("objects", {}).get("set", []):
+                if o.get("handle") is not None:
+                    hs.add(int(o["handle"]))
+        return sorted(hs)
+
     def reload_scene(self, raw=None):
         try:
             if raw is None:
-                raw = maxlink.read_scene_raw()
+                raw = maxlink.read_scene_raw(self.object_handles())
             self.scene = maxlink.Scene(maxlink.parse_scene(raw))
             self._scene_raw = raw
         except Exception:
@@ -629,7 +638,7 @@ class SceneManager(QtWidgets.QDockWidget):
             return False
         self._synced = now
         try:
-            raw = maxlink.read_scene_raw()
+            raw = maxlink.read_scene_raw(self.object_handles())
         except Exception:
             traceback.print_exc()
             return False
@@ -751,6 +760,12 @@ class SceneManager(QtWidgets.QDockWidget):
 
     def selected_handles(self):
         return maxlink.selected_handles()
+
+    def selected_objects(self):
+        """The selected geometry and shapes, read now (and added to what the scene knows)."""
+        items = maxlink.objects_info(maxlink.selected_handles())
+        self.scene.add_objects(items)
+        return items
 
     def select_handles(self, hs):
         maxlink.select_handles(hs)
@@ -1535,6 +1550,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 s["id"] = self._new_id()
                 maxlink.resolve(s, self.scene)
                 self.setups.append(s)
+            self.reload_scene()  # the scene read lists the objects the imported setups use
             self.rebuild_rows()
             self.changed(apply=False)
             self.toast("Imported %d setup(s)" % len(lst))

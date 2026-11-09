@@ -1166,13 +1166,10 @@ class ObjectsCard(Card):
             return
         have = set(o["handle"] for o in s["objects"]["set"])
         added = 0
-        for h in self.sm.selected_handles():
-            if h in have:
+        for so in self.sm.selected_objects():
+            if so["handle"] in have:
                 continue
-            so = self.sm.scene.obj(h)
-            if so is None:
-                continue
-            s["objects"]["set"].append(model.object_entry(h, so["name"], so["visible"], True))
+            s["objects"]["set"].append(model.object_entry(so["handle"], so["name"], so["visible"], True))
             added += 1
         if not added:
             self.sm.toast("Select geometry in the scene first")

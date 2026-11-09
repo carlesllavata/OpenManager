@@ -147,55 +147,124 @@ fn omgr_editorMaps =
 	out
 )
 
+-- Every texture map the scene uses, found by walking from what holds maps: the materials of the scene, the environment,
+-- the Material Editors, the maps OpenManager keeps, and the texture-map settings of the renderer, cameras and lights.
+-- One walk instead of getClassInstances per class, which scans the whole scene each time (seconds on big scenes).
+global omgr_walk
+fn omgr_walk m found seen =
+(
+	if (m == undefined) do return found
+	local id = undefined
+	try (id = (getHandleByAnim m) as integer) catch (return found)
+	if (HasDictValue seen id) do return found
+	PutDictValue seen id true
+	local sc = superclassof m
+	if (sc == textureMap) then
+	(
+		append found m
+		local n = 0
+		try (n = getNumSubTexmaps m) catch()
+		for i = 1 to n do (local sub = undefined; try (sub = getSubTexmap m i) catch(); omgr_walk sub found seen)
+	)
+	else if (sc == material) do
+	(
+		local n = 0
+		try (n = getNumSubMtls m) catch()
+		for i = 1 to n do (local sub = undefined; try (sub = getSubMtl m i) catch(); omgr_walk sub found seen)
+		n = 0
+		try (n = getNumSubTexmaps m) catch()
+		for i = 1 to n do (local sub = undefined; try (sub = getSubTexmap m i) catch(); omgr_walk sub found seen)
+	)
+	found
+)
+
+fn omgr_walkProps obj found seen =
+(
+	if (obj == undefined) do return found
+	local names = #()
+	try (names = getPropNames obj) catch()
+	for p in names do
+	(
+		local v = undefined
+		try (v = getProperty obj p) catch()
+		if (v != undefined and (try (superclassof v == textureMap) catch false)) do omgr_walk v found seen
+	)
+	found
+)
+
+fn omgr_allMaps =
+(
+	local found = #()
+	local seen = Dictionary #integer
+	for m in sceneMaterials do omgr_walk m found seen
+	omgr_walk environmentMap found seen
+	for m in (omgr_editorMaps()) do omgr_walk m found seen
+	try (for i = 1 to meditMaterials.count do omgr_walk meditMaterials[i] found seen) catch()
+	if (isProperty rootNode #OpenManager_Maps) do (for m in rootNode.OpenManager_Maps do omgr_walk m found seen)
+	omgr_walkProps renderers.current found seen
+	for c in cameras where (superclassof c == camera) do omgr_walkProps c found seen
+	for l in lights do omgr_walkProps l found seen
+	found
+)
+
 -- maps the Environment card knows about, as #(maps, offered). Offered in the list: skies, bitmaps with an .hdr, and
 -- colour corrections / selects with such a bitmap linked below. The others (.exr) are kept so a setup using one still works.
 fn omgr_envMaps =
 (
 	local found = #()
 	local offer = #()
-	for n in #("CoronaSky", "VRaySky", "FStormSky", "Physical_Sun___Sky_Environment") do
-	(
-		try (for m in (getClassInstances (execute n)) do omgr_addEnvMap found offer m true) catch()
-	)
-	local wanted = #("CoronaBitmap", "VRayHDRI", "VRayBitmap", "FStormBitmap", "Bitmaptexture", "CoronaColorCorrect", "Color_Correction", "FStormColorCorrection", "CoronaSelect")
 	local skies = #("CoronaSky", "VRaySky", "FStormSky", "Physical_Sun___Sky_Environment")
-	for n in wanted do
+	local wanted = #("CoronaBitmap", "VRayHDRI", "VRayBitmap", "FStormBitmap", "Bitmaptexture", "CoronaColorCorrect", "Color_Correction", "FStormColorCorrection", "CoronaSelect")
+	for m in (omgr_allMaps()) do
 	(
-		try
+		local cls = (classof m) as string
+		if ((findItem skies cls) > 0) then omgr_addEnvMap found offer m true
+		else if ((findItem wanted cls) > 0) do
 		(
-			for m in (getClassInstances (execute n)) do
-			(
-				local lvl = omgr_hdrLevel m
-				if (lvl > 0) do omgr_addEnvMap found offer m (lvl == 2)
-			)
-		)
-		catch()
-	)
-	-- the ones only in an editor, and what is linked below them (a Color Correct over an .hdr bitmap...)
-	for top in (omgr_editorMaps()) do
-	(
-		for m in (omgr_chain top) do
-		(
-			local cls = (classof m) as string
-			if ((findItem skies cls) > 0) then omgr_addEnvMap found offer m true
-			else if ((findItem wanted cls) > 0) do
-			(
-				local lvl = omgr_hdrLevel m
-				if (lvl > 0) do omgr_addEnvMap found offer m (lvl == 2)
-			)
+			local lvl = omgr_hdrLevel m
+			if (lvl > 0) do omgr_addEnvMap found offer m (lvl == 2)
 		)
 	)
 	if (environmentMap != undefined) do omgr_addEnvMap found offer environmentMap true
 	#(found, offer)
 )
 
+-- a map by class and name. Maps are looked up many times while setups are applied, so they are kept in a dictionary
+-- (filled from omgr_allMaps, emptied when another file is opened) and checked before use.
+global omgr_mapCache = undefined
+fn omgr_mapOk m cls nm = (try (isValidObj m and m.name == nm and ((classof m) as string) == cls) catch false)
+fn omgr_cacheMaps =
+(
+	omgr_mapCache = Dictionary #string
+	for m in (omgr_allMaps()) do
+	(
+		local key = ((classof m) as string) + "|" + m.name
+		if (not (HasDictValue omgr_mapCache key)) do PutDictValue omgr_mapCache key m
+	)
+	true
+)
 fn omgr_findMap cls nm =
 (
-	local c = undefined
-	try (c = execute cls) catch()
-	if (c == undefined) do return undefined
-	try (for m in (getClassInstances c) do (if (m.name == nm) do return m)) catch()
-	undefined
+	if (cls == undefined or nm == undefined) do return undefined
+	local key = cls + "|" + nm
+	if (omgr_mapCache == undefined) do omgr_cacheMaps()
+	local m = if (HasDictValue omgr_mapCache key) then (GetDictValue omgr_mapCache key) else undefined
+	if (m != undefined and not (omgr_mapOk m cls nm)) do m = undefined
+	if (m == undefined) do
+	(
+		omgr_cacheMaps()
+		m = if (HasDictValue omgr_mapCache key) then (GetDictValue omgr_mapCache key) else undefined
+		if (m != undefined and not (omgr_mapOk m cls nm)) do m = undefined
+	)
+	if (m == undefined) do
+	(
+		-- a map nothing points to (not even OpenManager): the slow way, once
+		local c = undefined
+		try (c = execute cls) catch()
+		if (c != undefined) do try (for x in (getClassInstances c) do (if (m == undefined and x.name == nm) do m = x)) catch()
+		if (m != undefined) do PutDictValue omgr_mapCache key m
+	)
+	m
 )
 
 fn omgr_isDome l =
@@ -216,7 +285,26 @@ fn omgr_isSun l =
 )
 
 -- the whole scene as one JSON text (one call is much faster than many small ones)
-fn omgr_scene maxObjects:5000 =
+-- name, class, layer and visibility of these objects (geometry and shapes), as a JSON array
+fn omgr_objectsInfo handles =
+(
+	local objs = #()
+	for h in handles do
+	(
+		local o = maxOps.getNodeByHandle h
+		if (o != undefined and (superclassof o == GeometryClass or superclassof o == shape)) do
+		(
+			local ln = ""
+			try (ln = o.layer.name) catch()
+			append objs ("{\"handle\":" + (o.inode.handle as string) + ",\"name\":" + (omgr_quote o.name) + ",\"class\":" + (omgr_quote (classof o)) + ",\"layer\":" + (omgr_quote ln) + ",\"visible\":" + (omgr_bool (not o.isNodeHidden)) + "}")
+		)
+	)
+	"[" + (omgr_join objs) + "]"
+)
+
+-- the whole scene as one JSON text (one call is much faster than many small ones). Objects: only `handles` (the ones
+-- the setups use); listing every object of a big scene each time would be slow and is not needed.
+fn omgr_scene handles:#() =
 (
 	local cams = #()
 	for c in cameras where (superclassof c == camera) do
@@ -263,18 +351,7 @@ fn omgr_scene maxObjects:5000 =
 		try (local p = ly.getParent(); if (p != undefined) do parentName = p.name) catch()
 		append lays ("{\"name\":" + (omgr_quote ly.name) + ",\"visible\":" + (omgr_bool ly.on) + ",\"frozen\":" + (omgr_bool ly.isfrozen) + ",\"render\":" + (omgr_bool ly.renderable) + ",\"parent\":" + (omgr_quote parentName) + "}")
 	)
-	local objs = #()
-	local total = 0
-	for o in objects where (superclassof o == GeometryClass or superclassof o == shape) do
-	(
-		total += 1
-		if (objs.count < maxObjects) do
-		(
-			local ln = ""
-			try (ln = o.layer.name) catch()
-			append objs ("{\"handle\":" + (o.inode.handle as string) + ",\"name\":" + (omgr_quote o.name) + ",\"class\":" + (omgr_quote (classof o)) + ",\"layer\":" + (omgr_quote ln) + ",\"visible\":" + (omgr_bool (not o.isNodeHidden)) + "}")
-		)
-	)
+	local total = geometry.count + shapes.count
 	local xr = #()
 	for i = 1 to (xrefs.getXRefFileCount()) do
 	(
@@ -290,7 +367,7 @@ fn omgr_scene maxObjects:5000 =
 		+ ",\"engine\":" + (omgr_quote (omgr_engineName())) + ",\"width\":" + (renderWidth as string) + ",\"height\":" + (renderHeight as string) \
 		+ ",\"active_camera\":" + active + ",\"env_name\":" + envName + ",\"env_class\":" + envCls + ",\"object_total\":" + (total as string) \
 		+ ",\"cameras\":[" + (omgr_join cams) + "],\"lights\":[" + (omgr_join shines) + "],\"maps\":[" + (omgr_join maps) + "],\"layers\":[" + (omgr_join lays) \
-		+ "],\"objects\":[" + (omgr_join objs) + "],\"xrefs\":[" + (omgr_join xr) + "]}"
+		+ "],\"objects\":" + (omgr_objectsInfo handles) + ",\"xrefs\":[" + (omgr_join xr) + "]}"
 )
 
 -- ---------------------------------------------------------------- reading and writing properties
@@ -974,28 +1051,11 @@ fn omgr_isRendering =
 fn omgr_texmaps =
 (
 	local ss = stringStream ""
-	local seen = #()
-	for c in textureMap.classes do
-	(
-		local found = #()
-		try (found = getClassInstances c) catch()
-		for m in found where (findItem seen m) == 0 do
-		(
-			append seen m
-			format "%|%\n" ((classof m) as string) m.name to:ss
-		)
-	)
+	for m in (omgr_allMaps()) do format "%|%\n" ((classof m) as string) m.name to:ss
 	ss as string
 )
 
-fn omgr_findTexmap cls nm =
-(
-	local c = undefined
-	try (c = execute cls) catch()
-	if (c == undefined) do return undefined
-	for m in (getClassInstances c) do (if (m.name == nm) do return m)
-	undefined
-)
+fn omgr_findTexmap cls nm = omgr_findMap cls nm
 
 -- Batch Render (3ds Max's own) from setups: a scene state and a view per setup
 fn omgr_batchView camHandle viewName stateName presetPath outPath w h =
@@ -1026,7 +1086,7 @@ fn omgr_hdriBitmap path =
 	local classes = if (eng == "Corona") then #("CoronaBitmap") else if (eng == "V-Ray") then #("VRayBitmap", "VRayHDRI") else #("Bitmaptexture")
 	for n in classes do
 	(
-		try (for m in (getClassInstances (execute n)) where (omgr_samePath (omgr_mapFile m) path) do return m) catch()
+		for m in (omgr_allMaps()) where (((classof m) as string) == n and (omgr_samePath (omgr_mapFile m) path)) do return m
 	)
 	local m = undefined
 	try
@@ -1243,7 +1303,7 @@ fn omgr_getElement nm =
 
 -- ---------------------------------------------------------------- scene events
 
-fn omgr_fire what = (if (omgr_notify != undefined) do (try (omgr_notify what) catch (format "OpenManager: %\n" (getCurrentException()))))
+fn omgr_fire what = (if (what == #preopen or what == #file) do omgr_mapCache = undefined; if (omgr_notify != undefined) do (try (omgr_notify what) catch (format "OpenManager: %\n" (getCurrentException()))))
 
 fn omgr_watch onOff =
 (

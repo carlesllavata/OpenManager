@@ -74,10 +74,20 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
   `dialogs.ScriptReviewDialog` through `window.ask_scripts(rows)` (live tests replace `ask_scripts` with a stub: the
   dialog is modal). "Don't run them" is remembered for the session in `window._denied`.
 
+## Performance rules (big scenes)
+- Never use `getClassInstances` per class to find maps: it scans the whole scene each call. `omgr_allMaps()` walks
+  from `sceneMaterials`, the environment, the Material Editors, `OpenManager_Maps` and texture-map props of the
+  renderer, cameras and lights (visited set: `Dictionary #integer` of `getHandleByAnim`). `omgr_findMap` uses the
+  `omgr_mapCache` dictionary (validated on use, rebuilt on a miss, cleared by `omgr_fire` on #preopen/#file); the
+  getClassInstances fallback only runs for a map nothing points to.
+- `omgr_scene handles:` lists only the objects the setups use (`window.object_handles()`); the selection is read
+  with `omgr_objectsInfo` (`window.selected_objects`). `object_total` = geometry.count + shapes.count.
+- Reference (10k boxes, 200 materials, Max 2027): scene read ~170 ms, map list ~160 ms, cached map lookup ~0 ms.
+
 ## Known issues (audit of 2026-11-09, not fixed yet)
 - The Script File card offers `.py` files, but render scripts run through `fileIn` (MAXScript only).
-- `omgr_texmaps` takes ~36 s with 10k objects; the scene is re-read on every mouse enter; Objects card caps at 5000.
 - Objects/layers are tracked by handle/name only.
+- The scene is still re-read (~170 ms on 10k objects) each time the mouse enters the window, throttled to 0.8 s.
 
 ## Git
 - Branch `main`, remote `origin` = https://github.com/carlesllavata/OpenManager (private for now).

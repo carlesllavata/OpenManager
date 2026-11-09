@@ -6,6 +6,16 @@ What each version of OpenManager adds, newest first.
 
 ### 9 November 2026
 
+- **Much faster on big scenes.** Measured on a scene with 10,000 objects and 200 materials:
+  - The map list of texture-map settings (camera overrides…) took **41 seconds**, with 3ds Max frozen; now
+    **0.2 s**. OpenManager now finds maps by walking from the materials, the environment, the Material Editors and
+    the texture-map settings of the renderer, cameras and lights, instead of scanning the whole scene once per map
+    type.
+  - Reading the scene (when the window opens, when you come back to it with the mouse…) went from 0.7 s to 0.17 s.
+  - Applying a setup looks maps up from a cache (40 ms per map before, instant now).
+- **No more 5,000-object limit in the Objects card.** The scene read used to list only the first 5,000 objects, so
+  "add selected" ignored objects beyond them. Now it only reads the objects your setups use, plus the selection
+  when you add it, so any object of any scene can be added.
 - **Scripts that come with a file no longer run without asking.** Setups can carry MAXScript (Script Editor card)
   and point at script files (Script File card), and they travel inside the `.max`. Before, opening someone else's
   file and clicking a setup ran its scripts straight away, and its render scripts ran on every render. Now:

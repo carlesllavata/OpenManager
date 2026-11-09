@@ -61,6 +61,13 @@ class Scene(object):
     def obj(self, h):
         return self._obj.get(h)
 
+    def add_objects(self, items):
+        """Objects read on their own (objects_info) join the ones the scene read listed."""
+        for o in items:
+            if o["handle"] not in self._obj:
+                self.objects.append(o)
+            self._obj[o["handle"]] = o
+
     def map(self, cls, name):
         for m in self.maps:
             if m["class"] == cls and m["name"] == name:
@@ -91,16 +98,22 @@ class Scene(object):
         return None
 
 
-def read_scene_raw():
-    return str(rt.omgr_scene())
+def read_scene_raw(handles=()):
+    """The scene as JSON text; objects: only these handles (the ones the setups use)."""
+    return str(rt.omgr_scene(handles=[int(h) for h in handles]))
+
+
+def objects_info(handles):
+    """Name, class, layer and visibility of these objects (geometry and shapes only)."""
+    return json.loads(str(rt.omgr_objectsInfo([int(h) for h in handles])), strict=False)
 
 
 def parse_scene(raw):
     return json.loads(raw, strict=False)  # a stray control character in a name must not stop the read
 
 
-def read_scene():
-    return Scene(parse_scene(read_scene_raw()))
+def read_scene(handles=()):
+    return Scene(parse_scene(read_scene_raw(handles)))
 
 
 def resolve(setup, scene):
