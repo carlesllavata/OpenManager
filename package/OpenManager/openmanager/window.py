@@ -291,6 +291,9 @@ class SceneManager(QtWidgets.QDockWidget):
         self.undo_stack = []  # records of applied setups (see begin_undo), newest last
         self.redo_stack = []
         self._undo_rec = None
+        self._typed = {}  # (setup id, slot) -> code typed in the Script Editor this session: yours, so it runs
+        self._denied = set()  # scripts you chose not to run this session (not asked about again)
+        self._refused = []  # scripts left out of the last changes built (not trusted)
         self.active_id = None
         self.next_id = 1
         self.last_sent = []
@@ -803,7 +806,65 @@ class SceneManager(QtWidgets.QDockWidget):
             # an incomplete path leaves the scene's render output as it is (it used to switch saving off, so a
             # batch rendered without saving); the batch checks every setup before it starts
             out_path = path if valid else None
-        return maxlink.actions(s, self.scene, self.enabled_rows, out_path, rendering, self.opts(), self.rs_default)
+        acts = maxlink.actions(s, self.scene, self.enabled_rows, out_path, rendering, self.opts(), self.rs_default)
+        acts, self._refused = model.filter_scripts(acts, self.script_allowed)
+        return acts
+
+    # ------------------------------------------------------------ scripts that came with a file
+    def script_allowed(self, kind, text):
+        """May this script of a setup run? Yes when trusted (approved, written or chosen by you) or when Settings
+        say to always run them."""
+        policy = self.opts().get("scripts", "ask")
+        if policy == "always":
+            return True
+        if model.script_key(kind, text) in set(self.settings.get("trusted_scripts") or []):
+            return True
+        if kind == "code" and text in self._typed.values():
+            self.trust_scripts([(kind, text)])
+            return True
+        return False
+
+    def trust_scripts(self, pieces):
+        """Remembers (kind, text) pieces as trusted, in this computer's settings (never in the .max)."""
+        lst = self.settings.setdefault("trusted_scripts", [])
+        added = False
+        for kind, text in pieces:
+            k = model.script_key(kind, text)
+            if k not in lst:
+                lst.append(k)
+                added = True
+        if added:
+            del lst[:-1000]
+            self.save_settings()
+
+    def typed_code(self, sid, slot, text):
+        self._typed[(sid, slot)] = text
+
+    def review_scripts(self, setups):
+        """Before setups are applied: shows the scripts they would run that aren't trusted yet, once, and asks."""
+        if self.opts().get("scripts", "ask") != "ask":
+            return
+        rows, keys = [], []
+        for s in setups:
+            for p in model.code_pieces(s):
+                k = model.script_key(p["kind"], p["text"])
+                if k in keys or k in self._denied or self.script_allowed(p["kind"], p["text"]):
+                    continue
+                keys.append(k)
+                rows.append((self.setup_label(s), p["slot"], p["kind"], p["text"]))
+        if not rows:
+            return
+        if self.ask_scripts(rows):
+            self.trust_scripts([(kind, text) for _, _, kind, text in rows])
+        else:
+            self._denied.update(keys)
+
+    def ask_scripts(self, rows):
+        return dialogs.ScriptReviewDialog(self, rows).exec() == QtWidgets.QDialog.Accepted
+
+    def tell_refused(self):
+        if self._refused:
+            self.toast("%d script(s) of this setup were not run: they came with the file and aren't trusted" % len(self._refused))
 
     def run_actions(self, acts, redraw=True):
         """Applies changes; events 3ds Max fires because of them (a render preset load looks like a file
@@ -869,6 +930,7 @@ class SceneManager(QtWidgets.QDockWidget):
         s = next((x for x in self.setups if x["id"] == sid), None)
         if s is None:
             return
+        self.review_scripts([s])
         self.begin_undo("Apply %s" % self.setup_label(s), "activate", keep_redo)
         self.active_id = sid
         maxlink.resolve(s, self.scene)
@@ -879,6 +941,7 @@ class SceneManager(QtWidgets.QDockWidget):
             self._apply()
         finally:
             self.end_undo()
+        self.tell_refused()
         self.refresh_rows()
         self.refresh_cards()
 
@@ -1187,8 +1250,10 @@ class SceneManager(QtWidgets.QDockWidget):
         if sid != self.active_id:
             self.activate(sid)
         else:
+            self.review_scripts([s])
             self.last_sent = []
             self._apply()
+            self.tell_refused()
 
     def _row_double(self, it, col):
         if col < len(self.column_keys) and self.column_keys[col] == "name" and not self.locked():
@@ -1529,6 +1594,7 @@ class SceneManager(QtWidgets.QDockWidget):
         """Applies each setup in turn (like a batch) and calls step(setup, index); Cancel stops it."""
         if not setups or self.rendering:
             return 0
+        self.review_scripts(setups)
         self.rendering = True
         self.clear_undo()  # a batch applies many setups: what came before it can no longer be undone
         keep = self.active_id
@@ -1634,6 +1700,7 @@ class SceneManager(QtWidgets.QDockWidget):
             return
         self.save_setups()
         self.reload_scene()
+        self.review_scripts(jobs)
         checks = self.check_render(jobs)
         runnable = [s for s, c in zip(jobs, checks) if not c["errors"]]
         if any(c["errors"] or c["warnings"] for c in checks):
@@ -1711,6 +1778,7 @@ class SceneManager(QtWidgets.QDockWidget):
         status, details = "Failed", []
         try:
             acts = self.actions_for(s, True)
+            refused = len(self._refused)
             self.run_actions(self.base_restore(acts) + acts)
             target = maxlink.render_output()
             if not target:
@@ -1731,6 +1799,8 @@ class SceneManager(QtWidgets.QDockWidget):
                 status, details = "Not rendered", ["Canceled"]
             else:
                 details = [str(result)]
+            if refused:
+                details.append("%d script(s) not run: they came with the file and aren't trusted" % refused)
         except Exception as ex:
             traceback.print_exc()
             details = [str(ex)]

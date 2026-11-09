@@ -587,6 +587,65 @@ def check_jobs(jobs):
     return out
 
 
+# ---------------------------------------------------------------- scripts that come with a file
+#
+# Setups can carry MAXScript (Script Editor card) and point at script files (Script File card). They travel inside
+# the .max, so a file from someone else could run anything when a setup is clicked or rendered. A script only runs
+# once it is trusted: written or chosen by you, or approved when OpenManager shows it to you.
+
+SCRIPT_SLOTS = (("snippet", "pre_setup", "Pre-Setup script"), ("snippet", "post_setup", "Post-Setup script"),
+                ("snippet", "pre_render", "Pre-Render script"), ("snippet", "post_render", "Post-Render script"),
+                ("scripts", "pre_render", "Pre-Render file"), ("scripts", "post_render", "Post-Render file"))
+
+
+def code_pieces(s):
+    """The scripts a setup would run, as dicts {"slot", "kind" ("code" or "file"), "text" (code or path)}."""
+    out = []
+    for block, key, title in SCRIPT_SLOTS:
+        b = s.get(block) or {}
+        if not b.get("enabled"):
+            continue
+        if block == "snippet":
+            text = b.get(key) or ""
+            if text.strip():
+                out.append({"slot": title, "kind": "code", "text": text})
+        else:
+            d = b.get(key) or {}
+            if d.get("enabled") and (d.get("path") or "").strip():
+                out.append({"slot": title, "kind": "file", "text": d["path"].strip()})
+    return out
+
+
+def script_key(kind, text):
+    """What is remembered when a script is trusted: the code itself (a changed script is asked about again), or the
+    path of a script file (yours to keep up to date)."""
+    import hashlib
+    if kind == "file":
+        return "file:" + os.path.normcase(os.path.normpath(text.strip()))
+    return "code:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def filter_scripts(acts, allowed):
+    """The changes without the scripts allowed(kind, text) refuses. Returns (acts, refused texts)."""
+    out, refused = [], []
+    for a in acts:
+        if a[0] == "code":
+            if allowed("code", a[1]):
+                out.append(a)
+            else:
+                refused.append(a[1])
+        elif a[0] == "renderscripts":
+            parts = list(a[1:])
+            for i, kind in enumerate(("file", "file", "code", "code")):
+                if parts[i] and not allowed(kind, parts[i]):
+                    refused.append(parts[i])
+                    parts[i] = ""
+            out.append(("renderscripts",) + tuple(parts))
+        else:
+            out.append(a)
+    return out, refused
+
+
 # ---------------------------------------------------------------- base state
 #
 # A setup only sets what its cards control. So that nothing it changed stays behind when another setup is applied,

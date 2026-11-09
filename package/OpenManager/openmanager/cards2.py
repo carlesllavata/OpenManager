@@ -724,6 +724,8 @@ class ScriptFileCard(Card):
         s = self.setup()
         if s and s["scripts"][k].get("path") != t:
             s["scripts"][k]["path"] = t
+            if t.strip():
+                self.sm.trust_scripts([("file", t)])  # a file you typed or chose is yours
             self.sm.changed()
 
     def _browse(self, k):
@@ -732,6 +734,7 @@ class ScriptFileCard(Card):
             s = self.setup()
             if s:
                 s["scripts"][k].update(path=f.replace("\\", "/"), enabled=True)
+                self.sm.trust_scripts([("file", s["scripts"][k]["path"])])
                 self.fill(s)
                 self.sm.changed()
 
@@ -775,6 +778,7 @@ class ScriptEditorCard(Card):
         s = self.setup()
         if s:
             s["snippet"][self.key()] = self.edit.toPlainText()
+            self.sm.typed_code(s["id"], self.key(), s["snippet"][self.key()])
             self.sm.changed(apply=False, list_too=False)
 
     def _test(self):

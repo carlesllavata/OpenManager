@@ -6,6 +6,16 @@ What each version of OpenManager adds, newest first.
 
 ### 9 November 2026
 
+- **Scripts that come with a file no longer run without asking.** Setups can carry MAXScript (Script Editor card)
+  and point at script files (Script File card), and they travel inside the `.max`. Before, opening someone else's
+  file and clicking a setup ran its scripts straight away, and its render scripts ran on every render. Now:
+  - The first time a setup would run scripts that came with the file, OpenManager **shows you their code** and asks:
+    **Run these scripts** or **Don't run them** (the safe choice is the default). The setup is applied either way.
+  - Your answer is remembered on your computer (never in the `.max`). If a script changes, you are asked again.
+  - **Scripts you write in the Script Editor or files you choose in the Script File card are yours** and always run.
+  - Batch Render, Bake Setups and Viewport Preview ask once for all the setups before they start, and the batch
+    report says when a setup's scripts were not run.
+  - **Settings > Setups > Scripts that came with a file:** ask (default), always run them, or never run them.
 - **Undo and Redo for setups.** Applying a setup can now be undone: the new **Undo** and **Redo** buttons in the
   top bar (and **Ctrl+Z** / **Ctrl+Y** while the OpenManager window has the focus) bring back the scene exactly as
   it was before you clicked the setup, viewport camera included, and apply it again. Changes you make in the cards

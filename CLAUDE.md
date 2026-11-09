@@ -64,8 +64,18 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
   last record. `undo()` runs the record and restores `base`/`active_id`; `redo()` re-activates. History is cleared
   on file load and when a batch starts. Restore kinds carry their key (`lightson` has "sun"/"dome" as a[1]).
 
+## Scripts in setups
+- `window.actions_for` drops untrusted scripts with `model.filter_scripts(acts, window.script_allowed)` (the "code"
+  changes and the fields of "renderscripts"); `window._refused` keeps what was left out. Trusted = key
+  (`model.script_key`: sha256 of the code, or the normalized path of a file) in `settings["trusted_scripts"]`
+  (plugcfg, never the .max), or code typed in the Script Editor this session (`window.typed_code`), or Settings
+  `max.scripts` = "always". Paths typed/chosen in the Script File card are trusted at once.
+- `window.review_scripts(setups)` runs before activate, re-click, batch and `_run_over_setups`, and shows
+  `dialogs.ScriptReviewDialog` through `window.ask_scripts(rows)` (live tests replace `ask_scripts` with a stub: the
+  dialog is modal). "Don't run them" is remembered for the session in `window._denied`.
+
 ## Known issues (audit of 2026-11-09, not fixed yet)
-- Snippet/pre-render MAXScript stored in a `.max` runs on a single click.
+- The Script File card offers `.py` files, but render scripts run through `fileIn` (MAXScript only).
 - `omgr_texmaps` takes ~36 s with 10k objects; the scene is re-read on every mouse enter; Objects card caps at 5000.
 - Objects/layers are tracked by handle/name only.
 

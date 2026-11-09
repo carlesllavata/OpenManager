@@ -33,7 +33,21 @@ class Dialog(QtWidgets.QDialog):
 DEFAULT_SETTINGS_MAX = {
     "viewport_update_type": 0, "viewport_refresh": True, "ipr_corona_restart": False, "ipr_vray_resolution": True,
     "update_time_output_type": False, "animate_camera": False, "restore_base": True,
+    "scripts": "ask",
 }
+SCRIPT_POLICIES = [("ask", "Show them and ask before they run"), ("always", "Always run them"),
+                   ("never", "Never run them")]
+
+
+def hrow_label(text, w):
+    row = QtWidgets.QWidget()
+    h = QtWidgets.QHBoxLayout(row)
+    h.setContentsMargins(0, 0, 0, 0)
+    h.addWidget(QtWidgets.QLabel(text))
+    h.addWidget(w, 1)
+    return row
+
+
 DEFAULT_THEME = {"main": "auto", "header": "colored"}
 COLUMNS = [("name", "Scene Name"), ("camera", "Camera"), ("resolution", "Resolution"), ("sun", "Sun"),
            ("dome", "Dome"), ("environment", "Environment"), ("frame", "Frame"), ("id", "Id")]
@@ -95,6 +109,41 @@ def _job_table(rows):
     t.setColumnWidth(0, min(260, t.columnWidth(0) + 12))
     t.setColumnWidth(1, t.columnWidth(1) + 16)
     return t
+
+
+class ScriptReviewDialog(Dialog):
+    """Scripts that came with the file, shown before they run for the first time."""
+
+    def __init__(self, parent, rows):
+        """rows: (setup label, slot, kind, text)."""
+        super(ScriptReviewDialog, self).__init__(parent)
+        self.setWindowTitle("Scripts in this file")
+        self.resize(720, 520)
+        v = QtWidgets.QVBoxLayout(self)
+        msg = QtWidgets.QLabel(
+            "These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
+            "deleting files, so only run scripts you trust. OpenManager remembers your answer for these scripts; "
+            "if one changes, it asks again.")
+        msg.setWordWrap(True)
+        v.addWidget(msg)
+        text = QtWidgets.QPlainTextEdit()
+        text.setReadOnly(True)
+        f = QtGui.QFont("Consolas")
+        f.setStyleHint(QtGui.QFont.Monospace)
+        text.setFont(f)
+        blocks = []
+        for label, slot, kind, body in rows:
+            head = "-- %s · %s" % (label, slot)
+            blocks.append("%s\n%s" % (head, ("fileIn @\"%s\"" % body) if kind == "file" else body.rstrip()))
+        text.setPlainText("\n\n".join(blocks))
+        v.addWidget(text, 1)
+        bb = QtWidgets.QDialogButtonBox()
+        run = bb.addButton("Run these scripts", QtWidgets.QDialogButtonBox.AcceptRole)
+        skip = bb.addButton("Don't run them", QtWidgets.QDialogButtonBox.RejectRole)
+        skip.setDefault(True)
+        run.clicked.connect(self.accept)
+        skip.clicked.connect(self.reject)
+        v.addWidget(bb)
 
 
 class BatchCheckDialog(Dialog):
@@ -266,7 +315,17 @@ class SettingsDialog(Dialog):
                                      "Off: a setup only changes its own cards; the rest stays as the previous setup left it.\n"
                                      "Viewport camera and background, scripts and render presets are never put back.")
         self.restore_base.setChecked(bool(mx["restore_base"]))
-        form.addRow(section("Setups"), self.restore_base)
+        sw = QtWidgets.QWidget()
+        sl = QtWidgets.QVBoxLayout(sw)
+        sl.setContentsMargins(0, 0, 0, 0)
+        sl.addWidget(self.restore_base)
+        self.scripts = Combo()
+        self.scripts.addItems([t for _, t in SCRIPT_POLICIES])
+        self.scripts.setCurrentIndex(next((i for i, (k, _) in enumerate(SCRIPT_POLICIES) if k == mx["scripts"]), 0))
+        self.scripts.setToolTip("Scripts of the Script Editor and Script File cards. The ones you write or choose\n"
+                                "yourself always run; this is about the ones that came with a file.")
+        sl.addWidget(hrow_label("Scripts that came with a file", self.scripts))
+        form.addRow(section("Setups"), sw)
         # Time output
         self.time_type = QtWidgets.QCheckBox("Update Time Output Type (Single/Range/List) on setup change")
         self.time_type.setChecked(bool(mx["update_time_output_type"]))
@@ -359,7 +418,8 @@ class SettingsDialog(Dialog):
             "max": {"viewport_update_type": self.vp_group.checkedId(), "viewport_refresh": self.redraw.isChecked(),
                     "ipr_corona_restart": self.ipr_corona.isChecked(), "ipr_vray_resolution": self.ipr_vray.isChecked(),
                     "update_time_output_type": self.time_type.isChecked(), "animate_camera": False,
-                    "restore_base": self.restore_base.isChecked()},
+                    "restore_base": self.restore_base.isChecked(),
+                    "scripts": SCRIPT_POLICIES[self.scripts.currentIndex()][0]},
             "columns_visible": {k: cb.isChecked() for k, cb in self.col_boxes.items()},
             "resolution_presets": pres or [list(x) for x in model.RESOLUTION_PRESETS],
         }
