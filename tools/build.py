@@ -116,7 +116,20 @@ def build_icons():
 
 # ---------------------------------------------------------------- package
 
+def check_mzp_run():
+    """3ds Max refuses the whole package, without a word to the user, when mzp.run doesn't compile. A "version" line
+    must be a plain number (0.2, never 0.2.0); the app's version lives in openmanager/window.py instead."""
+    for n, line in enumerate(open(os.path.join(PKG, "mzp.run"), encoding="utf-8-sig"), 1):
+        parts = line.split(None, 1)
+        if parts and parts[0].lower() == "version":
+            try:
+                float(parts[1])
+            except (IndexError, ValueError):
+                raise SystemExit("mzp.run line %d: 'version' must be a plain number, got: %s" % (n, line.strip()))
+
+
 def build_mzp():
+    check_mzp_run()
     os.makedirs(DIST, exist_ok=True)
     target = os.path.join(DIST, "OpenManager.mzp")
     if os.path.exists(target):

@@ -6,6 +6,12 @@ What each version of OpenManager adds, newest first.
 
 Nothing yet.
 
+## 0.2.1 — 10 November 2026
+
+- **The installer works again.** Dragging `OpenManager.mzp` onto 3ds Max 0.2.0 did nothing: no message, nothing in
+  *Customize User Interface*. 3ds Max refused the package because of how its version number was written, and it
+  doesn't say so. Fixed, and the build now checks for it so it can't happen again.
+
 ## 0.2.0 — 9 November 2026
 
 The first release of OpenManager: the tool gets its new name, and the problems found when it was reviewed are fixed.

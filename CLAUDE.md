@@ -18,7 +18,15 @@ Open3DS: app, code, comments, commit messages, README, `CHANGELOG.md` and releas
   `OpenManager/omgr_core.ms` (MAXScript, every global prefixed `omgr_`, callback ids `#omgr`, `#omgrRender`,
   `#omgrStartup`), `OpenManager/OpenManager_startup.ms`, `OpenManager/openmanager/` (Python package).
 - Installed to `getDir #userScripts\OpenManager\`; settings in `plugcfg\OpenManager*.json`.
-- Version lives in `openmanager/window.py` (`VERSION`) **and** `package/mzp.run`; keep them equal.
+- Version lives in `openmanager/window.py` (`VERSION`) and the README status line. `package/mzp.run` has no
+  version line on purpose: 3ds Max refuses the whole .mzp silently when it doesn't compile ("version 0.2.0" broke
+  0.2.0); `tools/build.py` refuses to build if a version line is not a plain number.
+- Test a package without installing it: copy `dist/OpenManager.mzp` with `install.ms` replaced by a probe script and
+  `rt.fileIn` the copy through the bridge (fileIn runs .mzp files). Compile-check a .ms without running it:
+  `rt.execute('if false do (
+' + source + '
+)')`. Defining a macroScript writes a .mcr into the user's
+  usermacros folder: don't do it in tests.
 - `openmanager/model.py` and `grid.py` have no Max/Qt imports: keep them testable outside Max.
 - `tools/build.py` draws the icons and writes `dist/OpenManager.mzp`; `tools/make_props.py` regenerates `props.json`.
 - Custom attribute IDs: data `#(0x4f4d4752, 0x5f446174)`, maps `#(0x4f4d4752, 0x5f4d6170)`. Never reuse the old
@@ -102,12 +110,12 @@ Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always
 - The scene is still re-read (~170 ms on 10k objects) each time the mouse enters the window, throttled to 0.8 s.
 
 ## Releases
-- Changes go under "## In development" in `CHANGELOG.md`. A release: bump `VERSION` in `openmanager/window.py`,
-  `package/mzp.run` and the README status line; turn the section into "## X.Y.Z — <date>" with a short summary
+- Changes go under "## In development" in `CHANGELOG.md`. A release: bump `VERSION` in `openmanager/window.py`
+  and the README status line; turn the section into "## X.Y.Z — <date>" with a short summary
   paragraph; `python -I tests\run.py`; `python -I tools\build.py`; commit "Release X.Y.Z"; tag `vX.Y.Z`; push with
   tags; `gh release create vX.Y.Z dist/OpenManager.mzp --title "OpenManager X.Y.Z"` with that section as notes plus
   an Install paragraph. After a batch of fixes, ask the user whether to publish a version.
-- 0.2.0 (9 November 2026) was the first release.
+- 0.2.0 (9 November 2026) was the first release; its installer did nothing (mzp.run version), fixed in 0.2.1.
 
 ## Git
 - Branch `main`, remote `origin` = https://github.com/carlesllavata/OpenManager (private for now).
