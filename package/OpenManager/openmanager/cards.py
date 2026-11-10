@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The cards of the board. Each one reads the active setup in fill() and writes it back on change."""
 import datetime
 import json

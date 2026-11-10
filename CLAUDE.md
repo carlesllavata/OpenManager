@@ -2,8 +2,24 @@
 
 Open-source scene setups / batch render manager for 3ds Max (2025+). The user's environment: 3ds Max 2027,
 Python 3.13 (bundled with Max), PySide6, Corona 14 and V-Ray. The repo lives on a NAS share (`Z:` maps to
-`\\192.168.2.10\...`). Talk to the user in Spanish; everything in the repo and on GitHub is in English, as in
-OpenTools: app, code, comments, commit messages, README, `CHANGELOG.md` and release notes.
+`\\192.168.2.10\...`). Part of the Open3D suite: see `..\..\CLAUDE.md`.
+
+## Open3D suite standards
+<!-- Shared block: keep it word for word the same in every Open3D CLAUDE.md (suite root, launcher, each app).
+     Any change here is made in all of them in the same session. -->
+- **One repo per tool.** Every tool of the Open3D suite, and the launcher, has its own git repository.
+  Everything in it is in English: code, comments, docs, app text, commit messages and release notes.
+- **Version diary.** Every series of changes to a tool is recorded in `CHANGELOG.md` at the root of its repo,
+  in English, newest first, written for users (what changed for them, not code details). Changes not yet
+  released go under `## In development`.
+- **Language with the user.** Claude always talks to the user in Spanish (castellano).
+- **License: GNU GPL v3 or later** (`GPL-3.0-or-later`) for every tool of the suite and the launcher: the full
+  text in `LICENSE`, the license named in the README, and `SPDX-License-Identifier: GPL-3.0-or-later` as the
+  first comment line of every source file (after a shebang or BOM). Only code that may be distributed under
+  it goes in: the user's own, public-domain or GPL-compatible code.
+- **Keeping these in sync.** This block is identical in the `CLAUDE.md` of the suite root, `launcher/` and
+  every app in `apps/` (today `OpenTools` and `OpenManager`). When it changes in one of them, make the same
+  change in all of them; every new tool's `CLAUDE.md` starts with this block.
 
 ## Scope decisions
 - Name: OpenManager. No accounts, licensing or login: install and use.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Setups, the property table and the render-output path builder.
 
 Pure Python (no 3ds Max, no Qt) so it can be tested on its own.

@@ -1,4 +1,5 @@
-﻿-- OpenManager install housekeeping, shared by the .mzp installer (install.ms) and the start of OpenManager.bundle
+﻿-- SPDX-License-Identifier: GPL-3.0-or-later
+-- OpenManager install housekeeping, shared by the .mzp installer (install.ms) and the start of OpenManager.bundle
 -- (OpenManager_bundle.ms). Each step only acts on what it finds, so running it again does nothing.
 
 global omgr_home

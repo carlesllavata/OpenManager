@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """OpenManager for 3ds Max.
 
 Started by the OpenManager macro (category OpenManager). One window per 3ds Max session.

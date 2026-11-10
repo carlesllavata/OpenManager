@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The OpenManager window: a dock that lives inside 3ds Max (floating or docked)."""
 import copy
 import json

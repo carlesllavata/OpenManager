@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Dialogs: Batch Render progress, Property Selector, Settings (the gear) and Bake Setups."""
 from PySide6 import QtCore, QtGui, QtWidgets
 

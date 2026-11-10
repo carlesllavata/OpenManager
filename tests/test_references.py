@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """References to nodes and layers survive merges and renames (model.py, no 3ds Max)."""
 import os
 import sys

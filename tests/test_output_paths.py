@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Output path building and the batch checks (model.py: no 3ds Max needed).
 
     "C:\\Program Files\\Autodesk\\3ds Max 2027\\Python\\python.exe" -I tests\\run.py

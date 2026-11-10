@@ -1,4 +1,5 @@
-﻿-- OpenManager.bundle start: the bundle's post-start-up script (3ds Max 2025 and later).
+﻿-- SPDX-License-Identifier: GPL-3.0-or-later
+-- OpenManager.bundle start: the bundle's post-start-up script (3ds Max 2025 and later).
 -- Points the OpenManager action at this bundle, cleans up older installs (the "Puzles" version and the per-user .mzp
 -- install) and adds the file-open check of OpenManager_startup.ms.
 -- Declared here, before the block is compiled: inside ( ) an unknown name becomes a local, so the functions fileIn

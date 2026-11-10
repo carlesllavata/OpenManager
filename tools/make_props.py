@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Builds openmanager/props.json (the Property Selector table) for every engine.
 
     python mzp/tools/make_props.py <tables.json>

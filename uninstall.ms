@@ -1,4 +1,5 @@
-﻿-- OpenManager: removes everything the .mzp installed (run it from Scripting > Run Script).
+﻿-- SPDX-License-Identifier: GPL-3.0-or-later
+-- OpenManager: removes everything the .mzp installed (run it from Scripting > Run Script).
 -- The setups stored inside .max files are left as they are.
 (
 	try (python.Execute "import sys\nm = sys.modules.get('openmanager')\nif m:\n    m.close()") catch()

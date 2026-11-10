@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Small icons drawn at run time: Windows' own symbol font plus a few hand-drawn shapes.
 Nothing to ship, sharp at any DPI."""
 from PySide6 import QtCore, QtGui

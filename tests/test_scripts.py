@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Scripts that come with a file only run once trusted (model.py, no 3ds Max)."""
 import os
 import sys

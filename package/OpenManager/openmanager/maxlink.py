@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Everything that talks to 3ds Max: reading the scene, applying a setup, storing setups, rendering."""
 import json
 import os

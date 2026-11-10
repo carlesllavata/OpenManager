@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The card grid: places in grid units, pushing cards out of the way, and floating everything up.
 
 Same rules as a vertical-compacting grid layout: a card dropped on another takes its place

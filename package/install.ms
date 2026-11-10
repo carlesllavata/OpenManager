@@ -1,4 +1,5 @@
-﻿-- OpenManager installer (runs when the .mzp is dropped on 3ds Max)
+﻿-- SPDX-License-Identifier: GPL-3.0-or-later
+-- OpenManager installer (runs when the .mzp is dropped on 3ds Max)
 -- Declared before the block is compiled: inside ( ) an unknown name becomes a local (omgr_home is set by the bundle,
 -- omgr_migrateLegacy by omgr_setup.ms, which is only read when this runs).
 global omgr_home, omgr_migrateLegacy

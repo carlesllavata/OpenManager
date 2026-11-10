@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Builds the two release outputs: draws the icons, then writes
 
 - dist/OpenManager.mzp     the package dropped onto 3ds Max (install.ms copies it into the user's profile)

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Base state: what a setup changed is put back when the next one doesn't control it (model.py, no 3ds Max)."""
 import json
 import os

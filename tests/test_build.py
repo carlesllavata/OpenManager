@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """OpenManager.bundle as tools/build.py writes it (no 3ds Max)."""
 import os
 import shutil

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Reusable pieces of the window: on/off switch, card frame, number row, and the grid board."""
 import copy
 

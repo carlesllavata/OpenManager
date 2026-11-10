@@ -1,4 +1,5 @@
-﻿-- OpenManager: when a file with setups of Pulze Scene Manager is opened and the window is closed, offer to open it.
+﻿-- SPDX-License-Identifier: GPL-3.0-or-later
+-- OpenManager: when a file with setups of Pulze Scene Manager is opened and the window is closed, offer to open it.
 -- (Settings > Notification turns this off.)
 global omgr_isOpen
 global omgr_startupCheck

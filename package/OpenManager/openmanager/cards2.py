@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Cards added to match the original module list: Background, Atmosphere, Variants, Render Elements,
 Render Settings Preset / Override, Post-Production, Scripts and Thumbnail."""
 import os
