@@ -14,6 +14,8 @@ What each version of OpenManager adds, newest first.
   installed, so OpenManager is never loaded twice. Your settings stay. The `.mzp` is still there for a manual
   install, but it won't install on top of the bundle.
 - The bundle also removes the version from before the name OpenManager, the same way the `.mzp` installer does.
+- **README brought up to date:** the Open3D suite, the bundle install not being released yet, and the Script File
+  card running MAXScript files only for now.
 
 ## 0.2.1 — 10 November 2026
 

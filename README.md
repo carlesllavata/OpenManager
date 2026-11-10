@@ -4,7 +4,11 @@ An open-source scene setups and batch render manager that lives inside **3ds Max
 (the Python + PySide6 that ships with Max, plus a MAXScript library). No separate program, no browser and
 **no account or login**: install it and start using it.
 
-> Status: early (v0.2.1). See the [changelog](CHANGELOG.md).
+OpenManager is part of [Open3D](https://github.com/carlesllavata/Open3D), a suite of open-source tools for
+3D work.
+
+> Status: early (v0.2.1). Installing as a plug-in bundle (below) is new and not in a released version yet.
+> What each version adds: [CHANGELOG.md](CHANGELOG.md).
 
 A **setup** stores, for one `.max` file: camera, resolution, frames, sun, dome, environment, layers, objects,
 lights, XRefs, output path, render settings, Corona VFB post-production and more. Click a setup and it is applied
@@ -58,6 +62,7 @@ Copy what appears in the **MAXScript Listener** (F11): errors are prefixed with 
 ## Current limits
 
 - Post-Production / VFB works with Corona only.
+- The Script File card runs MAXScript (`.ms`) files only; it also offers `.py` files, but those don't run yet.
 - Tested on 3ds Max 2026.3 and 2027 with Corona 14.
 
 ## License
