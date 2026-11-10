@@ -3,7 +3,7 @@
 Open-source scene setups / batch render manager for 3ds Max (2025+). The user's environment: 3ds Max 2027,
 Python 3.13 (bundled with Max), PySide6, Corona 14 and V-Ray. The repo lives on a NAS share (`Z:` maps to
 `\\192.168.2.10\...`). Talk to the user in Spanish; everything in the repo and on GitHub is in English, as in
-Open3DS: app, code, comments, commit messages, README, `CHANGELOG.md` and release notes.
+OpenTools: app, code, comments, commit messages, README, `CHANGELOG.md` and release notes.
 
 ## Scope decisions
 - Name: OpenManager. No accounts, licensing or login: install and use.
@@ -37,7 +37,7 @@ Open3DS: app, code, comments, commit messages, README, `CHANGELOG.md` and releas
 ## Commands
 Max's Python: `C:\Program Files\Autodesk\3ds Max 2027\Python\python.exe` (always run with `-I`).
 - Build: `python -I tools\build.py`
-- Live Max: the Open3DS dev bridge (`Z:\02_ASSETS\06_SOFTWARE\03_OPEN3DS\dev\bridge.py file.py`) runs Python in the
+- Live Max: the OpenTools (formerly Open3DS) dev bridge (`Z:\ZZ_ACADEMY\01_GITHUB\01_OPEN3D\apps\OpenTools\dev\bridge.py file.py`) runs Python in the
   user's Max; load this checkout with `sys.path.insert(0, r"...\package\OpenManager")`, set
   `sys.dont_write_bytecode = True`, and remove the module and path again at the end. Tests must only run on an empty,
   unsaved scene (the user's open scene is real work) and must not leave modal dialogs (they hang the bridge).
