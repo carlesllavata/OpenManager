@@ -1,4 +1,7 @@
 ﻿-- OpenManager installer (runs when the .mzp is dropped on 3ds Max)
+-- Declared before the block is compiled: inside ( ) an unknown name becomes a local (omgr_home is set by the bundle,
+-- omgr_migrateLegacy by omgr_setup.ms, which is only read when this runs).
+global omgr_home, omgr_migrateLegacy
 (
 	local title = "OpenManager"
 	local src = getFilenamePath (getSourceFileName())
@@ -24,38 +27,20 @@
 	(
 		messageBox "OpenManager needs 3ds Max 2025 or newer (Python 3 + PySide6)." title:title
 	)
+	else if (isKindOf omgr_home String and doesDirectoryExist omgr_home) then
+	(
+		-- OpenManager.bundle is installed (it sets omgr_home at start): a second copy in the profile would clash with it
+		messageBox ("OpenManager is already installed as a bundle:\n" + omgr_home + "\n\nThe .mzp is not needed: update OpenManager with the Open3D launcher.") title:title
+	)
 	else
 	(
 		-- an open window is closed first so its files can be replaced
 		try (python.Execute "import sys\nm = sys.modules.get('openmanager')\nif m:\n    m.close()\n    for k in [k for k in list(sys.modules) if k == 'openmanager' or k.startswith('openmanager.')]:\n        del sys.modules[k]") catch()
 
-		-- the version installed before the tool was called OpenManager ("Puzles"): closed and removed, its settings
-		-- carried over. Setups saved inside .max files by that version are read and converted by the tool itself.
-		try (python.Execute "import sys\nm = sys.modules.get('puzles_sm')\nif m:\n    m.close()") catch()
-		callbacks.removeScripts id:#pzsm
-		callbacks.removeScripts id:#pzsmRender
-		callbacks.removeScripts id:#pzsmStartup
-		local cfg = (getDir #plugcfg) + "\\"
-		for ext in #(".json", "_default.json", "_notify.txt") do
-		(
-			local was = cfg + "Puzles_SceneManager" + ext
-			local now = cfg + "OpenManager" + ext
-			if (doesFileExist was) do
-			(
-				if (not (doesFileExist now)) do copyFile was now
-				deleteFile was
-			)
-		)
-		local oldFiles = #((getDir #userStartupScripts) + "\\Puzles_SceneManager_startup.ms", (getDir #userMacros) + "\\Puzles_SceneManager.mcr")
-		for theme in #("Dark", "Light") do
-			for f in (getFiles ((getDir #userIcons) + "\\" + theme + "\\Puzles_SceneManager_*.png")) do append oldFiles f
-		for f in oldFiles where (doesFileExist f) do deleteFile f
-		local oldDir = (getDir #userScripts) + "\\Puzles"
-		if (doesDirectoryExist oldDir) do try ((dotNetClass "System.IO.Directory").Delete oldDir true) catch()
-		local oldCache = cfg + "Puzles_SceneManager_hdri"
-		local newCache = cfg + "OpenManager_hdri"
-		if ((doesDirectoryExist oldCache) and not (doesDirectoryExist newCache)) then try ((dotNetClass "System.IO.Directory").Move oldCache newCache) catch()
-		else if (doesDirectoryExist oldCache) do try ((dotNetClass "System.IO.Directory").Delete oldCache true) catch()
+		-- the version installed before the tool was called OpenManager ("Puzles"): removed, its settings carried over
+		-- (omgr_setup.ms, shared with the bundle, which does the same when 3ds Max starts)
+		fileIn (src + "OpenManager\\omgr_setup.ms")
+		omgr_migrateLegacy()
 
 		local dst = (getDir #userScripts) + "\\OpenManager\\"
 		omInstCopyTree (src + "OpenManager\\") dst

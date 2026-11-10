@@ -1,5 +1,7 @@
 ﻿-- OpenManager
 -- Customize User Interface > Group: Main UI > Category: OpenManager > OpenManager
+-- Used by both installs: OpenManager.bundle sets omgr_home when 3ds Max starts; the .mzp installs to userScripts.
+global omgr_home
 
 macroScript OpenManager
 	category:"OpenManager"
@@ -12,10 +14,10 @@ macroScript OpenManager
 
 	on execute do
 	(
-		local dir = (getDir #userScripts) + "\\OpenManager"
+		local dir = if (isKindOf omgr_home String and doesDirectoryExist omgr_home) then omgr_home else ((getDir #userScripts) + "\\OpenManager")
 		if (not (doesDirectoryExist dir)) then
 		(
-			messageBox "OpenManager is not installed.\nDrag OpenManager.mzp into 3ds Max again." title:"OpenManager"
+			messageBox "OpenManager is not installed.\nInstall it again with the Open3D launcher, or drag OpenManager.mzp into 3ds Max." title:"OpenManager"
 		)
 		else
 		(

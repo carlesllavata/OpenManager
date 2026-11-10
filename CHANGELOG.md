@@ -4,7 +4,13 @@ What each version of OpenManager adds, newest first.
 
 ## In development
 
-Nothing yet.
+- **OpenManager can be installed as a 3ds Max plug-in bundle**, the way the upcoming Open3D launcher will install
+  it: one folder in `ApplicationPlugins`, nothing copied into your 3ds Max profile, and it works in every 3ds Max
+  from 2025 on at once. The OpenManager action, its icons and the offer to open Pulze setups work exactly as before.
+- **Switching from the .mzp is automatic.** The first time the bundle starts, it removes the copy the `.mzp`
+  installed, so OpenManager is never loaded twice. Your settings stay. The `.mzp` is still there for a manual
+  install, but it won't install on top of the bundle.
+- The bundle also removes the version from before the name OpenManager, the same way the `.mzp` installer does.
 
 ## 0.2.1 — 10 November 2026
 

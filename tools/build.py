@@ -1,20 +1,33 @@
-"""Builds dist/OpenManager.mzp: draws the icons, then zips the package.
+"""Builds the two release outputs: draws the icons, then writes
 
-    python mzp/tools/build.py
+- dist/OpenManager.mzp     the package dropped onto 3ds Max (install.ms copies it into the user's profile)
+- dist/OpenManager.bundle  the Autodesk ApplicationPlugins bundle the Open3D launcher installs
+
+    python -I tools/build.py
 
 Pure Python, nothing to install.
 """
 import math
 import os
+import re
+import shutil
 import struct
+import xml.etree.ElementTree as ET
 import zipfile
 import zlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PKG = os.path.join(ROOT, "package")
+BUNDLE_SRC = os.path.join(ROOT, "bundle")
 DIST = os.path.join(ROOT, "dist")
 ICON_NAME = "OpenManager"
 SIZES = (16, 24, 30, 32, 36, 48)
+
+# the bundle's identity for 3ds Max: never change these two
+PRODUCT_CODE = "{6A36A415-E9A4-4DC7-9B99-1FF6EDB2C661}"
+UPGRADE_CODE = "{757AF74F-AD01-4AEE-A3B6-43D92E4B9053}"
+SERIES_MIN = "2025"
+SERIES_MAX = "2099"  # 3ds Max 2027 silently ignores a package without SeriesMax: 2099 = no cap
 
 
 # ---------------------------------------------------------------- icon: a stack of three setup cards, in greys
@@ -145,7 +158,99 @@ def build_mzp():
     return target
 
 
+# ---------------------------------------------------------------- bundle
+
+def read_version():
+    """VERSION in openmanager/window.py; the README status line must say the same."""
+    with open(os.path.join(PKG, "OpenManager", "openmanager", "window.py"), encoding="utf-8") as f:
+        m = re.search(r'^VERSION = "(\d+\.\d+\.\d+)"', f.read(), re.M)
+    if not m:
+        raise SystemExit('openmanager/window.py: no VERSION = "X.Y.Z" line')
+    version = m.group(1)
+    with open(os.path.join(ROOT, "README.md"), encoding="utf-8") as f:
+        if "(v%s)" % version not in f.read():
+            raise SystemExit("README.md: the status line doesn't say v%s (VERSION in window.py)" % version)
+    return version
+
+
+# Component types as other bundles installed with 3ds Max 2027 use them (macroscripts, dark/light icon paths) and as
+# OpenTools uses and has verified (post-start-up scripts).
+COMPONENTS = (
+    ("macroscripts parts", "./Contents/macroscripts/OpenManager.mcr"),
+    ("dark icon paths parts", "./Contents/icons/Dark"),
+    ("light icon paths parts", "./Contents/icons/Light"),
+    ("post-start-up scripts parts", "./Contents/scripts/OpenManager_bundle.ms"),
+)
+
+
+def package_contents(version):
+    req = '<RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="%s" SeriesMax="%s" />' % (SERIES_MIN, SERIES_MAX)
+    parts = "".join(
+        '    <Components Description="%s">\n        %s\n'
+        '        <ComponentEntry AppName="OpenManager" Version="%s" ModuleName="%s" />\n    </Components>\n'
+        % (desc, req, version, module) for desc, module in COMPONENTS)
+    return ('<?xml version="1.0" encoding="utf-8"?>\n'
+            '<ApplicationPackage\n'
+            '    SchemaVersion="1.0"\n'
+            '    AutodeskProduct="3ds Max"\n'
+            '    ProductType="Application"\n'
+            '    Name="OpenManager"\n'
+            '    Description="Open-source scene setups and batch render manager for 3ds Max."\n'
+            '    AppVersion="%s"\n'
+            '    ProductCode="%s"\n'
+            '    UpgradeCode="%s">\n'
+            '    <CompanyDetails Name="OpenManager contributors" />\n'
+            '    %s\n%s'
+            '</ApplicationPackage>\n') % (version, PRODUCT_CODE, UPGRADE_CODE, req, parts)
+
+
+def check_bundle(target, version):
+    """Refuses a bundle 3ds Max would load wrongly or not at all: versions that differ, a missing SeriesMax, a part
+    that points nowhere."""
+    root = ET.parse(os.path.join(target, "PackageContents.xml")).getroot()
+    problems = []
+    if root.get("AppVersion") != version:
+        problems.append("AppVersion %s != VERSION %s" % (root.get("AppVersion"), version))
+    for req in root.iter("RuntimeRequirements"):
+        if not req.get("SeriesMin") or not req.get("SeriesMax"):
+            problems.append("RuntimeRequirements without SeriesMin/SeriesMax")
+    for entry in root.iter("ComponentEntry"):
+        if entry.get("Version") != version:
+            problems.append("%s: Version %s != %s" % (entry.get("ModuleName"), entry.get("Version"), version))
+        if not os.path.exists(os.path.join(target, entry.get("ModuleName"))):
+            problems.append("%s: missing" % entry.get("ModuleName"))
+    if problems:
+        raise SystemExit("OpenManager.bundle refused:\n  " + "\n  ".join(problems))
+
+
+def build_bundle(version, dist=DIST, icons=None):
+    icons = icons or os.path.join(PKG, "icons")
+    target = os.path.join(dist, "OpenManager.bundle")
+    if os.path.exists(target):
+        # moved aside first: on the NAS a deleted folder lingers for a moment and the new one can't be made in its place
+        old = "%s.old-%d" % (target, os.getpid())
+        os.rename(target, old)
+        shutil.rmtree(old, ignore_errors=True)
+    for stale in [f for f in os.listdir(dist) if f.startswith("OpenManager.bundle.old-")] if os.path.isdir(dist) else []:
+        shutil.rmtree(os.path.join(dist, stale), ignore_errors=True)
+    contents = os.path.join(target, "Contents")
+    skip = shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo")
+    shutil.copytree(os.path.join(PKG, "OpenManager"), os.path.join(contents, "OpenManager"), ignore=skip)
+    for theme in THEMES:
+        shutil.copytree(os.path.join(icons, theme), os.path.join(contents, "icons", theme))
+    os.makedirs(os.path.join(contents, "macroscripts"))
+    shutil.copy2(os.path.join(PKG, "OpenManager.mcr"), os.path.join(contents, "macroscripts"))
+    os.makedirs(os.path.join(contents, "scripts"))
+    shutil.copy2(os.path.join(BUNDLE_SRC, "OpenManager_bundle.ms"), os.path.join(contents, "scripts"))
+    with open(os.path.join(target, "PackageContents.xml"), "w", encoding="utf-8", newline="\r\n") as f:
+        f.write(package_contents(version))
+    check_bundle(target, version)
+    return target
+
+
 if __name__ == "__main__":
+    v = read_version()
     build_icons()
     t = build_mzp()
     print("built %s (%d KB)" % (t, os.path.getsize(t) // 1024))
+    print("built %s (%s)" % (build_bundle(v), v))

@@ -14,17 +14,22 @@ to the scene; **Batch Render** renders every ticked setup, one after the other.
 
 ## Install (development build)
 
-1. Build the installer: `python tools/build.py` (plain Python 3, no dependencies). It writes `dist/OpenManager.mzp`.
-2. Drag the `.mzp` onto a 3ds Max viewport.
-3. *Customize > Customize User Interface > Toolbars*, **Group: Main UI**, **Category: OpenManager**: drag the
-   **OpenManager** action to a toolbar or a menu.
+Build it: `python tools/build.py` (plain Python 3, no dependencies). It writes two packages to `dist/`:
 
-To remove it: *Scripting > Run Script…* > `uninstall.ms`, then restart Max. Setups saved inside `.max` files are
-left untouched.
+- **`OpenManager.bundle`**, the Autodesk plug-in bundle that the Open3D launcher installs. By hand: with 3ds Max
+  closed, copy the folder into `%APPDATA%\Autodesk\ApplicationPlugins\` and start Max. It works in every Max from
+  2025 on. If OpenManager was installed with the `.mzp` before, the bundle removes that copy the first time it starts
+  (your settings stay). To remove the bundle, delete its folder with Max closed.
+- **`OpenManager.mzp`**, for a manual install: drag it onto a 3ds Max viewport. To remove it: *Scripting > Run
+  Script…* > `uninstall.ms`, then restart Max. It won't install over the bundle.
+
+Then *Customize > Customize User Interface > Toolbars*, **Group: Main UI**, **Category: OpenManager**: drag the
+**OpenManager** action to a toolbar or a menu. Setups saved inside `.max` files are never touched by installing or
+removing.
 
 - Setups are saved **inside the .max file** (the `OpenManager_Dat` attribute of `rootNode`).
 - Setups made with **Pulze Scene Manager** and with the previous version of this tool (*Puzles · Scene Manager*)
-  are read and converted. The installer also removes that previous version if it finds it, keeping its settings.
+  are read and converted. Both installs also remove that previous version if they find it, keeping its settings.
 - Window settings: `plugcfg\OpenManager.json`.
 
 ## Modules
@@ -38,11 +43,13 @@ Render Elements, Post-Production / VFB (Corona), Script File / Editor, Thumbnail
 | path | what it is |
 |---|---|
 | `uninstall.ms` | uninstaller |
-| `package/install.ms`, `mzp.run`, `OpenManager.mcr` | installer and the 3ds Max action |
+| `package/install.ms`, `mzp.run`, `OpenManager.mcr` | .mzp installer and the 3ds Max action |
+| `bundle/OpenManager_bundle.ms` | what the bundle runs when 3ds Max starts |
+| `package/OpenManager/omgr_setup.ms` | clean-up of older installs, shared by the bundle and the .mzp |
 | `package/OpenManager/omgr_core.ms` | MAXScript functions (prefix `omgr_`) that read and change the scene |
 | `package/OpenManager/OpenManager_startup.ms` | offers to open the window when a `.max` with Pulze setups is opened |
 | `package/OpenManager/openmanager/` | the window (Python): `window.py`, cards in `cards.py` / `cards2.py`, `maxlink.py` (setup → changes in Max), `model.py` (data, no Max or Qt) |
-| `tools/` | `build.py` (builds the .mzp and the icons) and `make_props.py` (the Property Selector table) |
+| `tools/` | `build.py` (builds the bundle, the .mzp and the icons) and `make_props.py` (the Property Selector table) |
 
 ## If something goes wrong
 
