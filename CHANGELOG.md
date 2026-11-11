@@ -4,6 +4,8 @@ What each version of OpenManager adds, newest first.
 
 ## In development
 
+- **Clean-up.** Code nothing used any more was removed (an unused Corona post-production save and a few
+  helpers). OpenManager works exactly as before.
 - **OpenManager is free software under the GNU GPL v3 or later.** You can use it, share it and change it
   freely; if you share a changed version, it has to stay under the same license with its source. The full text
   is in `LICENSE`.

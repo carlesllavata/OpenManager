@@ -7,7 +7,7 @@ import os
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import model
-from .widgets import Blocker, Card, ColorButton, Combo, NumberRow, Spin, TabBar, icon, menu_tool, tool, PRIMARY, blend, pal, text_color
+from .widgets import Blocker, Card, ColorButton, Combo, NumberRow, Spin, TabBar, icon, menu_tool, tool, blend, pal, text_color
 
 
 def hrow(*widgets, stretch_index=None, spacing=4):

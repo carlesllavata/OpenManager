@@ -92,12 +92,6 @@ class Scene(object):
     def other_lights(self):
         return [l for l in self.lights if l["kind"] == "light"]
 
-    def find_by_name(self, items, name):
-        for it in items:
-            if it["name"] == name:
-                return it
-        return None
-
 
 def read_scene_raw(handles=()):
     """The scene as JSON text; objects: only these handles (the ones the setups use)."""
@@ -111,10 +105,6 @@ def objects_info(handles):
 
 def parse_scene(raw):
     return json.loads(raw, strict=False)  # a stray control character in a name must not stop the read
-
-
-def read_scene(handles=()):
-    return Scene(parse_scene(read_scene_raw(handles)))
 
 
 def resolve_nodes(query):
@@ -931,10 +921,6 @@ def stop_render():
 
 def canceled():
     return bool(rt.omgr_cancel)
-
-
-def max_file():
-    return str(rt.maxFilePath) + str(rt.maxFileName)
 
 
 def watch(callback):

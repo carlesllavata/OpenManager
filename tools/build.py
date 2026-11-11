@@ -8,7 +8,6 @@
 
 Pure Python, nothing to install.
 """
-import math
 import os
 import re
 import shutil

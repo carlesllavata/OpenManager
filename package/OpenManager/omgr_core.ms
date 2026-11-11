@@ -1014,7 +1014,6 @@ fn omgr_setRenderScripts preFile postFile preCode postCode =
 )
 
 -- Corona post-production (tone mapping, bloom & glare, sharpening, LUT...) through the VFB's own .conf files
-fn omgr_postSave path = (try (CoronaRenderer.CoronaFp.savePostSettings path) catch (-1))
 fn omgr_postLoad path = (try (CoronaRenderer.CoronaFp.loadPostSettings path) catch (-1))
 
 fn omgr_snapshotViewport path =

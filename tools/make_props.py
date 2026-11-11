@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Builds openmanager/props.json (the Property Selector table) for every engine.
 
-    python mzp/tools/make_props.py <tables.json>
+    python -I tools/make_props.py tools/engine_tables.json
 
 <tables.json> holds the per-engine property lists ({"corona_cam": [...], ...}). Extra Corona camera
 overrides (tone mapping, direct / reflections / refractions / environment) are added here.
