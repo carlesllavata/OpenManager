@@ -11,7 +11,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from . import cards, cards2, dialogs, icons, maxlink, model, widgets
 from .widgets import Blocker, Card, GridBoard, PRIMARY, TINTS, blend, icon, menu_tool, pal, text_color, tool
 
-VERSION = "0.2.1"
+VERSION = "0.3.0"
 TITLE = "OpenManager"
 OBJECT_NAME = "OpenManager"
 TOP_ICON = 22

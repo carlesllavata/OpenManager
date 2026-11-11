@@ -7,7 +7,7 @@ An open-source scene setups and batch render manager that lives inside **3ds Max
 OpenManager is part of [Open3D](https://github.com/carlesllavata/Open3D), a suite of open-source tools for
 3D work.
 
-> Status: early (v0.2.1). Installing as a plug-in bundle (below) is new and not in a released version yet.
+> Status: early (v0.3.0).
 > What each version adds: [CHANGELOG.md](CHANGELOG.md).
 
 A **setup** stores, for one `.max` file: camera, resolution, frames, sun, dome, environment, layers, objects,
@@ -16,9 +16,16 @@ to the scene; **Batch Render** renders every ticked setup, one after the other.
 
 **Renderers:** Corona and V-Ray. FStorm works too, with less testing.
 
-## Install (development build)
+## Install
 
-Build it: `python tools/build.py` (plain Python 3, no dependencies). It writes two packages to `dist/`:
+The easy way: install the [Open3D Launcher](https://github.com/carlesllavata/Open3D/releases/latest) and click
+**Install** next to OpenManager, with 3ds Max closed. It puts OpenManager in `%APPDATA%\Autodesk\ApplicationPlugins`
+as a plug-in bundle (every 3ds Max from 2025 on loads it), tells you when a new version is out and updates it. To
+uninstall, choose **Uninstall…** in OpenManager's menu in the launcher.
+
+By hand, each [release](https://github.com/carlesllavata/OpenManager/releases/latest) also has the bundle as a zip and
+`OpenManager.mzp`. To build them from source: `python tools/build.py` (plain Python 3, no dependencies) writes both to
+`dist/`:
 
 - **`OpenManager.bundle`**, the Autodesk plug-in bundle that the Open3D launcher installs. By hand: with 3ds Max
   closed, copy the folder into `%APPDATA%\Autodesk\ApplicationPlugins\` and start Max. It works in every Max from
