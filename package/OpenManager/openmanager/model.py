@@ -347,16 +347,21 @@ def env_rows(m, enabled_rows_):
     return rows
 
 
-def light_tabs_classes(l):
+def light_tabs_classes(light):
     """Classes whose tabs apply to a sun: a Daylight shows its own tab and the one of the sun inside it."""
-    if not l:
+    if not light:
         return []
-    return [c for c in (l.get("class"), l.get("sun_class")) if c]
+    return [c for c in (light.get("class"), light.get("sun_class")) if c]
 
 
-def light_prop(l, tab, prop):
+def light_prop(light, tab, prop):
     """Property path on the node: settings of the sun inside a Daylight go through .sun"""
-    if l and l.get("sun_class") and tab_matches(tab, l.get("sun_class")) and not tab_matches(tab, l.get("class")):
+    if (
+        light
+        and light.get("sun_class")
+        and tab_matches(tab, light.get("sun_class"))
+        and not tab_matches(tab, light.get("class"))
+    ):
         return "sun." + prop["name"]
     return prop["name"]
 
@@ -1309,9 +1314,9 @@ def import_pulze(data, first_id):
         if isinstance(f.get("list"), str):
             s["frames"]["list"] = f["list"]
         s["layers"]["enabled"] = _b(g("layers").get("enabled"), False)
-        for l in g("layers").get("set") or []:
-            ent = layer_entry(l.get("handle") or l.get("name") or "")
-            for p in l.get("props") or []:
+        for layer in g("layers").get("set") or []:
+            ent = layer_entry(layer.get("handle") or layer.get("name") or "")
+            for p in layer.get("props") or []:
                 b = _b(p.get("value"))
                 n = p.get("name")
                 if b is None or n == "name":
@@ -1343,12 +1348,12 @@ def import_pulze(data, first_id):
                     ent["extra"][n] = b
             s["objects"]["set"].append(ent)
         s["lights"]["enabled"] = _b(g("lights").get("enabled"), False)
-        for l in g("lights").get("set") or []:
-            h = _h(l.get("handle"))
+        for light in g("lights").get("set") or []:
+            h = _h(light.get("handle"))
             if h is None:
                 continue
             s["lights"]["set"].append(h)
-            for p in l.get("props") or []:
+            for p in light.get("props") or []:
                 if p.get("name") and p.get("name") != "name" and p.get("value") is not None:
                     s["props"]["26|%d|%s" % (h, p["name"])] = p["value"]
         rc = g("renderCustom")

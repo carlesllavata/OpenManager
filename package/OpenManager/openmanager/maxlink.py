@@ -48,7 +48,7 @@ class Scene(object):
         self.object_total = d.get("object_total", len(self.objects))
         self.xrefs = d.get("xrefs", [])
         self._cam = {c["handle"]: c for c in self.cameras}
-        self._light = {l["handle"]: l for l in self.lights}
+        self._light = {light["handle"]: light for light in self.lights}
         self._obj = {o["handle"]: o for o in self.objects}
 
     @property
@@ -86,13 +86,13 @@ class Scene(object):
         return [m for m in self.maps if m.get("offer", True) or (m["class"], m["name"]) in keep]
 
     def suns(self):
-        return [l for l in self.lights if l["kind"] == "sun"]
+        return [light for light in self.lights if light["kind"] == "sun"]
 
     def domes(self):
-        return [l for l in self.lights if l["kind"] == "dome"]
+        return [light for light in self.lights if light["kind"] == "dome"]
 
     def other_lights(self):
-        return [l for l in self.lights if l["kind"] == "light"]
+        return [light for light in self.lights if light["kind"] == "light"]
 
 
 def read_scene_raw(handles=()):
@@ -552,33 +552,33 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
             (
                 "sun",
                 tuple(int(x["handle"]) for x in suns if x.get("handle") is not None),
-                tuple(sorted(int(l["handle"]) for l in scene.suns())),
+                tuple(sorted(int(light["handle"]) for light in scene.suns())),
             )
         )
         for i, en in enumerate(suns):
             h = en.get("handle")
             if h is None:
                 continue
-            l = scene.light(h)
+            light = scene.light(h)
             store = props if i == 0 else en.get("props", {})
-            classes = model.light_tabs_classes(l)
+            classes = model.light_tabs_classes(light)
             for t, p in enabled(3):
                 if any(model.tab_matches(t, c) for c in classes):
                     v = store.get("3|%s|%s" % (t["v_class"], p["name"]))
                     if v is not None:
-                        out.append(("node", h, model.light_prop(l, t, p), _value(p, v)))
+                        out.append(("node", h, model.light_prop(light, t, p), _value(p, v)))
     dome = s["dome"]
     if dome["enabled"]:
         out.append(
             (
                 "dome",
                 (int(dome["handle"]),) if dome.get("handle") is not None else (),
-                tuple(sorted(int(l["handle"]) for l in scene.domes())),
+                tuple(sorted(int(light["handle"]) for light in scene.domes())),
             )
         )
         if dome.get("handle") is not None:
-            l = scene.light(dome["handle"])
-            cls = l["class"] if l else None
+            light = scene.light(dome["handle"])
+            cls = light["class"] if light else None
             for t, p in enabled(4):
                 if model.tab_matches(t, cls):
                     v = stored(4, t, p)
@@ -613,24 +613,24 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
             out.append(("mkdir", output_path))
         out.append(("output", output_path))
     if s["layers"]["enabled"]:
-        for l in s["layers"]["set"]:
+        for layer in s["layers"]["set"]:
             for _, p in enabled(14):
                 if p["class"] != "BooleanClass":
                     continue
                 n = p["name"]
                 if n == "on":
-                    v = l["visible"]
+                    v = layer["visible"]
                 elif n == "isfrozen":
-                    v = l["freeze"]
+                    v = layer["freeze"]
                 elif n == "renderable":
-                    v = l["render"]
+                    v = layer["render"]
                 elif n == "primaryVisibility":
-                    v = l["vcam"]
-                elif n in l.get("extra", {}):
-                    v = l["extra"][n]
+                    v = layer["vcam"]
+                elif n in layer.get("extra", {}):
+                    v = layer["extra"][n]
                 else:
                     continue
-                out.append(("layer", l["name"], n, bool(v)))
+                out.append(("layer", layer["name"], n, bool(v)))
     if s["objects"]["enabled"]:
         for o in s["objects"]["set"]:
             for _, p in enabled(23):

@@ -350,11 +350,11 @@ class SettingsDialog(Dialog):
         outer.addWidget(scroll, 1)
 
         def section(text):
-            l = QtWidgets.QLabel(text)
-            f = l.font()
+            label = QtWidgets.QLabel(text)
+            f = label.font()
             f.setBold(True)
-            l.setFont(f)
-            return l
+            label.setFont(f)
+            return label
 
         # Notification
         self.notify = QtWidgets.QCheckBox("Ask to open the window when a file with setups is opened")

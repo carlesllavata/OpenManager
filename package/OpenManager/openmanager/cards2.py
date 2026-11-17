@@ -225,10 +225,10 @@ class VariantsCard(Card):
         v = QtWidgets.QVBoxLayout(dlg)
         v.addWidget(muted("Tick the layers that take turns: only one of them is visible per setup."))
         lst = QtWidgets.QListWidget()
-        for l in self.sm.scene.layers:
-            it = QtWidgets.QListWidgetItem(l["name"])
+        for layer in self.sm.scene.layers:
+            it = QtWidgets.QListWidgetItem(layer["name"])
             it.setFlags(it.flags() | QtCore.Qt.ItemIsUserCheckable)
-            it.setCheckState(QtCore.Qt.Checked if l["name"] in current else QtCore.Qt.Unchecked)
+            it.setCheckState(QtCore.Qt.Checked if layer["name"] in current else QtCore.Qt.Unchecked)
             lst.addItem(it)
         v.addWidget(lst)
         bb = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
@@ -495,9 +495,9 @@ class PostSection(QtWidgets.QFrame):
                 w.deleteLater()
 
     def header(self, r, text):
-        l = QtWidgets.QLabel(text)
-        l.setEnabled(False)
-        self.grid.addWidget(l, r, 0, 1, 2)
+        label = QtWidgets.QLabel(text)
+        label.setEnabled(False)
+        self.grid.addWidget(label, r, 0, 1, 2)
 
     def small_editor(self, name, value, on_change):
         """A compact editor for one value of a line with several: tick box, small number box or colour."""
@@ -576,7 +576,7 @@ class PostSection(QtWidgets.QFrame):
 
     def value_row(self, r, label, value, on_change):
         """An editor that fits the value: tick box, slider and number, colour or text."""
-        l = QtWidgets.QLabel(label)
+        caption = QtWidgets.QLabel(label)
         if isinstance(value, bool):
             ed = QtWidgets.QCheckBox()
             ed.setChecked(value)
@@ -599,7 +599,7 @@ class PostSection(QtWidgets.QFrame):
         else:
             ed = QtWidgets.QLineEdit(str(value))
             ed.editingFinished.connect(lambda e=ed: on_change(e.text()))
-        self.grid.addWidget(l, r, 0)
+        self.grid.addWidget(caption, r, 0)
         self.grid.addWidget(ed, r, 1)
 
 

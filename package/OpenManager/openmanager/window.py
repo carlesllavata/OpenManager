@@ -1281,9 +1281,9 @@ class SceneManager(QtWidgets.QDockWidget):
                     props[key] = v
                     got = True
         for i, en in enumerate(model.entries(s["sun"])):
-            l = self.scene.light(en.get("handle"))
+            light = self.scene.light(en.get("handle"))
             store = model.entry_store(s, s["sun"], i)
-            classes = model.light_tabs_classes(l)
+            classes = model.light_tabs_classes(light)
             for t, p in self.enabled_rows(3):
                 key = "3|%s|%s" % (t["v_class"], p["name"])
                 if key not in store and any(model.tab_matches(t, c) for c in classes):
@@ -1599,7 +1599,8 @@ class SceneManager(QtWidgets.QDockWidget):
         s["camera"].update(handle=sc.active_camera, name=cam["name"] if cam else "", locked=bool(cam and cam["locked"]))
         s["resolution"].update(width=sc.width, height=sc.height, ratio=model.ratio(sc.width, sc.height))
         s["layers"]["set"] = [
-            model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True)) for l in sc.layers
+            model.layer_entry(layer["name"], layer["visible"], layer.get("frozen", False), layer.get("render", True))
+            for layer in sc.layers
         ]
         if sc.env_class:
             s["environment"].update(cls=sc.env_class, name=sc.env_name)

@@ -27,24 +27,24 @@ from .widgets import (
 
 def hrow(*widgets, stretch_index=None, spacing=4):
     w = QtWidgets.QWidget()
-    l = QtWidgets.QHBoxLayout(w)
-    l.setContentsMargins(0, 0, 0, 0)
-    l.setSpacing(spacing)
+    layout = QtWidgets.QHBoxLayout(w)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(spacing)
     for i, x in enumerate(widgets):
         if x is None:
-            l.addStretch(1)
+            layout.addStretch(1)
         elif isinstance(x, int):
-            l.addSpacing(x)
+            layout.addSpacing(x)
         else:
-            l.addWidget(x, 1 if i == stretch_index else 0)
+            layout.addWidget(x, 1 if i == stretch_index else 0)
     return w
 
 
 def muted(text):
-    l = QtWidgets.QLabel(text)
-    l.setEnabled(False)
-    l.setWordWrap(True)
-    return l
+    label = QtWidgets.QLabel(text)
+    label.setEnabled(False)
+    label.setWordWrap(True)
+    return label
 
 
 def fit_columns(table):
@@ -593,8 +593,8 @@ class LightPickCard(Card):
         if self.MULTI:
             titles = []
             for i, e in enumerate(model.entries(s[self.KIND])):
-                l = self.sm.scene.light(e.get("handle"))
-                titles.append(l["name"] if l else "%s %d" % (model.CARDS[self.CARD_ID][0], i + 1))
+                light = self.sm.scene.light(e.get("handle"))
+                titles.append(light["name"] if light else "%s %d" % (model.CARDS[self.CARD_ID][0], i + 1))
             self.entry_tabs.set_tabs(titles, self.tab)
         with Blocker(self.combo):
             self.combo.clear()
@@ -605,29 +605,29 @@ class LightPickCard(Card):
             for i, e in enumerate(model.entries(s[self.KIND])):
                 if e is not c and e.get("handle") is not None:
                     used.setdefault(e.get("handle"), i + 1)
-            for l in self.items():
-                text = l["name"]
-                if l.get("class") == "DaylightAssemblyHead":
-                    text += "  (Daylight%s)" % (": " + l["sun_class"] if l.get("sun_class") else "")
-                if l["handle"] in used:
-                    text += "  - in tab %d" % used[l["handle"]]
-                self.combo.addItem(text, l["handle"])
-                if l["handle"] in used:
+            for light in self.items():
+                text = light["name"]
+                if light.get("class") == "DaylightAssemblyHead":
+                    text += "  (Daylight%s)" % (": " + light["sun_class"] if light.get("sun_class") else "")
+                if light["handle"] in used:
+                    text += "  - in tab %d" % used[light["handle"]]
+                self.combo.addItem(text, light["handle"])
+                if light["handle"] in used:
                     it = self.combo.model().item(self.combo.count() - 1)
                     if it is not None:
                         it.setEnabled(False)
             i = self.combo.findData(c.get("handle"))
             self.combo.setCurrentIndex(max(0, i))
-        l = self.sm.scene.light(c.get("handle"))
-        classes = model.light_tabs_classes(l)
+        light = self.sm.scene.light(c.get("handle"))
+        classes = model.light_tabs_classes(light)
         rows = [(t, p) for t, p in self.sm.enabled_rows(self.CARD_ID) if any(model.tab_matches(t, x) for x in classes)]
         self.rows.fill(s, rows, store=model.entry_store(s, s[self.KIND], self.tab), entry=self.tab)
-        if l and not rows:
+        if light and not rows:
             self.hint.setText(
                 "No settings of %s are ticked: choose them with the puzzle piece (Property Selector)."
                 % " / ".join(classes)
             )
-        self.hint.setVisible(bool(l) and not rows)
+        self.hint.setVisible(bool(light) and not rows)
 
     def _chosen(self, i):
         s = self.setup()
@@ -636,8 +636,8 @@ class LightPickCard(Card):
         h = self.combo.itemData(i)
         c = self._entry(s)
         c["handle"] = h
-        l = self.sm.scene.light(h)
-        c["name"] = l["name"] if l else ""
+        light = self.sm.scene.light(h)
+        c["name"] = light["name"] if light else ""
         self.sm.query_values()
         self.sm.changed()
         self.fill(s)
@@ -1056,52 +1056,54 @@ class LayersCard(Card):
     def fill(self, s):
         cols = self.columns()
         flt = self.filter.text().lower()
-        rows = [l for l in s["layers"]["set"] if flt in l["name"].lower()]
+        rows = [layer for layer in s["layers"]["set"] if flt in layer["name"].lower()]
         with Blocker(self.table):
             self.table.clear()
             self.table.setColumnCount(1 + len(cols))
             self.table.setHorizontalHeaderLabels(["Name"] + [p.get("short") or p["name"] for p in cols])
             self.table.setRowCount(len(rows))
             names = set(x["name"] for x in self.sm.scene.layers)
-            for r, l in enumerate(rows):
-                it = QtWidgets.QTableWidgetItem(l["name"] if l["name"] in names else l["name"] + " (missing)")
-                it.setData(QtCore.Qt.UserRole, l["name"])
+            for r, layer in enumerate(rows):
+                it = QtWidgets.QTableWidgetItem(
+                    layer["name"] if layer["name"] in names else layer["name"] + " (missing)"
+                )
+                it.setData(QtCore.Qt.UserRole, layer["name"])
                 it.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
                 self.table.setItem(r, 0, it)
                 for c, p in enumerate(cols):
                     f = self.FIELD.get(p["name"])
-                    on = l[f] if f else l.get("extra", {}).get(p["name"], p.get("value", False) is True)
+                    on = layer[f] if f else layer.get("extra", {}).get(p["name"], p.get("value", False) is True)
                     fi = self.table.flag_item(on)
                     fi.setData(QtCore.Qt.UserRole, p["name"])
                     self.table.setItem(r, c + 1, fi)
             fit_columns(self.table)
 
     def _entry(self, s, name):
-        return next((l for l in s["layers"]["set"] if l["name"] == name), None)
+        return next((layer for layer in s["layers"]["set"] if layer["name"] == name), None)
 
     def _changed(self, it):
         s = self.setup()
         if not s or it.column() == 0:
             return
         name = self.table.item(it.row(), 0).data(QtCore.Qt.UserRole)
-        l = self._entry(s, name)
-        if l is None:
+        layer = self._entry(s, name)
+        if layer is None:
             return
         on = it.checkState() == QtCore.Qt.Checked
         prop = it.data(QtCore.Qt.UserRole)
         # the same change goes to every selected row (quick for many layers)
         rows = set(i.row() for i in self.table.selectedItems())
-        targets = [l]
+        targets = [layer]
         if it.row() in rows and len(rows) > 1:
             targets = [self._entry(s, self.table.item(r, 0).data(QtCore.Qt.UserRole)) for r in rows]
-        for l in targets:
-            if l is None:
+        for layer in targets:
+            if layer is None:
                 continue
             f = self.FIELD.get(prop)
             if f:
-                l[f] = on
+                layer[f] = on
             else:
-                l.setdefault("extra", {})[prop] = on
+                layer.setdefault("extra", {})[prop] = on
         if len(targets) > 1:
             self.fill(s)
         self.sm.changed()
@@ -1111,8 +1113,8 @@ class LayersCard(Card):
         if not s:
             return
         s["layers"]["set"] = [
-            model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True))
-            for l in self.sm.scene.layers
+            model.layer_entry(layer["name"], layer["visible"], layer.get("frozen", False), layer.get("render", True))
+            for layer in self.sm.scene.layers
         ]
         if not s["layers"]["enabled"]:
             s["layers"]["enabled"] = True
@@ -1128,8 +1130,8 @@ class LayersCard(Card):
         if not s:
             return
         names = maxlink.selected_layers()
-        have = set(l["name"] for l in s["layers"]["set"])
-        new = [l for l in self.sm.scene.layers if l["name"] in names and l["name"] not in have]
+        have = set(layer["name"] for layer in s["layers"]["set"])
+        new = [layer for layer in self.sm.scene.layers if layer["name"] in names and layer["name"] not in have]
         if not new:
             self.sm.toast("Those layers are already in this setup" if names else "Select a layer first")
         self._add(new)
@@ -1138,9 +1140,11 @@ class LayersCard(Card):
         s = self.setup()
         if not s:
             return
-        for l in layers:
+        for layer in layers:
             s["layers"]["set"].append(
-                model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True))
+                model.layer_entry(
+                    layer["name"], layer["visible"], layer.get("frozen", False), layer.get("render", True)
+                )
             )
         self.fill(s)
         self.sm.changed()
@@ -1152,7 +1156,7 @@ class LayersCard(Card):
         names = set(
             self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems())
         )
-        s["layers"]["set"] = [l for l in s["layers"]["set"] if l["name"] not in names]
+        s["layers"]["set"] = [layer for layer in s["layers"]["set"] if layer["name"] not in names]
         self.fill(s)
         self.sm.changed()
 
@@ -1295,8 +1299,8 @@ class LightsCard(Card):
             self.table.setHorizontalHeaderLabels(["Name"] + [p.get("short") or p["name"] for p in cols])
             self.table.setRowCount(len(hs))
             for r, h in enumerate(hs):
-                l = self.sm.scene.light(h)
-                it = QtWidgets.QTableWidgetItem(l["name"] if l else "#%s (missing)" % h)
+                light = self.sm.scene.light(h)
+                it = QtWidgets.QTableWidgetItem(light["name"] if light else "#%s (missing)" % h)
                 it.setData(QtCore.Qt.UserRole, h)
                 it.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
                 self.table.setItem(r, 0, it)
@@ -1342,9 +1346,9 @@ class LightsCard(Card):
         self.add_menu.addAction("Lights selected in the scene", self._add_selected)
         self.add_menu.addSeparator()
         have = set(s["lights"]["set"])
-        for l in self.sm.scene.other_lights()[:300]:
-            if l["handle"] not in have:
-                self.add_menu.addAction(l["name"], lambda h=l["handle"]: self._add([h]))
+        for light in self.sm.scene.other_lights()[:300]:
+            if light["handle"] not in have:
+                self.add_menu.addAction(light["name"], lambda h=light["handle"]: self._add([h]))
 
     def _add_selected(self):
         hs = [h for h in self.sm.selected_handles() if self.sm.scene.light(h)]
