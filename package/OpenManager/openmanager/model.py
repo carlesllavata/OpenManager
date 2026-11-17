@@ -1262,7 +1262,10 @@ def import_pulze(data, first_id):
         return None
     out = []
     for i, v in enumerate(lst):
-        g = lambda k: v.get(k) or {}
+
+        def g(k, v=v):
+            return v.get(k) or {}
+
         s = empty_setup(first_id + i)
         s["render"] = _b(g("render").get("enabled"), True)
         c = v.get("color")

@@ -123,7 +123,10 @@ def recolor(icon, old_color, new_color):
 def teapot_path(r):
     """A teapot silhouette inside rect r (body, lid with knob, curved spout, ring handle)."""
     x, y, w, h = r.x(), r.y(), r.width(), r.height()
-    P = lambda fx, fy: QtCore.QPointF(x + w * fx, y + h * fy)
+
+    def P(fx, fy):
+        return QtCore.QPointF(x + w * fx, y + h * fy)
+
     path = QtGui.QPainterPath()
     path.addEllipse(QtCore.QRectF(P(0.20, 0.36), P(0.80, 0.88)))
     lid = QtGui.QPainterPath()

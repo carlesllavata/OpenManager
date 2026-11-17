@@ -77,7 +77,7 @@ def built_by_the_cards():
     out = {"node": set(), "layer": set(), "map": set(), "rs": set(), "pipeline": set()}
     for eng, eng_name in ENGINES.items():
 
-        def ticked(card):
+        def ticked(card, eng=eng):
             return [(t, p) for t in model.tabs_for(card, eng) for p in t["props"]]
 
         def setup(card=None):
@@ -87,7 +87,7 @@ def built_by_the_cards():
                 s["props"]["%d|%s|%s" % (card, t["v_class"], p["name"])] = VALUES[p["class"]]
             return s
 
-        def collect(s, **scene):
+        def collect(s, eng_name=eng_name, **scene):
             for a in maxlink.actions(
                 s, maxlink.Scene(dict(scene, engine=eng_name)), ticked, None, False, None, {"gi_default": 1}
             ):

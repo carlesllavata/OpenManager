@@ -82,7 +82,10 @@ def apply_camera(chain):
     scene = maxlink.Scene(
         {"engine": "Corona", "cameras": [{"handle": 7, "name": "Cam", "class": "CoronaCam", "locked": False}]}
     )
-    ticked = lambda card: model.enabled_rows(card, "corona", ["CoronaCam|colorMappingPipeline"]) if card == 1 else []
+
+    def ticked(card):
+        return model.enabled_rows(card, "corona", ["CoronaCam|colorMappingPipeline"]) if card == 1 else []
+
     return run(maxlink.actions(camera_setup(chain), scene, ticked, None, False))
 
 

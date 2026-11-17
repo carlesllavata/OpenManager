@@ -2158,7 +2158,10 @@ class SceneManager(QtWidgets.QDockWidget):
             self.render_results.get(id(s), (self.setup_label(s), "Not rendered", ["Canceled before it started"]))
             for s in self.render_order
         ]
-        count = lambda st: sum(1 for r in rows if r[1] == st)
+
+        def count(st):
+            return sum(1 for r in rows if r[1] == st)
+
         summary = "%d saved, %d failed, %d skipped" % (count("Saved"), count("Failed"), count("Skipped"))
         if self.render_cancel:
             summary = "Batch Render canceled: " + summary + ", %d not rendered" % count("Not rendered")
