@@ -181,6 +181,92 @@ def _to_max(v):
     return v
 
 
+# ---------------------------------------------------------------- class names that come with a file
+#
+# Setups are stored inside the .max file, so the class names in them can be written by someone else. A name is never
+# run as code: it has to look like a class name (model.is_class_name), it is looked up by that name among what
+# 3ds Max knows, and what is found has to be a class of the kind expected. Anything else is left out and reported:
+# a line in the MAXScript Listener at once, and take_rejected() for the window to tell.
+
+_rejected = []
+
+
+def _reject(name, kind):
+    text = name if isinstance(name, str) else repr(name)
+    if len(text) > 80:
+        text = text[:80] + "..."
+    print('OpenManager: left out "%s": it is not %s (class names stored in a file are never run as code)' % (text, kind))
+    if text not in _rejected and len(_rejected) < 20:
+        _rejected.append(text)
+
+
+def take_rejected():
+    """The class names left out since the last call, here and in omgr_core.ms (omgr_mapClass), each one once."""
+    names = list(_rejected)
+    del _rejected[:]
+    try:
+        names += [n for n in (str(x) for x in rt.omgr_takeBadClasses()) if n not in names]
+    except Exception:
+        pass
+    return names
+
+
+def _global(name):
+    """What 3ds Max has under this name (a class, a function, a variable...), or None. A plain look-up by name:
+    nothing is evaluated."""
+    if name.startswith("__"):
+        return None  # those are Python's own attributes of the runtime, not names of 3ds Max
+    try:
+        return getattr(rt, name)
+    except Exception:
+        return None
+
+
+def _kind(cls):
+    """What 3ds Max says a class is: the name of its superclass ("textureMap" for the class of a map), or None."""
+    try:
+        k = rt.classOf(cls)
+        return None if k is None else str(k)
+    except Exception:
+        return None
+
+
+def _operator_kinds():
+    """What a tone-mapping operator class is, read from the operators OpenManager knows by name (empty when Corona
+    is not there)."""
+    kinds = set()
+    for known in model.POST_OPERATORS:
+        cls = _global(known)
+        if cls is not None:
+            kinds.add(_kind(cls))
+    kinds.discard(None)
+    return kinds
+
+
+def operator_class(name):
+    """The tone-mapping operator class called `name`; None, and the name is reported, when there is no such class."""
+    cls = _global(name) if model.is_class_name(name) else None
+    if cls is None or _kind(cls) not in _operator_kinds():
+        _reject(name, "a tone-mapping operator class")
+        return None
+    return cls
+
+
+def new_operator(name):
+    """A new tone-mapping operator of the class called `name`, or None (reported)."""
+    cls = operator_class(name)
+    if cls is None:
+        return None
+    try:
+        op = cls()
+        # every operator links to the next one: a class of the same kind without that link is not an operator
+        rt.getProperty(op, "colorMappingOperator_nextOperator")
+        return op
+    except Exception:
+        _reject(name, "a tone-mapping operator class")
+        return None
+
+
 # ---------------------------------------------------------------- tone-mapping chains (Corona colour mapping operators)
 
 def read_pipeline(obj, prop):
@@ -217,9 +303,8 @@ def write_pipeline(obj, prop, chain):
     first = None
     prev = None
     for item in chain:
-        try:
-            op = rt.execute("%s()" % item["class"])
-        except Exception:
+        op = new_operator(item.get("class") if isinstance(item, dict) else None)
+        if op is None:
             continue
         for n, v in item.get("props", {}).items():
             try:
@@ -298,9 +383,8 @@ def apply_tone(chain):
     for item in chain:
         op = next((o for o in live if str(rt.classOf(o)) == item["class"] and o not in used), None)
         if op is None:
-            try:
-                op = rt.execute("%s()" % item["class"])
-            except Exception:
+            op = new_operator(item["class"])
+            if op is None:
                 continue
             if live:
                 rt.setProperty(live[-1], "colorMappingOperator_nextOperator", op)

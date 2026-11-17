@@ -647,6 +647,21 @@ def filter_scripts(acts, allowed):
     return out, refused
 
 
+# ---------------------------------------------------------------- class names that come with a file
+#
+# Setups also name 3ds Max classes: the tone-mapping operators of a chain, the class of a texture map. Like the
+# scripts, these names travel inside the .max, so a file from someone else could put MAXScript in their place. A
+# class name is never run as code: it is looked up among the classes 3ds Max has, and only a name that looks like
+# one is looked up at all.
+
+_CLASS_NAME = re.compile(r"[A-Za-z0-9_]+\Z")
+
+
+def is_class_name(text):
+    """Could this be the name of a 3ds Max class? ASCII letters, digits and "_" only, as MAXScript writes them."""
+    return isinstance(text, str) and _CLASS_NAME.match(text) is not None
+
+
 # ---------------------------------------------------------------- base state
 #
 # A setup only sets what its cards control. So that nothing it changed stays behind when another setup is applied,
