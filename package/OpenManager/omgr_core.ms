@@ -1035,6 +1035,21 @@ fn omgr_setElement nm onOff =
 	true
 )
 
+-- The scripts of Render Setup (Scripts rollout: a script file run before each render and one run after it, each with
+-- its switch) are among what a render preset keeps, so loading a preset could set a script that runs at the next
+-- render. A preset only brings render settings: maxlink.load_preset reads these four before the load and puts them
+-- back after it, whatever the preset holds.
+fn omgr_renderSetupScripts = #(usePreRendScript, preRendScript, usePostRendScript, postRendScript)
+
+fn omgr_setRenderSetupScripts v =
+(
+	usePreRendScript = (v[1] == true)
+	preRendScript = (if (v[2] == undefined) then "" else (v[2] as string))
+	usePostRendScript = (v[3] == true)
+	postRendScript = (if (v[4] == undefined) then "" else (v[4] as string))
+	true
+)
+
 fn omgr_loadPreset path =
 (
 	if (path != "" and doesFileExist path) then

@@ -124,7 +124,8 @@ def review_text(rows):
                    "deleting files, so only run scripts you trust.")
     if presets:
         msg.append("%s a render preset that came with the file. A preset replaces the render settings of the scene "
-                   "with the ones in its file, so only load presets you trust." % ("They also load" if scripts else "These setups load"))
+                   "with the ones in its file, so only load presets you trust. OpenManager leaves the scripts of "
+                   "Render Setup as they are." % ("They also load" if scripts else "These setups load"))
     msg.append("OpenManager remembers your answer for these %s; if one changes, it asks again." % what)
     blocks = []
     for label, slot, kind, body in rows:

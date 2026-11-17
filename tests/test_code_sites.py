@@ -116,6 +116,30 @@ class CoreMs(unittest.TestCase):
         for piece in ("omgr_isClassName part", 'pattern:"script*"', 'pattern:"*script"', '"oslcode"', "append omgr_badProps"):
             self.assertIn(piece, check)
 
+    def test_a_render_preset_is_loaded_in_one_place(self):
+        # a preset also keeps the scripts of Render Setup: maxlink.load_preset puts them back after the load
+        self.assertEqual(calls(self.src, "renderPresets.LoadAll"), [("omgr_loadPreset", None)])
+        code = code_of(self.src)
+        scripts = ("usePreRendScript", "preRendScript", "usePostRendScript", "postRendScript")
+        self.assertIn("fn omgr_renderSetupScripts = #(%s)" % ", ".join(scripts), code)
+        bodies = re.findall(r"^fn[ \t]+(\w+)[^\n]*\n((?:(?!fn[ \t]|global[ \t]).*\n)*)", code, re.M)
+        setters = set(name for name, body in bodies if re.search(r"\b(?:%s)[ \t]*=(?!=)" % "|".join(scripts), body))
+        self.assertEqual(setters, {"omgr_setRenderSetupScripts"})
+        setter = dict(bodies)["omgr_setRenderSetupScripts"]
+        for i, name in enumerate(scripts, 1):
+            self.assertRegex(setter, r"\b%s = \(.*v\[%d\]" % (name, i))
+        link = read("openmanager", "maxlink.py")
+        self.assertEqual(len(re.findall(r"omgr_loadPreset", link)), 1)
+        loader = link[link.index("def load_preset(path):"):link.index("def run_code(code):")]
+        for piece in ("kept = list(rt.omgr_renderSetupScripts())", "return bool(rt.omgr_loadPreset(path))", "finally:",
+                      "rt.omgr_setRenderSetupScripts(kept)"):
+            self.assertIn(piece, loader)
+        self.assertLess(loader.index("rt.omgr_renderSetupScripts()"), loader.index("rt.omgr_loadPreset(path)"))
+        self.assertLess(loader.index("finally:"), loader.index("rt.omgr_setRenderSetupScripts(kept)"))
+        for name in sorted(os.listdir(os.path.join(TOOL, "openmanager"))):
+            if name.endswith(".py") and name != "maxlink.py":
+                self.assertNotIn("omgr_loadPreset", read("openmanager", name), name)
+
 
 class OtherMs(unittest.TestCase):
     def test_start_up_scripts_run_no_text_from_a_scene(self):

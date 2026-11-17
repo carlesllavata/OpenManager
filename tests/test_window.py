@@ -721,8 +721,9 @@ class RenderPresetOfAFile(Base):
         title, message, listed, yes, no = window.dialogs.review_text([self.ROW])
         self.assertEqual(title, "Render presets in this file")
         self.assertEqual(message, "These setups load a render preset that came with the file. A preset replaces the render settings "
-                                  "of the scene with the ones in its file, so only load presets you trust. OpenManager remembers "
-                                  "your answer for these render presets; if one changes, it asks again.")
+                                  "of the scene with the ones in its file, so only load presets you trust. OpenManager leaves the "
+                                  "scripts of Render Setup as they are. OpenManager remembers your answer for these render presets; "
+                                  "if one changes, it asks again.")
         self.assertEqual(listed, '-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"')
         self.assertEqual((yes, no), ("Load these presets", "Don't load them"))
 
@@ -730,9 +731,141 @@ class RenderPresetOfAFile(Base):
         title, message, listed, yes, no = window.dialogs.review_text([("#1 Cam", "Pre-Setup script", "code", "print 1"), self.ROW])
         self.assertEqual(title, "Scripts and render presets in this file")
         self.assertIn("so only run scripts you trust. They also load a render preset that came with the file.", message)
+        self.assertIn("so only load presets you trust. OpenManager leaves the scripts of Render Setup as they are. OpenManager remembers", message)
         self.assertTrue(message.endswith("OpenManager remembers your answer for these scripts and render presets; if one changes, it asks again."))
         self.assertEqual(listed, '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"')
         self.assertEqual((yes, no), ("Run and load them", "Don't run or load them"))
+
+
+class RenderSetupScriptsOfAPreset(Base):
+    """A render preset also keeps the scripts of Render Setup (Scripts rollout: a script file run before each render,
+    one run after it, and their switches), so a preset the person agreed to could still set a script that runs at
+    the next render. Loading a preset leaves them as they were (maxlink.load_preset)."""
+    PRESET = "D:/project/presets/final.rps"
+    BROUGHT = [True, "//server/share/before.ms", True, "//server/share/after.ms"]
+    FILE = "D:/s/pre.ms"
+
+    def preset_brings_scripts(self, fails=False):
+        """What 3ds Max does with this preset: the four script settings of Render Setup become the ones it keeps."""
+        def load(path):
+            rt.render_setup_scripts = list(self.BROUGHT)
+            if fails:
+                raise RuntimeError("the preset could not be read")
+            return True
+        rt.returns["omgr_loadPreset"] = load
+
+    def file(self, **more):
+        """A window on a file whose setup loads the preset, already trusted on this computer."""
+        trusted = [model.script_key("preset", self.PRESET)] + [model.script_key(k, t) for k, t in more.pop("trust", [])]
+        return Window(stored([setup(1, preset=self.PRESET, **more)]), settings={"trusted_scripts": trusted})
+
+    # ---- the one place where a preset is loaded
+    def test_they_are_read_before_the_load_and_put_back_after_it(self):
+        self.preset_brings_scripts()
+        self.assertTrue(maxlink.load_preset(self.PRESET))
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+        self.assertEqual(rt.calls, [("omgr_renderSetupScripts",), ("omgr_loadPreset", self.PRESET),
+                                    ("omgr_setRenderSetupScripts", False, "", False, ""), ("omgr_renderSetupScripts",)])
+
+    def test_scripts_the_person_has_in_render_setup_stay(self):
+        mine = [True, "D:/mine/before.ms", False, "D:/mine/after.ms"]
+        rt.render_setup_scripts = list(mine)
+        self.preset_brings_scripts()
+        maxlink.load_preset(self.PRESET)
+        self.assertEqual(rt.render_setup_scripts, mine)
+
+    def test_a_load_that_fails_puts_them_back_too(self):
+        self.preset_brings_scripts(fails=True)
+        with self.assertRaises(RuntimeError):
+            maxlink.load_preset(self.PRESET)
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+
+    def test_a_preset_that_is_not_loaded_changes_nothing(self):
+        rt.render_setup_scripts = [True, "D:/mine/before.ms", False, ""]
+        self.assertFalse(maxlink.load_preset("D:/no/such.rps"))  # omgr_loadPreset gives false for a file that is not there
+        self.assertEqual(rt.render_setup_scripts, [True, "D:/mine/before.ms", False, ""])
+
+    def test_no_preset_is_loaded_when_they_can_not_be_read(self):
+        self.preset_brings_scripts()
+
+        def broken(self):
+            raise RuntimeError("no such global")
+        with mock.patch.object(type(rt), "omgr_renderSetupScripts", broken), self.assertRaises(RuntimeError):
+            maxlink.load_preset(self.PRESET)
+        self.assertEqual(called("omgr_loadPreset"), [])
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+
+    def test_it_says_so_when_3ds_max_does_not_take_them_back(self):
+        self.preset_brings_scripts()
+        with mock.patch.object(type(rt), "omgr_setRenderSetupScripts", lambda self, values: True):
+            listener = quiet(maxlink.load_preset, self.PRESET)
+        self.assertIn("OpenManager: the scripts of Render Setup could not be put back after loading %s" % self.PRESET, listener)
+        self.assertNotIn("could not be put back", quiet(maxlink.load_preset, self.PRESET))
+
+    def test_the_same_path_written_another_way_is_no_change(self):
+        rt.render_setup_scripts = [True, "d:\\MINE\\before.ms", False, ""]
+
+        def load(path):
+            rt.render_setup_scripts = [True, "D:/mine/before.ms", False, ""]  # the same file, as 3ds Max may give it back
+            return True
+        rt.returns["omgr_loadPreset"] = load
+        with mock.patch.object(type(rt), "omgr_setRenderSetupScripts", lambda self, values: True):
+            self.assertNotIn("could not be put back", quiet(maxlink.load_preset, self.PRESET))
+
+    # ---- every way a setup is applied
+    def test_a_click_on_a_setup(self):
+        self.preset_brings_scripts()
+        w = self.file()
+        quiet(w.activate, 1)
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+        self.assertEqual(w.toasts, [])
+
+    def test_a_click_when_the_load_fails(self):
+        self.preset_brings_scripts(fails=True)
+        w = self.file()
+        listener = quiet(w.activate, 1)
+        self.assertIn("-> the preset could not be read", listener)
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+
+    def test_batch_render_bake_setups_and_viewport_preview(self):
+        for go in (batch_render, lambda w: bake(w, 0, [1]), lambda w: bake(w, 3, [1], "print mine"), viewport_preview):
+            self.setUp()
+            rt.render_setup_scripts = [False, "D:/mine/before.ms", True, "D:/mine/after.ms"]
+            self.preset_brings_scripts()
+            go(self.file())
+            self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+            self.assertEqual(rt.render_setup_scripts, [False, "D:/mine/before.ms", True, "D:/mine/after.ms"])
+
+    def test_a_preset_chosen_in_the_card(self):
+        self.preset_brings_scripts()
+        w = Window(stored([setup(1)]))
+        s = w.setups[0]
+        s["render_preset"]["enabled"] = True
+        window.cards2.RenderPresetCard._set(Holder(setup=lambda: s, fill=lambda s: None, sm=w), self.PRESET)
+        quiet(w.activate, 1)
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+
+    # ---- the scripts of the setup itself are another thing, and still apply
+    def test_the_scripts_of_the_setup_still_apply(self):
+        self.preset_brings_scripts()
+        w = self.file(pre_setup="print 1", pre_render="print 3", post_render="print 4", pre_file=self.FILE,
+                      trust=[("code", "print 1"), ("code", "print 3"), ("code", "print 4"), ("file", self.FILE)])
+        quiet(w.activate, 1)
+        order = [c for c in rt.calls if c[0] in ("omgr_runCode", "omgr_loadPreset", "omgr_setRenderSetupScripts", "omgr_setRenderScripts")]
+        self.assertEqual(order, [("omgr_runCode", "print 1"), ("omgr_loadPreset", self.PRESET),
+                                 ("omgr_setRenderSetupScripts", False, "", False, ""),
+                                 ("omgr_setRenderScripts", self.FILE, "", "print 3", "print 4")])
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+        self.assertEqual(w.toasts, [])
+
+    def test_and_in_a_batch(self):
+        self.preset_brings_scripts()
+        w = self.file(pre_render="print 3", trust=[("code", "print 3")])
+        batch_render(w)
+        self.assertEqual(called("omgr_setRenderScripts"), [("", "", "print 3", "")])
+        self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
 
 
 if __name__ == "__main__":

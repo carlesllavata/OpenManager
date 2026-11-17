@@ -739,7 +739,7 @@ def _run_one(a):
     elif k == "element":
         rt.omgr_setElement(a[1], a[2])
     elif k == "preset":
-        rt.omgr_loadPreset(a[1])
+        load_preset(a[1])
     elif k == "post":
         if a[1]:
             path = os.path.join(tempfile.gettempdir(), "omgr_post.conf")
@@ -946,6 +946,23 @@ def rs_snapshot():
 
 def save_preset(path):
     return bool(rt.omgr_savePreset(path))
+
+
+def load_preset(path):
+    """Loads a render preset: the one place where OpenManager does. A preset also keeps the scripts of Render Setup
+    (the script files run before and after a render, and their switches), so loading one could set a script that
+    runs at the next render. They are read before the load and put back after it, whatever the preset holds, and
+    also when the load fails: a preset only brings render settings."""
+    def plain(v):  # the two switches as they are, the two paths as Windows compares them
+        return [bool(v[0]), os.path.normcase(os.path.normpath(str(v[1] or ""))), bool(v[2]), os.path.normcase(os.path.normpath(str(v[3] or "")))]
+    kept = list(rt.omgr_renderSetupScripts())
+    try:
+        return bool(rt.omgr_loadPreset(path))
+    finally:
+        rt.omgr_setRenderSetupScripts(kept)
+        if plain(list(rt.omgr_renderSetupScripts())) != plain(kept):
+            print("OpenManager: the scripts of Render Setup could not be put back after loading %s: look at them "
+                  "in Render Setup > Common > Scripts before rendering" % path)
 
 
 def run_code(code):

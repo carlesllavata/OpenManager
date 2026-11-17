@@ -294,14 +294,16 @@ class ElementsCard(Card):
 
 
 class RenderPresetCard(Card):
-    """A 3ds Max render preset (.rps) loaded with the setup."""
+    """A 3ds Max render preset (.rps) loaded with the setup (the scripts of Render Setup that it keeps are not:
+    maxlink.load_preset)."""
     CARD_ID = 18
 
     def build(self):
         self.path = QtWidgets.QLineEdit()
         self.path.setPlaceholderText("Render preset file (.rps)")
         self.path.editingFinished.connect(self._path)
-        browse = tool("folder", "Choose a render preset", slot=self._browse)
+        browse = tool("folder", "Choose a render preset. When it is loaded, OpenManager leaves the scripts of Render Setup as they are.",
+                      slot=self._browse)
         save = tool("save", "Save the current render settings as a preset and use it here", slot=self._save)
         clear = tool("close", "Clear", size=12, slot=lambda: self._set(""))
         self.body_layout.addWidget(hrow(clear, self.path, browse, save, stretch_index=1))

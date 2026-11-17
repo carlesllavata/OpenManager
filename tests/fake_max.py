@@ -75,6 +75,8 @@ class Runtime(object):
         self.returns = {}  # what an omgr_ function gives back: {name: value, or a function of its arguments}
         self.bad_classes = []  # what omgr_core.ms would have in omgr_badClasses
         self.bad_props = []  # and in omgr_badProps
+        # Render Setup > Scripts: usePreRendScript, preRendScript, usePostRendScript, postRendScript
+        self.render_setup_scripts = [False, "", False, ""]
         self.nodes = {}  # handle -> object
         self._kinds = {}
         self._globals = {}
@@ -177,6 +179,15 @@ class Runtime(object):
     def omgr_takeBadProps(self):
         out, self.bad_props = self.bad_props, []
         return out
+
+    def omgr_renderSetupScripts(self):
+        self.calls.append(("omgr_renderSetupScripts",))
+        return list(self.render_setup_scripts)
+
+    def omgr_setRenderSetupScripts(self, values):
+        self.calls.append(("omgr_setRenderSetupScripts",) + tuple(values))
+        self.render_setup_scripts = list(values)
+        return True
 
 
 def install():

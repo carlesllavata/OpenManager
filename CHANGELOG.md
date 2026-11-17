@@ -31,6 +31,12 @@ What each version of OpenManager adds, newest first.
   choose or save in the card is yours and loads as before. The setting, now called *Scripts and render presets
   that came with a file* (ask, always, never), covers both, for a click on a setup, Batch Render, Bake Setups and
   Viewport Preview.
+- **A render preset does not bring the scripts of Render Setup.** A `.rps` file also keeps the pre-render and
+  post-render scripts of Render Setup (*Common > Scripts*: the two files and their switches), so a preset you
+  agreed to load could still set a script that 3ds Max runs at the next render. When OpenManager loads a preset,
+  it now leaves those scripts as they were, whatever the preset holds and also when the load fails: for a click
+  on a setup, Batch Render, Bake Setups, Viewport Preview, and for a preset you chose yourself. The question about
+  presets says so. The scripts of the setup's own Script cards are another thing and run as before.
 
 ## 0.3.0 — 11 November 2026
 
