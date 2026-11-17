@@ -1,0 +1,7 @@
+# OPEN3D common ruff settings. This block is the same in every OPEN3D repository that has Python.
+required-version = "==0.17.5"
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["E", "F", "I", "B", "BLE", "S"]

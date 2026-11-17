@@ -1,3 +1,14 @@
-* text=auto
-*.mzp binary
+# OPEN3D common rules. This block is the same in every OPEN3D repository.
+# Text files are stored and checked out with LF; only Windows scripts use CRLF.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
 *.png binary
+*.jpg binary
+*.bmp binary
+*.ico binary
+*.ttf binary
+*.zip binary
+*.mzp binary
