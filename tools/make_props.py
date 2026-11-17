@@ -7,7 +7,9 @@
 overrides (tone mapping, direct / reflections / refractions / environment) are added here.
 """
 
-import json, os, sys
+import json
+import os
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "package", "OpenManager", "openmanager", "props.json")

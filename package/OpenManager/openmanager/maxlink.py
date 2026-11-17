@@ -5,8 +5,8 @@ import json
 import os
 import tempfile
 
-from pymxs import runtime as rt
 import pymxs
+from pymxs import runtime as rt
 
 from . import model
 

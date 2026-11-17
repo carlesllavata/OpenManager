@@ -10,7 +10,7 @@ import traceback
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import cards, cards2, dialogs, icons, maxlink, model, widgets
-from .widgets import Blocker, Card, GridBoard, PRIMARY, TINTS, blend, icon, menu_tool, pal, text_color, tool
+from .widgets import PRIMARY, TINTS, Blocker, Card, GridBoard, blend, icon, menu_tool, pal, text_color, tool
 
 VERSION = "0.3.0"
 TITLE = "OpenManager"

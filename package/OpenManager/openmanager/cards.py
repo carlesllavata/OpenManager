@@ -16,12 +16,12 @@ from .widgets import (
     NumberRow,
     Spin,
     TabBar,
+    blend,
     icon,
     menu_tool,
-    tool,
-    blend,
     pal,
     text_color,
+    tool,
 )
 
 
