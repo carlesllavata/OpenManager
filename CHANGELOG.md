@@ -2,6 +2,22 @@
 
 What each version of OpenManager adds, newest first.
 
+## In development
+
+- **Class names that come with a file are never run.** A setup names some things by their 3ds Max class: the
+  tone-mapping operators of the Post-Production / VFB card and of a Corona camera, and the maps its settings use.
+  Setups travel inside the `.max`, and those names were run as MAXScript when a setup was applied, so a file from
+  someone else could run anything with one click, past the question OpenManager asks about scripts. Now a name is
+  only looked up among the classes 3ds Max has. One that is not a tone-mapping operator or a texture map class is
+  left out, and OpenManager says so: a message in the window, and the name in the MAXScript Listener. Your own
+  setups work exactly as before, Corona and V-Ray classes included.
+- **A file can't hide a script where OpenManager keeps what to put back.** The values a setup replaced are stored
+  in the `.max` with the setups, and put back without being shown. A script written there by hand ran when any
+  setup was clicked, batch rendered or baked, with no question asked. Now only values to put back are read from
+  there, and OpenManager says when it ignored anything else.
+- **Batch Render, Bake Setups and Viewport Preview were checked:** scripts that came with a file go through the
+  same question there as when you click a setup. Tests now cover it.
+
 ## 0.3.0 — 11 November 2026
 
 OpenManager joins the Open3D Launcher: install and update it from there, as a 3ds Max plug-in.
