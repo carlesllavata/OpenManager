@@ -318,6 +318,8 @@ class RenderPresetCard(Card):
         s = self.setup()
         if s:
             s["render_preset"]["path"] = p.replace("\\", "/")
+            if p.strip():
+                self.sm.trust_scripts([("preset", s["render_preset"]["path"])])  # a preset you typed, chose or saved is yours
             self.fill(s)
             self.sm.changed()
 

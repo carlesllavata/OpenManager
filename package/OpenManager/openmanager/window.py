@@ -295,6 +295,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self._typed = {}  # (setup id, slot) -> code typed in the Script Editor this session: yours, so it runs
         self._denied = set()  # scripts you chose not to run this session (not asked about again)
         self._refused = []  # scripts left out of the last changes built (not trusted)
+        self._refused_presets = []  # and the render preset
         self.active_id = None
         self.next_id = 1
         self.last_sent = []
@@ -875,12 +876,13 @@ class SceneManager(QtWidgets.QDockWidget):
             out_path = path if valid else None
         acts = maxlink.actions(s, self.scene, self.enabled_rows, out_path, rendering, self.opts(), self.rs_default)
         acts, self._refused = model.filter_scripts(acts, self.script_allowed)
+        acts, self._refused_presets = model.filter_presets(acts, self.script_allowed)
         return acts
 
-    # ------------------------------------------------------------ scripts that came with a file
+    # ------------------------------------------------------------ scripts and render presets that came with a file
     def script_allowed(self, kind, text):
-        """May this script of a setup run? Yes when trusted (approved, written or chosen by you) or when Settings
-        say to always run them."""
+        """May this script of a setup run (kind "code" or "file"), or its render preset be loaded (kind "preset")?
+        Yes when trusted (approved, written or chosen by you) or when Settings say to always run them."""
         policy = self.opts().get("scripts", "ask")
         if policy == "always":
             return True
@@ -908,7 +910,8 @@ class SceneManager(QtWidgets.QDockWidget):
         self._typed[(sid, slot)] = text
 
     def review_scripts(self, setups):
-        """Before setups are applied: shows the scripts they would run that aren't trusted yet, once, and asks."""
+        """Before setups are applied: shows the scripts they would run and the render presets they would load that
+        aren't trusted yet, once, and asks."""
         if self.opts().get("scripts", "ask") != "ask":
             return
         rows, keys = [], []
@@ -930,11 +933,14 @@ class SceneManager(QtWidgets.QDockWidget):
         return dialogs.ScriptReviewDialog(self, rows).exec() == QtWidgets.QDialog.Accepted
 
     def tell_refused(self):
-        """After a setup was applied: says what was left out of it. Scripts that aren't trusted, and class names
-        that are not classes (tell_rejected)."""
-        first = None
+        """After a setup was applied: says what was left out of it. Scripts and a render preset that aren't trusted,
+        and what tell_rejected tells."""
+        lines = []
         if self._refused:
-            first = "%d script(s) of this setup were not run: they came with the file and aren't trusted" % len(self._refused)
+            lines.append("%d script(s) of this setup were not run: they came with the file and aren't trusted" % len(self._refused))
+        if self._refused_presets:
+            lines.append("The render preset of this setup was not loaded: it came with the file and isn't trusted")
+        first = "\n".join(lines) or None
         if not self.tell_rejected(first) and first:
             self.toast(first)
 
@@ -1876,7 +1882,7 @@ class SceneManager(QtWidgets.QDockWidget):
         status, details = "Failed", []
         try:
             acts = self.actions_for(s, True)
-            refused = len(self._refused)
+            refused, no_preset = len(self._refused), bool(self._refused_presets)
             self.run_actions(self.base_restore(acts) + acts)
             left_out, not_set = len(maxlink.take_rejected()), len(maxlink.take_refused())
             target = maxlink.render_output()
@@ -1900,6 +1906,8 @@ class SceneManager(QtWidgets.QDockWidget):
                 details = [str(result)]
             if refused:
                 details.append("%d script(s) not run: they came with the file and aren't trusted" % refused)
+            if no_preset:
+                details.append("Render preset not loaded: it came with the file and isn't trusted")
             if left_out:
                 details.append("%d class name(s) not used: they are not operator or map classes" % left_out)
             if not_set:

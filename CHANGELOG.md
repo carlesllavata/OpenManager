@@ -24,6 +24,13 @@ What each version of OpenManager adds, newest first.
   Settings - Override), never a path into another object and never a property that holds code. What is left out
   is told like the class names: a message in the window, the detail in the MAXScript Listener. Your own setups
   work as before, the ones converted from Pulze too.
+- **A render preset that came with a file is not loaded without asking.** The Render Settings - Preset card loads
+  a `.rps` file, which replaces the render settings of the scene, from a path kept in the setup. A setup from
+  someone else loaded whatever file its path named, as soon as it was clicked or rendered. Now the preset is
+  shown with its path in the same question as the scripts, and is only loaded once you agree. A preset you type,
+  choose or save in the card is yours and loads as before. The setting, now called *Scripts and render presets
+  that came with a file* (ask, always, never), covers both, for a click on a setup, Batch Render, Bake Setups and
+  Viewport Preview.
 
 ## 0.3.0 — 11 November 2026
 

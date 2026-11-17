@@ -596,14 +596,20 @@ def check_jobs(jobs):
 # Setups can carry MAXScript (Script Editor card) and point at script files (Script File card). They travel inside
 # the .max, so a file from someone else could run anything when a setup is clicked or rendered. A script only runs
 # once it is trusted: written or chosen by you, or approved when OpenManager shows it to you.
+#
+# The render preset of a setup (Render Settings - Preset card) goes the same way: it is a file of 3ds Max that
+# replaces the render settings of the scene, named by a path that came with the setup. It is only loaded once it is
+# trusted, like a script file.
 
 SCRIPT_SLOTS = (("snippet", "pre_setup", "Pre-Setup script"), ("snippet", "post_setup", "Post-Setup script"),
                 ("snippet", "pre_render", "Pre-Render script"), ("snippet", "post_render", "Post-Render script"),
                 ("scripts", "pre_render", "Pre-Render file"), ("scripts", "post_render", "Post-Render file"))
+PRESET_SLOT = "Render preset"
 
 
 def code_pieces(s):
-    """The scripts a setup would run, as dicts {"slot", "kind" ("code" or "file"), "text" (code or path)}."""
+    """The scripts a setup would run and the render preset it would load, as dicts {"slot", "kind" ("code", "file"
+    or "preset"), "text" (code or path)}."""
     out = []
     for block, key, title in SCRIPT_SLOTS:
         b = s.get(block) or {}
@@ -617,15 +623,18 @@ def code_pieces(s):
             d = b.get(key) or {}
             if d.get("enabled") and (d.get("path") or "").strip():
                 out.append({"slot": title, "kind": "file", "text": d["path"].strip()})
+    rp = s.get("render_preset") or {}
+    if rp.get("enabled") and isinstance(rp.get("path"), str) and rp["path"].strip():
+        out.append({"slot": PRESET_SLOT, "kind": "preset", "text": rp["path"].strip()})
     return out
 
 
 def script_key(kind, text):
     """What is remembered when a script is trusted: the code itself (a changed script is asked about again), or the
-    path of a script file (yours to keep up to date)."""
+    path of a script file or of a render preset (yours to keep up to date)."""
     import hashlib
-    if kind == "file":
-        return "file:" + os.path.normcase(os.path.normpath(text.strip()))
+    if kind in ("file", "preset"):
+        return kind + ":" + os.path.normcase(os.path.normpath(text.strip()))
     return "code:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
@@ -645,6 +654,17 @@ def filter_scripts(acts, allowed):
                     refused.append(parts[i])
                     parts[i] = ""
             out.append(("renderscripts",) + tuple(parts))
+        else:
+            out.append(a)
+    return out, refused
+
+
+def filter_presets(acts, allowed):
+    """The changes without the render preset allowed("preset", path) refuses. Returns (acts, refused paths)."""
+    out, refused = [], []
+    for a in acts:
+        if a[0] == "preset" and not (isinstance(a[1], str) and allowed("preset", a[1])):
+            refused.append(a[1])
         else:
             out.append(a)
     return out, refused

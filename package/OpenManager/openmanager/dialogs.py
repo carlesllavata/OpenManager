@@ -112,19 +112,44 @@ def _job_table(rows):
     return t
 
 
+def review_text(rows):
+    """What ScriptReviewDialog says for these rows (setup label, slot, kind, text): its title, its message, the list
+    it shows and the text of its two buttons. kind: "code", "file" (a script file) or "preset" (a render preset)."""
+    presets = any(kind == "preset" for _, _, kind, _ in rows)
+    scripts = any(kind != "preset" for _, _, kind, _ in rows) or not presets
+    what = "scripts and render presets" if (scripts and presets) else ("scripts" if scripts else "render presets")
+    msg = []
+    if scripts:
+        msg.append("These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
+                   "deleting files, so only run scripts you trust.")
+    if presets:
+        msg.append("%s a render preset that came with the file. A preset replaces the render settings of the scene "
+                   "with the ones in its file, so only load presets you trust." % ("They also load" if scripts else "These setups load"))
+    msg.append("OpenManager remembers your answer for these %s; if one changes, it asks again." % what)
+    blocks = []
+    for label, slot, kind, body in rows:
+        head = "-- %s · %s" % (label, slot)
+        if kind == "file":
+            body = "fileIn @\"%s\"" % body
+        elif kind == "preset":
+            body = "renderPresets.LoadAll 0 @\"%s\"" % body
+        blocks.append("%s\n%s" % (head, body.rstrip()))
+    yes = "Run and load them" if (scripts and presets) else ("Run these scripts" if scripts else "Load these presets")
+    no = "Don't run or load them" if (scripts and presets) else ("Don't run them" if scripts else "Don't load them")
+    return what.capitalize() + " in this file", " ".join(msg), "\n\n".join(blocks), yes, no
+
+
 class ScriptReviewDialog(Dialog):
-    """Scripts that came with the file, shown before they run for the first time."""
+    """Scripts and render presets that came with the file, shown before they are used for the first time."""
 
     def __init__(self, parent, rows):
         """rows: (setup label, slot, kind, text)."""
         super(ScriptReviewDialog, self).__init__(parent)
-        self.setWindowTitle("Scripts in this file")
+        title, message, listed, yes, no = review_text(rows)
+        self.setWindowTitle(title)
         self.resize(720, 520)
         v = QtWidgets.QVBoxLayout(self)
-        msg = QtWidgets.QLabel(
-            "These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
-            "deleting files, so only run scripts you trust. OpenManager remembers your answer for these scripts; "
-            "if one changes, it asks again.")
+        msg = QtWidgets.QLabel(message)
         msg.setWordWrap(True)
         v.addWidget(msg)
         text = QtWidgets.QPlainTextEdit()
@@ -132,15 +157,11 @@ class ScriptReviewDialog(Dialog):
         f = QtGui.QFont("Consolas")
         f.setStyleHint(QtGui.QFont.Monospace)
         text.setFont(f)
-        blocks = []
-        for label, slot, kind, body in rows:
-            head = "-- %s · %s" % (label, slot)
-            blocks.append("%s\n%s" % (head, ("fileIn @\"%s\"" % body) if kind == "file" else body.rstrip()))
-        text.setPlainText("\n\n".join(blocks))
+        text.setPlainText(listed)
         v.addWidget(text, 1)
         bb = QtWidgets.QDialogButtonBox()
-        run = bb.addButton("Run these scripts", QtWidgets.QDialogButtonBox.AcceptRole)
-        skip = bb.addButton("Don't run them", QtWidgets.QDialogButtonBox.RejectRole)
+        run = bb.addButton(yes, QtWidgets.QDialogButtonBox.AcceptRole)
+        skip = bb.addButton(no, QtWidgets.QDialogButtonBox.RejectRole)
         skip.setDefault(True)
         run.clicked.connect(self.accept)
         skip.clicked.connect(self.reject)
@@ -323,9 +344,10 @@ class SettingsDialog(Dialog):
         self.scripts = Combo()
         self.scripts.addItems([t for _, t in SCRIPT_POLICIES])
         self.scripts.setCurrentIndex(next((i for i, (k, _) in enumerate(SCRIPT_POLICIES) if k == mx["scripts"]), 0))
-        self.scripts.setToolTip("Scripts of the Script Editor and Script File cards. The ones you write or choose\n"
-                                "yourself always run; this is about the ones that came with a file.")
-        sl.addWidget(hrow_label("Scripts that came with a file", self.scripts))
+        self.scripts.setToolTip("Scripts of the Script Editor and Script File cards, and the render preset of the\n"
+                                "Render Settings - Preset card. The ones you write or choose yourself are always\n"
+                                "used; this is about the ones that came with a file.")
+        sl.addWidget(hrow_label("Scripts and render presets that came with a file", self.scripts))
         form.addRow(section("Setups"), sw)
         # Time output
         self.time_type = QtWidgets.QCheckBox("Update Time Output Type (Single/Range/List) on setup change")

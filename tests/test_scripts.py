@@ -57,6 +57,38 @@ class FilterScripts(unittest.TestCase):
         self.assertEqual(model.filter_scripts(self.acts, lambda kind, text: True), (list(self.acts), []))
 
 
+class RenderPreset(unittest.TestCase):
+    """The render preset of a setup is asked about and trusted like a script file."""
+
+    def test_it_is_one_of_the_pieces_shown(self):
+        s = setup_with_scripts()
+        s["render_preset"].update(enabled=True, path=" D:/p/final.rps ")
+        self.assertEqual(model.code_pieces(s)[-1], {"slot": "Render preset", "kind": "preset", "text": "D:/p/final.rps"})
+        self.assertEqual(len(model.code_pieces(s)), 4)
+
+    def test_only_when_its_card_is_on_and_has_a_path(self):
+        for card in ({"enabled": False, "path": "D:/p/final.rps"}, {"enabled": True, "path": ""}, {"enabled": True, "path": "  "},
+                     {"enabled": True, "path": None}, {"enabled": True, "path": 5}, {"enabled": True}, None):
+            s = model.empty_setup(1)
+            s["render_preset"] = card
+            self.assertEqual(model.code_pieces(s), [], card)
+
+    def test_remembered_by_its_path(self):
+        self.assertEqual(model.script_key("preset", "D:/p/final.rps"), model.script_key("preset", "D:\\p\\final.rps "))
+        self.assertNotEqual(model.script_key("preset", "D:/p/final.rps"), model.script_key("preset", "D:/p/other.rps"))
+        # a script file trusted under a path does not make a preset of the same path trusted
+        self.assertNotEqual(model.script_key("preset", "D:/p/x"), model.script_key("file", "D:/p/x"))
+
+    def test_left_out_of_the_changes_unless_allowed(self):
+        acts = [("code", "print 1"), ("preset", "D:/p/final.rps"), ("res", 1, 1)]
+        self.assertEqual(model.filter_presets(acts, lambda kind, text: False),
+                         ([("code", "print 1"), ("res", 1, 1)], ["D:/p/final.rps"]))
+        self.assertEqual(model.filter_presets(acts, lambda kind, text: (kind, text) == ("preset", "D:/p/final.rps")), (acts, []))
+        self.assertEqual(model.filter_presets([("preset", 5), ("preset", ("a",))], lambda kind, text: True), ([], [5, ("a",)]))
+        # the scripts are another question (filter_scripts)
+        self.assertEqual(model.filter_scripts(acts, lambda kind, text: False), ([("preset", "D:/p/final.rps"), ("res", 1, 1)], ["print 1"]))
+
+
 class StoredBase(unittest.TestCase):
     """The base state is stored in the file and applied without being shown: it can't carry a script."""
     hidden = [[["x"], ["code", 'messageBox "x"']],

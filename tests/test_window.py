@@ -29,6 +29,7 @@ SCENE = {"file": "scene.max", "folder": "", "engine": "Corona", "cameras": [{"ha
 CLASS_TOAST = "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)"
 SETTING_TOAST = "%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)"
 SCRIPT_TOAST = "%d script(s) of this setup were not run: they came with the file and aren't trusted"
+PRESET_TOAST = "The render preset of this setup was not loaded: it came with the file and isn't trusted"
 
 
 class Holder(object):
@@ -67,7 +68,7 @@ class Window(object):
         self.save_timer = self.apply_timer = self.list_timer = Timer()
         self.scene, self.setups, self.todo, self.rs_default, self.base = maxlink.Scene(), [], [], {}, {}
         self.undo_stack, self.redo_stack, self._undo_rec = [], [], None
-        self._typed, self._denied, self._refused = {}, set(), []
+        self._typed, self._denied, self._refused, self._refused_presets = {}, set(), [], []
         self.active_id, self.next_id, self.last_sent, self.last_saved = None, 1, [], None
         self.rendering, self.loading, self.applying = False, False, 0
         self.pc_name, self.user_name = "PC", "me"
@@ -105,13 +106,16 @@ def stored(setups, **extra):
 
 
 def setup(sid=1, ops=None, **scripts):
-    """A setup that only sets what is asked: tone-mapping operators (Post-Production card) and scripts (pre_setup,
-    post_setup, pre_render, post_render: Script Editor card; pre_file, post_file: Script File card)."""
+    """A setup that only sets what is asked: tone-mapping operators (Post-Production card), scripts (pre_setup,
+    post_setup, pre_render, post_render: Script Editor card; pre_file, post_file: Script File card) and a render
+    preset (preset: Render Settings - Preset card)."""
     s = model.empty_setup(sid)
     s["resolution"]["enabled"] = False
     s["camera"].update(handle=7, name="Cam")
     if ops is not None:
         s["post"].update(enabled=True, cats={"tonemap": {"ops": ops}})
+    if scripts.get("preset"):
+        s["render_preset"].update(enabled=True, path=scripts.pop("preset"))
     code = {k: v for k, v in scripts.items() if not k.endswith("_file")}
     if code:
         s["snippet"].update(enabled=True, **code)
@@ -563,6 +567,172 @@ class ScriptsOfAFile(Base):
             go(w)
             self.assert_no_script_ran()
             self.assertEqual(w.asked, [])
+
+
+class RenderPresetOfAFile(Base):
+    """The render preset of a setup (Render Settings - Preset card) is a file that replaces the render settings; its
+    path comes with the setup. It is asked about and trusted like a script file."""
+    PRESET = "D:/project/presets/final.rps"
+    ROW = ("#1 Cam", "Render preset", "preset", PRESET)
+
+    def file(self, **more):
+        return stored([setup(1, preset=self.PRESET, **more)])
+
+    # ---- a click on the setup
+    def test_it_is_shown_and_not_loaded_when_refused(self):
+        w = Window(self.file(), answer=False)
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [[self.ROW]])
+        self.assertEqual(called("omgr_loadPreset"), [])
+        self.assertEqual(w.toasts, [PRESET_TOAST])
+
+    def test_it_is_loaded_once_the_person_agrees_and_not_asked_about_again(self):
+        w = Window(self.file(), answer=True)
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [[self.ROW]])
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+        self.assertEqual(w.toasts, [])
+        self.assertEqual(w.settings["trusted_scripts"], [model.script_key("preset", self.PRESET)])
+        w.answer = False
+        quiet(w.activate, 1)  # clicked again
+        self.assertEqual(len(w.asked), 1)
+
+    def test_a_refusal_holds_for_the_session(self):
+        w = Window(self.file(), answer=False)
+        quiet(w.activate, 1)
+        w.answer = True
+        quiet(w.activate, 1)
+        self.assertEqual(len(w.asked), 1)
+        self.assertEqual(called("omgr_loadPreset"), [])
+
+    def test_never(self):
+        w = Window(self.file(), settings={"max": {"scripts": "never"}}, answer=True)
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [])
+        self.assertEqual(called("omgr_loadPreset"), [])
+        self.assertEqual(w.toasts, [PRESET_TOAST])
+
+    def test_always(self):
+        w = Window(self.file(), settings={"max": {"scripts": "always"}})
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [])
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+
+    def test_scripts_and_the_preset_are_asked_about_together(self):
+        w = Window(self.file(pre_setup="print 1"), answer=False)
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [[("#1 Cam", "Pre-Setup script", "code", "print 1"), self.ROW]])
+        self.assertEqual(called("omgr_loadPreset") + called("omgr_runCode"), [])
+        self.assertEqual(w.toasts, [SCRIPT_TOAST % 1 + "\n" + PRESET_TOAST])
+
+    def test_another_path_is_another_preset(self):
+        w = Window(self.file(), answer=True)
+        quiet(w.activate, 1)
+        w.setups[0]["render_preset"]["path"] = "//server/share/other.rps"
+        w.answer = False
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked[1], [("#1 Cam", "Render preset", "preset", "//server/share/other.rps")])
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+
+    def test_a_card_that_is_off_loads_nothing_and_asks_nothing(self):
+        s = setup(1, preset=self.PRESET)
+        s["render_preset"]["enabled"] = False
+        w = Window(stored([s]))
+        quiet(w.activate, 1)
+        self.assertEqual((w.asked, called("omgr_loadPreset"), w.toasts), ([], [], []))
+
+    def test_a_path_that_is_not_text_is_not_loaded(self):
+        for path in (5, ["a.rps"], {"a": 1}, "   "):
+            self.setUp()
+            s = setup(1)
+            s["render_preset"].update(enabled=True, path=path)
+            w = Window(stored([s]), answer=True)
+            quiet(w.activate, 1)
+            self.assertEqual(called("omgr_loadPreset"), [], repr(path))
+
+    # ---- a preset of your own
+    def test_a_preset_chosen_in_the_card_is_yours(self):
+        w = Window(stored([setup(1)]))
+        s = w.setups[0]
+        s["render_preset"]["enabled"] = True
+        card = Holder(setup=lambda: s, fill=lambda s: None, sm=w)
+        window.cards2.RenderPresetCard._set(card, "D:\\project\\presets\\final.rps")  # typed, browsed or saved
+        self.assertEqual(s["render_preset"]["path"], self.PRESET)
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [])
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+
+    def test_clearing_the_card_trusts_nothing(self):
+        w = Window(self.file())
+        card = Holder(setup=lambda: w.setups[0], fill=lambda s: None, sm=w)
+        window.cards2.RenderPresetCard._set(card, "")
+        self.assertEqual(w.settings.get("trusted_scripts", []), [])
+
+    def test_a_preset_trusted_here_is_not_asked_about_in_another_file(self):
+        mine = model.script_key("preset", "d:\\PROJECT\\presets\\final.rps")  # the same file, written another way
+        w = Window(self.file(), settings={"trusted_scripts": [mine]})
+        quiet(w.activate, 1)
+        self.assertEqual(w.asked, [])
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+
+    # ---- Batch Render, Bake Setups, Viewport Preview
+    def test_batch_render(self):
+        w = Window(self.file(), answer=False)
+        report = batch_render(w)
+        self.assertEqual(w.asked, [[self.ROW]])
+        self.assertEqual(called("omgr_loadPreset"), [])
+        self.assertIn("Render preset not loaded: it came with the file and isn't trusted", report[0][2])
+        self.setUp()
+        w = Window(self.file(), answer=True)
+        report = batch_render(w)
+        self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)])
+        self.assertFalse([line for line in report[0][2] if "preset" in line.lower()])
+
+    def test_bake_setups_and_viewport_preview(self):
+        for go in (lambda w: bake(w, 0, [1]), lambda w: bake(w, 3, [1], "print mine"), viewport_preview):
+            for answer in (False, True):
+                self.setUp()
+                w = Window(self.file(), answer=answer)
+                go(w)
+                self.assertEqual(w.asked, [[self.ROW]])
+                self.assertEqual(called("omgr_loadPreset"), [(self.PRESET,)] if answer else [])
+
+    def test_never_and_always_hold_for_a_batch_too(self):
+        for policy, loaded in (("never", []), ("always", [(self.PRESET,)])):
+            for go in (batch_render, lambda w: bake(w, 0, [1])):
+                self.setUp()
+                w = Window(self.file(), settings={"max": {"scripts": policy}}, answer=True)
+                go(w)
+                self.assertEqual(w.asked, [])
+                self.assertEqual(called("omgr_loadPreset"), loaded)
+
+    # ---- what the dialog says
+    def test_the_dialog_for_scripts_alone_reads_as_before(self):
+        title, message, listed, yes, no = window.dialogs.review_text([("#1 Cam", "Pre-Setup script", "code", "print 1\n"),
+                                                                      ("#1 Cam", "Pre-Render file", "file", "D:/s/pre.ms")])
+        self.assertEqual(title, "Scripts in this file")
+        self.assertEqual(message, "These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
+                                  "deleting files, so only run scripts you trust. OpenManager remembers your answer for these scripts; "
+                                  "if one changes, it asks again.")
+        self.assertEqual(listed, '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Pre-Render file\nfileIn @"D:/s/pre.ms"')
+        self.assertEqual((yes, no), ("Run these scripts", "Don't run them"))
+
+    def test_the_dialog_for_a_preset(self):
+        title, message, listed, yes, no = window.dialogs.review_text([self.ROW])
+        self.assertEqual(title, "Render presets in this file")
+        self.assertEqual(message, "These setups load a render preset that came with the file. A preset replaces the render settings "
+                                  "of the scene with the ones in its file, so only load presets you trust. OpenManager remembers "
+                                  "your answer for these render presets; if one changes, it asks again.")
+        self.assertEqual(listed, '-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"')
+        self.assertEqual((yes, no), ("Load these presets", "Don't load them"))
+
+    def test_the_dialog_for_both(self):
+        title, message, listed, yes, no = window.dialogs.review_text([("#1 Cam", "Pre-Setup script", "code", "print 1"), self.ROW])
+        self.assertEqual(title, "Scripts and render presets in this file")
+        self.assertIn("so only run scripts you trust. They also load a render preset that came with the file.", message)
+        self.assertTrue(message.endswith("OpenManager remembers your answer for these scripts and render presets; if one changes, it asks again."))
+        self.assertEqual(listed, '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"')
+        self.assertEqual((yes, no), ("Run and load them", "Don't run or load them"))
 
 
 if __name__ == "__main__":
