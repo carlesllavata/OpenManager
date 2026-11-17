@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The OpenManager window: a dock that lives inside 3ds Max (floating or docked)."""
+
 import copy
 import json
 import os
@@ -18,13 +19,22 @@ TOP_ICON = 22
 
 # setup list columns: (key, title); the first three are fixed
 COL_GRIP, COL_RENDER, COL_NUM = 0, 1, 2
-OPTIONAL_COLUMNS = [("id", "Id"), ("name", "Scene Name"), ("camera", "Camera"), ("resolution", "Resolution"),
-                    ("sun", "Sun"), ("dome", "Dome"), ("environment", "Environment"), ("frame", "Frame")]
+OPTIONAL_COLUMNS = [
+    ("id", "Id"),
+    ("name", "Scene Name"),
+    ("camera", "Camera"),
+    ("resolution", "Resolution"),
+    ("sun", "Sun"),
+    ("dome", "Dome"),
+    ("environment", "Environment"),
+    ("frame", "Frame"),
+]
 
 
 def cfg_dir():
     try:
         from pymxs import runtime as rt
+
         return str(rt.getDir(rt.Name("plugcfg")))
     except Exception:
         return os.path.expanduser("~")
@@ -72,8 +82,13 @@ class SetupListCard(Card):
         sm = self.sm
         hl = self.header_layout
         at = self.header_tools_at
-        self.btn_check = tool("checklist", "Tick setups with a box, without activating them, to duplicate, delete or color several",
-                              size=widgets.HEADER_ICON, checkable=True, slot=sm.set_check_mode)
+        self.btn_check = tool(
+            "checklist",
+            "Tick setups with a box, without activating them, to duplicate, delete or color several",
+            size=widgets.HEADER_ICON,
+            checkable=True,
+            slot=sm.set_check_mode,
+        )
         buttons = [
             self.btn_check,
             tool("color", "Setup color", size=widgets.HEADER_ICON, slot=sm.pick_color),
@@ -87,7 +102,12 @@ class SetupListCard(Card):
         buttons += [
             tool("camera", "Fetch current scene", size=widgets.HEADER_ICON, slot=sm.fetch_scene),
             tool("list", "Create setup for every camera", size=widgets.HEADER_ICON, slot=sm.per_camera),
-            tool("wand", "Create new camera (from the current view) and a setup for it", size=widgets.HEADER_ICON, slot=sm.new_camera),
+            tool(
+                "wand",
+                "Create new camera (from the current view) and a setup for it",
+                size=widgets.HEADER_ICON,
+                slot=sm.new_camera,
+            ),
             tool("add", "Create empty setup", size=widgets.HEADER_ICON, slot=sm.add_empty),
         ]
         for i, b in enumerate(buttons):
@@ -194,10 +214,19 @@ class Toast(QtWidgets.QLabel):
 
 def light_palette():
     p = QtGui.QPalette()
-    for role, c in ((QtGui.QPalette.Window, "#f0f0f0"), (QtGui.QPalette.WindowText, "#2e2e2e"), (QtGui.QPalette.Base, "#ffffff"),
-                    (QtGui.QPalette.AlternateBase, "#f4f4f4"), (QtGui.QPalette.Text, "#2e2e2e"), (QtGui.QPalette.Button, "#e6e6e6"),
-                    (QtGui.QPalette.ButtonText, "#2e2e2e"), (QtGui.QPalette.Highlight, PRIMARY), (QtGui.QPalette.HighlightedText, "#ffffff"),
-                    (QtGui.QPalette.ToolTipBase, "#ffffdc"), (QtGui.QPalette.ToolTipText, "#000000")):
+    for role, c in (
+        (QtGui.QPalette.Window, "#f0f0f0"),
+        (QtGui.QPalette.WindowText, "#2e2e2e"),
+        (QtGui.QPalette.Base, "#ffffff"),
+        (QtGui.QPalette.AlternateBase, "#f4f4f4"),
+        (QtGui.QPalette.Text, "#2e2e2e"),
+        (QtGui.QPalette.Button, "#e6e6e6"),
+        (QtGui.QPalette.ButtonText, "#2e2e2e"),
+        (QtGui.QPalette.Highlight, PRIMARY),
+        (QtGui.QPalette.HighlightedText, "#ffffff"),
+        (QtGui.QPalette.ToolTipBase, "#ffffdc"),
+        (QtGui.QPalette.ToolTipText, "#000000"),
+    ):
         p.setColor(role, QtGui.QColor(c))
     p.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText, QtGui.QColor("#9a9a9a"))
     p.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, QtGui.QColor("#9a9a9a"))
@@ -206,10 +235,19 @@ def light_palette():
 
 def dark_palette():
     p = QtGui.QPalette()
-    for role, c in ((QtGui.QPalette.Window, "#2b2b2b"), (QtGui.QPalette.WindowText, "#e0e0e0"), (QtGui.QPalette.Base, "#3a3a3a"),
-                    (QtGui.QPalette.AlternateBase, "#333333"), (QtGui.QPalette.Text, "#e0e0e0"), (QtGui.QPalette.Button, "#444444"),
-                    (QtGui.QPalette.ButtonText, "#e0e0e0"), (QtGui.QPalette.Highlight, PRIMARY), (QtGui.QPalette.HighlightedText, "#ffffff"),
-                    (QtGui.QPalette.ToolTipBase, "#2b2b2b"), (QtGui.QPalette.ToolTipText, "#e0e0e0")):
+    for role, c in (
+        (QtGui.QPalette.Window, "#2b2b2b"),
+        (QtGui.QPalette.WindowText, "#e0e0e0"),
+        (QtGui.QPalette.Base, "#3a3a3a"),
+        (QtGui.QPalette.AlternateBase, "#333333"),
+        (QtGui.QPalette.Text, "#e0e0e0"),
+        (QtGui.QPalette.Button, "#444444"),
+        (QtGui.QPalette.ButtonText, "#e0e0e0"),
+        (QtGui.QPalette.Highlight, PRIMARY),
+        (QtGui.QPalette.HighlightedText, "#ffffff"),
+        (QtGui.QPalette.ToolTipBase, "#2b2b2b"),
+        (QtGui.QPalette.ToolTipText, "#e0e0e0"),
+    ):
         p.setColor(role, QtGui.QColor(c))
     p.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText, QtGui.QColor("#7a7a7a"))
     p.setColor(QtGui.QPalette.Disabled, QtGui.QPalette.Text, QtGui.QColor("#7a7a7a"))
@@ -217,10 +255,26 @@ def dark_palette():
 
 
 THEMES = {
-    "light": {"bg": "#f0f0f0", "base": "#ffffff", "text": "#2e2e2e", "dis": "#a0a0a0", "border": "#c9c9c9",
-              "button": "#e4e4e4", "sel": "#cfe6f3", "head": "#e9e9e9"},
-    "dark": {"bg": "#2b2b2b", "base": "#383838", "text": "#e0e0e0", "dis": "#808080", "border": "#4d4d4d",
-             "button": "#454545", "sel": "#2f5a73", "head": "#404040"},
+    "light": {
+        "bg": "#f0f0f0",
+        "base": "#ffffff",
+        "text": "#2e2e2e",
+        "dis": "#a0a0a0",
+        "border": "#c9c9c9",
+        "button": "#e4e4e4",
+        "sel": "#cfe6f3",
+        "head": "#e9e9e9",
+    },
+    "dark": {
+        "bg": "#2b2b2b",
+        "base": "#383838",
+        "text": "#e0e0e0",
+        "dis": "#808080",
+        "border": "#4d4d4d",
+        "button": "#454545",
+        "sel": "#2f5a73",
+        "head": "#404040",
+    },
 }
 
 
@@ -228,7 +282,8 @@ def theme_qss(name):
     """A full style for the window when the theme is forced: 3ds Max's own style sheet would otherwise
     keep its colours on inputs and labels."""
     t = dict(THEMES[name], primary=PRIMARY)
-    return """
+    return (
+        """
 QWidget { color: %(text)s; }
 QDockWidget { color: %(text)s; }
 QDockWidget::title { background: %(head)s; padding: 4px; }
@@ -271,7 +326,9 @@ QCheckBox::indicator, QRadioButton::indicator, QTableWidget::indicator, QListWid
 QRadioButton::indicator { border-radius: 7px; }
 QCheckBox::indicator:checked, QTableWidget::indicator:checked, QListWidget::indicator:checked { background: %(primary)s; border-color: %(primary)s; }
 QRadioButton::indicator:checked { background: %(primary)s; border: 3px solid %(base)s; outline: 1px solid %(primary)s; }
-""" % t
+"""
+        % t
+    )
 
 
 class SceneManager(QtWidgets.QDockWidget):
@@ -279,8 +336,11 @@ class SceneManager(QtWidgets.QDockWidget):
         super(SceneManager, self).__init__(TITLE, parent)
         self.setObjectName(OBJECT_NAME)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.setFeatures(QtWidgets.QDockWidget.DockWidgetMovable | QtWidgets.QDockWidget.DockWidgetFloatable
-                         | QtWidgets.QDockWidget.DockWidgetClosable)
+        self.setFeatures(
+            QtWidgets.QDockWidget.DockWidgetMovable
+            | QtWidgets.QDockWidget.DockWidgetFloatable
+            | QtWidgets.QDockWidget.DockWidgetClosable
+        )
         self.settings = self.load_settings()
         self.apply_theme_palette()
         self._icon_color = text_color()
@@ -352,9 +412,15 @@ class SceneManager(QtWidgets.QDockWidget):
         tl = QtWidgets.QHBoxLayout(top)
         tl.setContentsMargins(6, 4, 8, 4)
         tl.setSpacing(2)
-        self.btn_preview = self._top_tool("view", "Switch to Preview Mode: clicking a setup only shows it, the cards can't be edited", checkable=True)
+        self.btn_preview = self._top_tool(
+            "view", "Switch to Preview Mode: clicking a setup only shows it, the cards can't be edited", checkable=True
+        )
         self.btn_preview.toggled.connect(self.set_preview_mode)
-        self.btn_sync = self._top_tool("sync", "Enable Camera Sync: changing the camera of the viewport changes the active setup's camera", checkable=True)
+        self.btn_sync = self._top_tool(
+            "sync",
+            "Enable Camera Sync: changing the camera of the viewport changes the active setup's camera",
+            checkable=True,
+        )
         self.btn_sync.toggled.connect(self.set_camera_sync)
         self.btn_render = QtWidgets.QToolButton()
         self.btn_render.setIcon(icons.teapot(PRIMARY, True, TOP_ICON))
@@ -363,10 +429,27 @@ class SceneManager(QtWidgets.QDockWidget):
         self.btn_render.setFixedSize(TOP_ICON + 14, TOP_ICON + 12)
         self.btn_render.setToolTip("Batch Render: every setup with its teapot on, one after the other")
         self.btn_render.clicked.connect(lambda: self.start_render(None))
-        self.btn_render_sel = self._top_tool("photo", "Render only the selected setups", slot=lambda: self.start_render(self.selected_setups()))
-        self.btn_bake = self._top_tool("bake", "Bake Setups: 3ds Max Batch Render, .max / .scn per setup, or a script on every setup", slot=self.bake_setups)
-        self.btn_vpreview = self._top_tool("globe", "Viewport Preview: a viewport picture of every setup (as its thumbnail)", slot=self.viewport_preview)
-        for b in (self.btn_preview, self.btn_sync, self.btn_render, self.btn_render_sel, self.btn_bake, self.btn_vpreview):
+        self.btn_render_sel = self._top_tool(
+            "photo", "Render only the selected setups", slot=lambda: self.start_render(self.selected_setups())
+        )
+        self.btn_bake = self._top_tool(
+            "bake",
+            "Bake Setups: 3ds Max Batch Render, .max / .scn per setup, or a script on every setup",
+            slot=self.bake_setups,
+        )
+        self.btn_vpreview = self._top_tool(
+            "globe",
+            "Viewport Preview: a viewport picture of every setup (as its thumbnail)",
+            slot=self.viewport_preview,
+        )
+        for b in (
+            self.btn_preview,
+            self.btn_sync,
+            self.btn_render,
+            self.btn_render_sel,
+            self.btn_bake,
+            self.btn_vpreview,
+        ):
             tl.addWidget(b)
         tl.addSpacing(6)
         tl.addWidget(self._top_tool("refresh", "Read the scene again", slot=self.reload_scene))
@@ -485,7 +568,12 @@ class SceneManager(QtWidgets.QDockWidget):
         if dlg.exec() != QtWidgets.QDialog.Accepted:
             return
         if dlg.action == "factory":
-            if QtWidgets.QMessageBox.question(self, TITLE, "Reset every setting, the card layout and the Property Selector ticks?") != QtWidgets.QMessageBox.Yes:
+            if (
+                QtWidgets.QMessageBox.question(
+                    self, TITLE, "Reset every setting, the card layout and the Property Selector ticks?"
+                )
+                != QtWidgets.QMessageBox.Yes
+            ):
                 return
             geo = self.settings.get("geometry")
             self.settings = {"geometry": geo} if geo else {}
@@ -595,8 +683,14 @@ class SceneManager(QtWidgets.QDockWidget):
             self.last_saved = None  # saved again under the new name with the file
         if data.get("base_dropped"):
             # the stored base held something OpenManager never puts there (model.base_from_json)
-            print("OpenManager: ignored %d stored change(s) of this file: they could run a script without asking" % data["base_dropped"])
-            self.toast("%d stored change(s) of this file were ignored: they could run a script without asking" % data["base_dropped"])
+            print(
+                "OpenManager: ignored %d stored change(s) of this file: they could run a script without asking"
+                % data["base_dropped"]
+            )
+            self.toast(
+                "%d stored change(s) of this file were ignored: they could run a script without asking"
+                % data["base_dropped"]
+            )
         self.resolve_scene_refs()
         self.active_id = None
         self.last_sent = []
@@ -648,7 +742,7 @@ class SceneManager(QtWidgets.QDockWidget):
         for r, u in zip(refs, uids):
             if u:
                 r["uid"] = u
-        for (s, h), u in zip(lights, uids[len(refs):]):
+        for (s, h), u in zip(lights, uids[len(refs) :]):
             if u:
                 model.light_uids(s)[str(h)] = u
         lrefs = [ref for s in self.setups for ref in model.layer_refs(s) if not model.layer_ref_get(ref)[1]]
@@ -659,7 +753,7 @@ class SceneManager(QtWidgets.QDockWidget):
     def object_handles(self, setups=None):
         """Objects the setups use: the only ones the scene read lists (a big scene has far too many to list)."""
         hs = set()
-        for s in (self.setups if setups is None else setups):
+        for s in self.setups if setups is None else setups:
             for o in s.get("objects", {}).get("set", []):
                 if o.get("handle") is not None:
                     hs.add(int(o["handle"]))
@@ -741,8 +835,10 @@ class SceneManager(QtWidgets.QDockWidget):
 
     def update_status(self):
         f = self.scene.file or "Untitled"
-        self.status.setText("%s  ·  %s  ·  %d setup%s" % (self.scene.engine or "?", f, len(self.setups),
-                                                                     "" if len(self.setups) == 1 else "s"))
+        self.status.setText(
+            "%s  ·  %s  ·  %d setup%s"
+            % (self.scene.engine or "?", f, len(self.setups), "" if len(self.setups) == 1 else "s")
+        )
 
     # ------------------------------------------------------------ helpers the cards use
     def active(self):
@@ -790,8 +886,15 @@ class SceneManager(QtWidgets.QDockWidget):
     def build_path(self, s):
         """(path, problem) of the setup's Render Output card; problem is None when the path is complete."""
         cam = self.scene.camera(s["camera"]["handle"])
-        return model.build_path(s["output"], self.scene.file, cam["name"] if cam else None, s["scenename"],
-                                self.index_of(s), self.pc_name, self.user_name)
+        return model.build_path(
+            s["output"],
+            self.scene.file,
+            cam["name"] if cam else None,
+            s["scenename"],
+            self.index_of(s),
+            self.pc_name,
+            self.user_name,
+        )
 
     def final_path(self, s):
         path, problem = self.build_path(s)
@@ -846,7 +949,11 @@ class SceneManager(QtWidgets.QDockWidget):
         cls = prop["class"]
         special = cls in ("Color", "Texturemap", "Pipeline")
         if card == 25:
-            v = maxlink.read_special("rs", None, prop["name"], cls) if special else maxlink.read_value("rs", prop["name"], None)
+            v = (
+                maxlink.read_special("rs", None, prop["name"], cls)
+                if special
+                else maxlink.read_value("rs", prop["name"], None)
+            )
         elif card in (1, 3, 4):
             block = s[{1: "camera", 3: "sun", 4: "dome"}[card]]
             h = model.entries(block)[entry].get("handle") if card != 1 else block.get("handle")
@@ -937,7 +1044,10 @@ class SceneManager(QtWidgets.QDockWidget):
         and what tell_rejected tells."""
         lines = []
         if self._refused:
-            lines.append("%d script(s) of this setup were not run: they came with the file and aren't trusted" % len(self._refused))
+            lines.append(
+                "%d script(s) of this setup were not run: they came with the file and aren't trusted"
+                % len(self._refused)
+            )
         if self._refused_presets:
             lines.append("The render preset of this setup was not loaded: it came with the file and isn't trusted")
         first = "\n".join(lines) or None
@@ -952,9 +1062,15 @@ class SceneManager(QtWidgets.QDockWidget):
         classes, settings = len(maxlink.take_rejected()), len(maxlink.take_refused())
         lines = [first] if first else []
         if classes:
-            lines.append("%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)" % classes)
+            lines.append(
+                "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)"
+                % classes
+            )
         if settings:
-            lines.append("%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)" % settings)
+            lines.append(
+                "%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)"
+                % settings
+            )
         if classes or settings:
             self.toast_label.show_text("\n".join(lines), 8000)
         return classes + settings
@@ -1051,8 +1167,13 @@ class SceneManager(QtWidgets.QDockWidget):
     # was before that setup was clicked. The setups' own data is never undone.
 
     def begin_undo(self, label, kind, keep_redo=False):
-        self._undo_rec = {"label": label, "kind": kind, "restore": {}, "base_before": dict(self.base),
-                          "active_before": self.active_id}
+        self._undo_rec = {
+            "label": label,
+            "kind": kind,
+            "restore": {},
+            "base_before": dict(self.base),
+            "active_before": self.active_id,
+        }
         if not keep_redo:
             self.redo_stack = []
 
@@ -1060,8 +1181,12 @@ class SceneManager(QtWidgets.QDockWidget):
         """Before acts run: their current values go into the open record, or into the last one when the change is
         an edit of the setup it applied."""
         rec = self._undo_rec
-        if rec is None and self.active_id is not None and self.undo_stack \
-                and self.undo_stack[-1].get("active_after") == self.active_id:
+        if (
+            rec is None
+            and self.active_id is not None
+            and self.undo_stack
+            and self.undo_stack[-1].get("active_after") == self.active_id
+        ):
             rec = self.undo_stack[-1]
         if rec is not None:
             model.undo_capture(rec["restore"], acts, maxlink.capture)
@@ -1234,7 +1359,9 @@ class SceneManager(QtWidgets.QDockWidget):
             self.reload_scene()
             cam = self.scene.camera(h)
         s["camera"].update(handle=h, name=cam["name"] if cam else "")
-        self.last_sent = [a for a in self.last_sent if a[0] != "camera"] + [("camera", h, bool(s["camera"]["locked"]), int(self.opts().get("viewport_update_type", 0)))]
+        self.last_sent = [a for a in self.last_sent if a[0] != "camera"] + [
+            ("camera", h, bool(s["camera"]["locked"]), int(self.opts().get("viewport_update_type", 0)))
+        ]
         self.changed(apply=False)
         self.refresh_cards([1, 9])
 
@@ -1266,7 +1393,12 @@ class SceneManager(QtWidgets.QDockWidget):
             for s in self.setups:
                 it = QtWidgets.QTreeWidgetItem()
                 it.setData(0, QtCore.Qt.UserRole, s["id"])
-                it.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsDragEnabled | QtCore.Qt.ItemIsEditable)
+                it.setFlags(
+                    QtCore.Qt.ItemIsEnabled
+                    | QtCore.Qt.ItemIsSelectable
+                    | QtCore.Qt.ItemIsDragEnabled
+                    | QtCore.Qt.ItemIsEditable
+                )
                 self.tree.addTopLevelItem(it)
         self.refresh_rows()
 
@@ -1291,10 +1423,20 @@ class SceneManager(QtWidgets.QDockWidget):
                 dome = self.scene.light(s["dome"]["handle"]) if s["dome"]["enabled"] else None
                 env = s["environment"]
                 values = {
-                    "num": str(i + 1), "id": str(s["id"]), "name": s["scenename"],
-                    "camera": (cam["name"] if cam else (s["camera"].get("name") or "")) if s["camera"]["enabled"] else "",
-                    "resolution": "%d * %d" % (s["resolution"]["width"], s["resolution"]["height"]) if s["resolution"]["enabled"] else "",
-                    "sun": (sun["name"] + (" +%d" % len(s["sun"].get("extra") or []) if s["sun"].get("extra") else "") if sun else ("Off" if s["sun"]["enabled"] else "")),
+                    "num": str(i + 1),
+                    "id": str(s["id"]),
+                    "name": s["scenename"],
+                    "camera": (cam["name"] if cam else (s["camera"].get("name") or ""))
+                    if s["camera"]["enabled"]
+                    else "",
+                    "resolution": "%d * %d" % (s["resolution"]["width"], s["resolution"]["height"])
+                    if s["resolution"]["enabled"]
+                    else "",
+                    "sun": (
+                        sun["name"] + (" +%d" % len(s["sun"].get("extra") or []) if s["sun"].get("extra") else "")
+                        if sun
+                        else ("Off" if s["sun"]["enabled"] else "")
+                    ),
                     "dome": (dome["name"] if dome else ("Off" if s["dome"]["enabled"] else "")),
                     "environment": (env.get("name") or "Off") if env["enabled"] else "",
                     "frame": self._frames_text(s),
@@ -1386,11 +1528,18 @@ class SceneManager(QtWidgets.QDockWidget):
         if it is not None:
             sid = it.data(0, QtCore.Qt.UserRole)
             m.addAction("Activate", lambda: self.activate(sid))
-            m.addAction(icons.teapot(PRIMARY, True, 16), "Render this setup",
-                        lambda: self.start_render([s for s in self.setups if s["id"] == sid]))
+            m.addAction(
+                icons.teapot(PRIMARY, True, 16),
+                "Render this setup",
+                lambda: self.start_render([s for s in self.setups if s["id"] == sid]),
+            )
             col = self.column_keys.index("name") if "name" in self.column_keys else 0
             m.addAction(icon("edit"), "Rename", lambda: self.tree.editItem(it, col))
-            m.addAction(icon("photo"), "Thumbnail from viewport", lambda: self.fetch_thumbnail(next(s for s in self.setups if s["id"] == sid), "viewport"))
+            m.addAction(
+                icon("photo"),
+                "Thumbnail from viewport",
+                lambda: self.fetch_thumbnail(next(s for s in self.setups if s["id"] == sid), "viewport"),
+            )
             m.addSeparator()
             m.addAction(icon("dup"), "Duplicate", self.duplicate)
             m.addAction(icon("color"), "Setup color...", self.pick_color)
@@ -1428,7 +1577,9 @@ class SceneManager(QtWidgets.QDockWidget):
         s["camera"]["handle"] = self.scene.active_camera
         cam = self.scene.camera(self.scene.active_camera)
         s["camera"]["name"] = cam["name"] if cam else ""
-        s["resolution"].update(width=self.scene.width, height=self.scene.height, ratio=model.ratio(self.scene.width, self.scene.height))
+        s["resolution"].update(
+            width=self.scene.width, height=self.scene.height, ratio=model.ratio(self.scene.width, self.scene.height)
+        )
         self._add(s)
 
     def fetch_scene(self):
@@ -1438,7 +1589,9 @@ class SceneManager(QtWidgets.QDockWidget):
         cam = sc.camera(sc.active_camera)
         s["camera"].update(handle=sc.active_camera, name=cam["name"] if cam else "", locked=bool(cam and cam["locked"]))
         s["resolution"].update(width=sc.width, height=sc.height, ratio=model.ratio(sc.width, sc.height))
-        s["layers"]["set"] = [model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True)) for l in sc.layers]
+        s["layers"]["set"] = [
+            model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True)) for l in sc.layers
+        ]
         if sc.env_class:
             s["environment"].update(cls=sc.env_class, name=sc.env_name)
         self._add(s)
@@ -1454,7 +1607,9 @@ class SceneManager(QtWidgets.QDockWidget):
         for c in cams:
             s = model.empty_setup(self._new_id())
             s["camera"].update(handle=c["handle"], name=c["name"])
-            s["resolution"].update(width=self.scene.width, height=self.scene.height, ratio=model.ratio(self.scene.width, self.scene.height))
+            s["resolution"].update(
+                width=self.scene.width, height=self.scene.height, ratio=model.ratio(self.scene.width, self.scene.height)
+            )
             self.setups.append(s)
         self.rebuild_rows()
         self.changed(apply=False)
@@ -1466,7 +1621,9 @@ class SceneManager(QtWidgets.QDockWidget):
         s = model.empty_setup(self._new_id())
         cam = self.scene.camera(h)
         s["camera"].update(handle=h, name=cam["name"] if cam else "")
-        s["resolution"].update(width=self.scene.width, height=self.scene.height, ratio=model.ratio(self.scene.width, self.scene.height))
+        s["resolution"].update(
+            width=self.scene.width, height=self.scene.height, ratio=model.ratio(self.scene.width, self.scene.height)
+        )
         self._add(s)
         self.toast("New camera: %s" % (cam["name"] if cam else h))
 
@@ -1484,7 +1641,10 @@ class SceneManager(QtWidgets.QDockWidget):
         sel = self.selected_setups() or ([self.active()] if self.active() else [])
         if not sel:
             return
-        if QtWidgets.QMessageBox.question(self, TITLE, "Are you sure you want to remove the selected setup(s)?") != QtWidgets.QMessageBox.Yes:
+        if (
+            QtWidgets.QMessageBox.question(self, TITLE, "Are you sure you want to remove the selected setup(s)?")
+            != QtWidgets.QMessageBox.Yes
+        ):
             return
         ids = set(s["id"] for s in sel)
         self.checked -= ids
@@ -1532,7 +1692,10 @@ class SceneManager(QtWidgets.QDockWidget):
         if s is None:
             return
         prefix = "%d|" % cid
-        self.clipboard[cid] = (copy.deepcopy(self._card_data(s, cid)), {k: v for k, v in s["props"].items() if k.startswith(prefix)})
+        self.clipboard[cid] = (
+            copy.deepcopy(self._card_data(s, cid)),
+            {k: v for k, v in s["props"].items() if k.startswith(prefix)},
+        )
         self.toast("Copied %s" % model.CARDS[cid][0])
 
     def paste_card(self, cid):
@@ -1572,7 +1735,9 @@ class SceneManager(QtWidgets.QDockWidget):
                 cls = s["environment"].get("cls")
         idx = next((i for i, t in enumerate(tabs) if cls and (model.tab_matches(t, cls) or t["v_class"] == cls)), None)
         if idx is None:
-            idx = next((i for i, t in enumerate(tabs) if t.get("engine") and t.get("engine") == self.scene.engine_id), None)
+            idx = next(
+                (i for i, t in enumerate(tabs) if t.get("engine") and t.get("engine") == self.scene.engine_id), None
+            )
         if idx is None:
             on = set(checked)
             idx = next((i for i, t in enumerate(tabs) if any(model.prop_key(t, p) in on for p in t["props"])), 0)
@@ -1610,8 +1775,12 @@ class SceneManager(QtWidgets.QDockWidget):
     def export_setups(self):
         sel = self.selected_setups()
         chosen = sel if len(sel) > 1 else self.setups
-        f, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save Preset", os.path.join(self._start_dir(), "setups.smp"),
-                                                     "OpenManager Preset Files (*.smp);;All(*.*)")
+        f, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Save Preset",
+            os.path.join(self._start_dir(), "setups.smp"),
+            "OpenManager Preset Files (*.smp);;All(*.*)",
+        )
         if not f:
             return
         try:
@@ -1622,7 +1791,9 @@ class SceneManager(QtWidgets.QDockWidget):
             self.toast("Could not save the preset: %s" % ex)
 
     def import_setups(self):
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Load Preset", self._start_dir(), "OpenManager Preset Files (*.smp)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Preset", self._start_dir(), "OpenManager Preset Files (*.smp)"
+        )
         if not f:
             return
         try:
@@ -1648,8 +1819,12 @@ class SceneManager(QtWidgets.QDockWidget):
         s = self.active()
         if s is None:
             return
-        f, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save Output Preset", os.path.join(self._start_dir(), "output.smp"),
-                                                     "OpenManager Preset Files (*.smp);;All(*.*)")
+        f, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Save Output Preset",
+            os.path.join(self._start_dir(), "output.smp"),
+            "OpenManager Preset Files (*.smp);;All(*.*)",
+        )
         if f:
             with open(f, "w", encoding="utf-8") as fh:
                 json.dump({"output": s["output"]}, fh, indent=1)
@@ -1659,7 +1834,9 @@ class SceneManager(QtWidgets.QDockWidget):
         s = self.active()
         if s is None:
             return
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Load Output Preset", self._start_dir(), "OpenManager Preset Files (*.smp)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Output Preset", self._start_dir(), "OpenManager Preset Files (*.smp)"
+        )
         if not f:
             return
         try:
@@ -1709,7 +1886,11 @@ class SceneManager(QtWidgets.QDockWidget):
             for i, s in enumerate(setups):
                 if cancel["on"]:
                     break
-                dlg.set_job("[%s]" % (s["scenename"] or (self.scene.camera(s["camera"]["handle"]) or {}).get("name", "")), i, len(setups))
+                dlg.set_job(
+                    "[%s]" % (s["scenename"] or (self.scene.camera(s["camera"]["handle"]) or {}).get("name", "")),
+                    i,
+                    len(setups),
+                )
                 QtWidgets.QApplication.processEvents()
                 acts = self.actions_for(s, False)
                 self.run_actions(self.base_restore(acts) + acts)
@@ -1735,6 +1916,7 @@ class SceneManager(QtWidgets.QDockWidget):
         def step(s, i):
             maxlink.snapshot_viewport(self.thumb_path(s))
             s["thumbnail"] = self.thumb_path(s)
+
         n = self._run_over_setups(sel, "Viewport Preview", "Viewport snapshot", step)
         if n:
             self.changed(apply=False)
@@ -1764,28 +1946,51 @@ class SceneManager(QtWidgets.QDockWidget):
             os.makedirs(folder, exist_ok=True)
 
         def label(s, i):
-            return "%03d_%s" % (i + 1, (s["scenename"] or (self.scene.camera(s["camera"]["handle"]) or {}).get("name", "setup")).replace(" ", "_"))
+            return "%03d_%s" % (
+                i + 1,
+                (s["scenename"] or (self.scene.camera(s["camera"]["handle"]) or {}).get("name", "setup")).replace(
+                    " ", "_"
+                ),
+            )
 
         if method == 0:
+
             def step(s, i):
                 if s["camera"].get("handle") is None:
                     return
                 path, valid = self.final_path(s)
-                preset = os.path.join(self.scene.folder or cfg_dir(), "OpenManager_presets", "%s_%s.rps" % (stem, label(s, i))).replace("\\", "/")
+                preset = os.path.join(
+                    self.scene.folder or cfg_dir(), "OpenManager_presets", "%s_%s.rps" % (stem, label(s, i))
+                ).replace("\\", "/")
                 maxlink.save_preset(preset)
-                maxlink.batch_view(s["camera"]["handle"], label(s, i), "SM_" + label(s, i), preset,
-                                   path if (s["output"]["enabled"] and valid) else "", int(s["resolution"]["width"]), int(s["resolution"]["height"]))
+                maxlink.batch_view(
+                    s["camera"]["handle"],
+                    label(s, i),
+                    "SM_" + label(s, i),
+                    preset,
+                    path if (s["output"]["enabled"] and valid) else "",
+                    int(s["resolution"]["width"]),
+                    int(s["resolution"]["height"]),
+                )
+
             n = self._run_over_setups(chosen, "Bake Setups", "Batch Render views", step)
             self.toast("%d view(s) added to Rendering > Batch Render" % n)
         elif method == 1:
-            n = self._run_over_setups(chosen, "Bake Setups", "Saving .max files",
-                                      lambda s, i: maxlink.save_copy(os.path.join(folder, "%s_%s.max" % (stem, label(s, i)))))
+            n = self._run_over_setups(
+                chosen,
+                "Bake Setups",
+                "Saving .max files",
+                lambda s, i: maxlink.save_copy(os.path.join(folder, "%s_%s.max" % (stem, label(s, i)))),
+            )
             self.toast("%d .max file(s) saved in %s" % (n, folder))
         elif method == 2:
             from pymxs import runtime as rt
 
             def step(s, i):
-                rt.CoronaRenderer.CoronaFp.exportScene(os.path.join(folder, "%s_%s.scn" % (stem, label(s, i))), False, False)
+                rt.CoronaRenderer.CoronaFp.exportScene(
+                    os.path.join(folder, "%s_%s.scn" % (stem, label(s, i))), False, False
+                )
+
             n = self._run_over_setups(chosen, "Bake Setups", "Exporting Corona scenes", step)
             self.toast("%d .scn file(s) exported to %s" % (n, folder))
         else:
@@ -1800,7 +2005,11 @@ class SceneManager(QtWidgets.QDockWidget):
             return
         jobs = chosen if chosen is not None else [s for s in self.setups if s["render"]]
         if not jobs:
-            self.toast("Please enable one or more scene setups to Render..." if chosen is None else "Select one or more setups first")
+            self.toast(
+                "Please enable one or more scene setups to Render..."
+                if chosen is None
+                else "Select one or more setups first"
+            )
             return
         self.save_setups()
         self.reload_scene()
@@ -1837,8 +2046,16 @@ class SceneManager(QtWidgets.QDockWidget):
             if c["enabled"] and c.get("handle") is not None and self.scene.camera(c["handle"]) is None:
                 missing = c.get("name") or "#%s" % c["handle"]
             path, problem = self.build_path(s) if s["output"]["enabled"] else ("", None)
-            info.append({"label": self.setup_label(s), "output": bool(s["output"]["enabled"]), "path": path,
-                         "problem": problem, "scene_output": scene_out, "camera_missing": missing})
+            info.append(
+                {
+                    "label": self.setup_label(s),
+                    "output": bool(s["output"]["enabled"]),
+                    "path": path,
+                    "problem": problem,
+                    "scene_output": scene_out,
+                    "camera_missing": missing,
+                }
+            )
         return model.check_jobs(info)
 
     def _check_row(self, s, c):
@@ -1937,8 +2154,10 @@ class SceneManager(QtWidgets.QDockWidget):
             pass
         self.widget().setEnabled(True)
         self.refresh_cards()
-        rows = [self.render_results.get(id(s), (self.setup_label(s), "Not rendered", ["Canceled before it started"]))
-                for s in self.render_order]
+        rows = [
+            self.render_results.get(id(s), (self.setup_label(s), "Not rendered", ["Canceled before it started"]))
+            for s in self.render_order
+        ]
         count = lambda st: sum(1 for r in rows if r[1] == st)
         summary = "%d saved, %d failed, %d skipped" % (count("Saved"), count("Failed"), count("Skipped"))
         if self.render_cancel:
@@ -1990,5 +2209,6 @@ class SceneManager(QtWidgets.QDockWidget):
             traceback.print_exc()
         widgets.PALETTE_OVERRIDE = None
         from . import _closed
+
         _closed(self)
         super(SceneManager, self).closeEvent(e)

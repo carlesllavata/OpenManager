@@ -6,6 +6,7 @@
 <tables.json> holds the per-engine property lists ({"corona_cam": [...], ...}). Extra Corona camera
 overrides (tone mapping, direct / reflections / refractions / environment) are added here.
 """
+
 import json, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -95,14 +96,30 @@ CORONA_CAM_OVERRIDES = [
     P("bokehBladeCount", "Integer", "Bokeh blades", None, 3, 12, 1),
     P("bokehRotation", "Float", "Bokeh rotation", None, 0, 360, 1),
     P("shutterAngle", "Float", "Shutter angle", None, 0, 360, 1),
-    P("projection", "Integer", "Projection", "Projection (0 perspective, 1 cylindrical, 2 spherical, 3 VR, 4 fisheye, 5 ortho)", 0, 5, 1),
+    P(
+        "projection",
+        "Integer",
+        "Projection",
+        "Projection (0 perspective, 1 cylindrical, 2 spherical, 3 VR, 4 fisheye, 5 ortho)",
+        0,
+        5,
+        1,
+    ),
 ]
 
 CORONA_RENDER_EXTRA = [
     P("denoise_filterType", "Integer", "Denoiser", "Denoiser (0 none, 1 high quality, 2 NVIDIA, 3 Intel)", 0, 3, 1),
     P("denoise_blendAmount", "Float", "Denoise amount", None, 0, 1, 0.01),
     P("progressive_passLimit", "Integer", "Pass limit", None, 0, 500, 1),
-    P("shading_secondarySolver", "Integer", "Secondary GI solver", "Secondary GI solver (0 path tracing, 3 UHD cache)", 0, 4, 1),
+    P(
+        "shading_secondarySolver",
+        "Integer",
+        "Secondary GI solver",
+        "Secondary GI solver (0 path tracing, 3 UHD cache)",
+        0,
+        4,
+        1,
+    ),
     P("lockSampling", "BooleanClass", "Lock sampling pattern"),
     P("system_numThreads", "Integer", "Render threads", "Render threads (0 = all)", 0, 256, 1),
 ]
@@ -116,8 +133,14 @@ def tab_props(raw):
             short, long = (disp + [disp[0]])[:2]
         else:
             short = long = disp or p["name"]
-        d = {"name": p["name"], "class": p.get("class", "Float"), "short": short, "long": long,
-             "value": p.get("value"), "enabled": bool(p.get("enabled"))}
+        d = {
+            "name": p["name"],
+            "class": p.get("class", "Float"),
+            "short": short,
+            "long": long,
+            "value": p.get("value"),
+            "enabled": bool(p.get("enabled")),
+        }
         for k in ("min", "max", "step"):
             if p.get(k) is not None:
                 d[k] = p[k]
@@ -131,15 +154,26 @@ def main(tables_path):
     tables = json.load(open(tables_path, encoding="utf-8"))
     tables["corona_cam_overrides"] = CORONA_CAM_OVERRIDES
     have = set(p["name"] for p in tables.get("corona_render", []))
-    tables["corona_render"] = tables.get("corona_render", []) + [p for p in CORONA_RENDER_EXTRA if p["name"] not in have]
+    tables["corona_render"] = tables.get("corona_render", []) + [
+        p for p in CORONA_RENDER_EXTRA if p["name"] not in have
+    ]
     tabs = []
     for cid, name, cls, engine, key, v_class in TABS:
         props = tab_props(tables.get(key, []))
         if not props:
             print("no table for", key)
             continue
-        tabs.append({"id": cid, "name": name, "cls": cls[0] if cls else None, "classes": cls, "engine": engine,
-                     "v_class": v_class, "props": props})
+        tabs.append(
+            {
+                "id": cid,
+                "name": name,
+                "cls": cls[0] if cls else None,
+                "classes": cls,
+                "engine": engine,
+                "v_class": v_class,
+                "props": props,
+            }
+        )
     json.dump(tabs, open(OUT, "w", encoding="utf-8"), indent=1)
     print("wrote %s: %d tabs, %d settings" % (OUT, len(tabs), sum(len(t["props"]) for t in tabs)))
 

@@ -9,11 +9,16 @@ It only knows what the tests need: a few classes of several kinds, a Corona-like
 tone-mapping operators, and the omgr_ functions of omgr_core.ms as recorders (rt.calls). `execute` never runs
 anything: it keeps the text it was given in rt.executed, where a test can see that nothing got there.
 """
+
 import contextlib
 import sys
 import types
 
-OPERATOR = {"colorMappingOperator_nextOperator": None, "colorMappingOperator_enabled": True, "colorMappingOperator_id": 0}
+OPERATOR = {
+    "colorMappingOperator_nextOperator": None,
+    "colorMappingOperator_enabled": True,
+    "colorMappingOperator_id": 0,
+}
 
 
 class Kind(object):
@@ -81,8 +86,11 @@ class Runtime(object):
         self._kinds = {}
         self._globals = {}
         self.operator_kind = self.kind(operator_kind)
-        for name, prop in (("SimpleExposureOperatorPlugin", "simpleExposure"), ("FilmicOperatorPlugin", "highlightCompression"),
-                           ("ContrastOperatorPlugin", "contrast")):
+        for name, prop in (
+            ("SimpleExposureOperatorPlugin", "simpleExposure"),
+            ("FilmicOperatorPlugin", "highlightCompression"),
+            ("ContrastOperatorPlugin", "contrast"),
+        ):
             self.define(name, self.operator_kind, dict(OPERATOR, **{"colorMappingOperator_" + prop: 0.0}))
         self.define("NotAnOperator", self.operator_kind, {"value": 0})  # same kind of class, but no operator
         self.define("Box", self.kind("GeometryClass"), {"height": 10.0})
@@ -91,8 +99,14 @@ class Runtime(object):
         self._globals["resetMaxFile"] = MaxFunction(self, "resetMaxFile")  # a function
         self._globals["someText"] = 'Box(); messageBox "x"'  # a variable that holds text
         self._globals["nothingYet"] = None  # a variable with no value
-        self._globals.update(renderWidth=1920, renderHeight=1080, rendSaveFile=False, rendOutputFilename="",
-                             omgr_oldDat="PuzlesSM_Dat", omgr_cancel=False)
+        self._globals.update(
+            renderWidth=1920,
+            renderHeight=1080,
+            rendSaveFile=False,
+            rendOutputFilename="",
+            omgr_oldDat="PuzlesSM_Dat",
+            omgr_cancel=False,
+        )
         renderer = MaxClass(self, "CoronaRenderer", self.kind("RendererClass"))
         self.renderers = Holder(current=MaxObject(renderer, {"colorMap_pipeline": None}))
         self.maxOps = Holder(getNodeByHandle=lambda h: self.nodes.get(h))
@@ -129,10 +143,12 @@ class Runtime(object):
         if name in g:
             return g[name]
         if name.startswith("omgr_"):
+
             def recorder(*args, **kwargs):
                 self.calls.append((name,) + args)
                 value = self.returns.get(name)
                 return value(*args, **kwargs) if callable(value) else value
+
             return recorder
         raise AttributeError(name)  # an unknown name
 

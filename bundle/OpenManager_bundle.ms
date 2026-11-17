@@ -6,16 +6,16 @@
 -- defines below would be undefined locals when called.
 global omgr_home, omgr_migrateLegacy, omgr_removeMzpInstall
 (
-	local here = getFilenamePath (getThisScriptFilename())
-	omgr_home = pathConfig.normalizePath (here + "..\\OpenManager")
-	try
-	(
-		fileIn (omgr_home + "\\omgr_setup.ms")
-		omgr_migrateLegacy()
-		-- 3ds Max loads usermacros before the bundles' macroscripts, so the bundle's OpenManager macro already won
-		if (omgr_removeMzpInstall()) do
-			format "OpenManager: the older .mzp install was removed; OpenManager now runs from %\n" omgr_home
-	)
-	catch (format "OpenManager: clean-up of older installs failed: %\n" (getCurrentException()))
-	fileIn (omgr_home + "\\OpenManager_startup.ms")
+    local here = getFilenamePath (getThisScriptFilename())
+    omgr_home = pathConfig.normalizePath (here + "..\\OpenManager")
+    try
+    (
+        fileIn (omgr_home + "\\omgr_setup.ms")
+        omgr_migrateLegacy()
+        -- 3ds Max loads usermacros before the bundles' macroscripts, so the bundle's OpenManager macro already won
+        if (omgr_removeMzpInstall()) do
+            format "OpenManager: the older .mzp install was removed; OpenManager now runs from %\n" omgr_home
+    )
+    catch (format "OpenManager: clean-up of older installs failed: %\n" (getCurrentException()))
+    fileIn (omgr_home + "\\OpenManager_startup.ms")
 )

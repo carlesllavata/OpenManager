@@ -3,6 +3,7 @@
 
 The methods under test are the real ones of window.SceneManager, used by an object that has none of its widgets
 (Window below): opening a file, clicking a setup, Batch Render, Bake Setups."""
+
 import contextlib
 import io
 import json
@@ -25,9 +26,18 @@ try:
 except ImportError as ex:  # PySide6 comes with the Python of 3ds Max
     raise unittest.SkipTest("the window needs PySide6 (%s)" % ex)
 
-SCENE = {"file": "scene.max", "folder": "", "engine": "Corona", "cameras": [{"handle": 7, "name": "Cam", "class": "CoronaCam", "locked": False}]}
-CLASS_TOAST = "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)"
-SETTING_TOAST = "%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)"
+SCENE = {
+    "file": "scene.max",
+    "folder": "",
+    "engine": "Corona",
+    "cameras": [{"handle": 7, "name": "Cam", "class": "CoronaCam", "locked": False}],
+}
+CLASS_TOAST = (
+    "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)"
+)
+SETTING_TOAST = (
+    "%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)"
+)
 SCRIPT_TOAST = "%d script(s) of this setup were not run: they came with the file and aren't trusted"
 PRESET_TOAST = "The render preset of this setup was not loaded: it came with the file and isn't trusted"
 
@@ -51,12 +61,53 @@ class Timer(object):
 class Window(object):
     """window.SceneManager without widgets: the methods listed in REAL are its own; what they need from the widgets
     is below (toasts and questions are kept instead of shown)."""
-    REAL = ("reload_all", "encoded", "object_handles", "opts", "active", "index_of", "enabled_keys", "enabled_rows", "build_path",
-            "final_path", "setup_label", "toast", "actions_for", "script_allowed", "trust_scripts", "typed_code", "review_scripts",
-            "tell_refused", "tell_rejected", "run_actions", "_apply", "_apply_edit", "base_restore", "restore_scene", "activate",
-            "begin_undo", "undo_capture", "end_undo", "clear_undo", "update_undo_buttons", "undo", "redo",
-            "_run_over_setups", "viewport_preview", "bake_setups", "thumb_path", "start_render", "check_render", "_check_row",
-            "_begin_render", "_job_label", "_next_job", "_cancel_render", "_end_render")
+
+    REAL = (
+        "reload_all",
+        "encoded",
+        "object_handles",
+        "opts",
+        "active",
+        "index_of",
+        "enabled_keys",
+        "enabled_rows",
+        "build_path",
+        "final_path",
+        "setup_label",
+        "toast",
+        "actions_for",
+        "script_allowed",
+        "trust_scripts",
+        "typed_code",
+        "review_scripts",
+        "tell_refused",
+        "tell_rejected",
+        "run_actions",
+        "_apply",
+        "_apply_edit",
+        "base_restore",
+        "restore_scene",
+        "activate",
+        "begin_undo",
+        "undo_capture",
+        "end_undo",
+        "clear_undo",
+        "update_undo_buttons",
+        "undo",
+        "redo",
+        "_run_over_setups",
+        "viewport_preview",
+        "bake_setups",
+        "thumb_path",
+        "start_render",
+        "check_render",
+        "_check_row",
+        "_begin_render",
+        "_job_label",
+        "_next_job",
+        "_cancel_render",
+        "_end_render",
+    )
 
     def __init__(self, stored="", settings=None, answer=False, pulze=""):
         """stored: the text of rootNode.OpenManager_Dat (pulze: of Pulze's SceneManager_Dat); answer: what the person
@@ -161,6 +212,7 @@ class Dialog(object):
 
 def bake_dialog(method, ids, code=""):
     """Stands for the Bake Setups dialog with these choices made (method: its place in dialogs.BakeDialog.METHODS)."""
+
     class BakeDialog(Dialog):
         def __init__(self, parent, setups, folder):
             self.method = Holder(currentIndex=lambda: method)
@@ -169,6 +221,7 @@ def bake_dialog(method, ids, code=""):
 
         def chosen(self):
             return ids
+
     return BakeDialog
 
 
@@ -177,8 +230,12 @@ def batch_render(w, chosen=None):
     Returns the rows of the report: (setup, status, details)."""
     later = []
     timers = Holder(QTimer=Holder(singleShot=lambda ms, fn: later.append(fn)))
-    with mock.patch.object(window, "QtCore", timers), mock.patch.object(window.dialogs, "BatchDialog", Dialog), \
-            mock.patch.object(window.dialogs, "BatchCheckDialog", Dialog), mock.patch.object(window.dialogs, "BatchReportDialog", Dialog):
+    with (
+        mock.patch.object(window, "QtCore", timers),
+        mock.patch.object(window.dialogs, "BatchDialog", Dialog),
+        mock.patch.object(window.dialogs, "BatchCheckDialog", Dialog),
+        mock.patch.object(window.dialogs, "BatchReportDialog", Dialog),
+    ):
         quiet(w.start_render, chosen)
         while later:
             quiet(later.pop(0))
@@ -186,13 +243,19 @@ def batch_render(w, chosen=None):
 
 
 def bake(w, method, ids, code=""):
-    with mock.patch.object(window.dialogs, "BakeDialog", bake_dialog(method, ids, code)), \
-            mock.patch.object(window.dialogs, "BatchDialog", Dialog), mock.patch.object(window, "cfg_dir", tempfile.gettempdir):
+    with (
+        mock.patch.object(window.dialogs, "BakeDialog", bake_dialog(method, ids, code)),
+        mock.patch.object(window.dialogs, "BatchDialog", Dialog),
+        mock.patch.object(window, "cfg_dir", tempfile.gettempdir),
+    ):
         quiet(w.bake_setups)
 
 
 def viewport_preview(w):
-    with mock.patch.object(window.dialogs, "BatchDialog", Dialog), mock.patch.object(window, "cfg_dir", tempfile.gettempdir):
+    with (
+        mock.patch.object(window.dialogs, "BatchDialog", Dialog),
+        mock.patch.object(window, "cfg_dir", tempfile.gettempdir),
+    ):
         quiet(w.viewport_preview)
 
 
@@ -202,7 +265,9 @@ class Base(unittest.TestCase):
         rt.add_node(7, "CoronaCam", "Cam")
         rt.returns["omgr_render"] = "done"
         # the scene saves its renders, so a batch has nothing to stop for
-        rt._globals.update(rendSaveFile=True, rendOutputFilename=os.path.join(tempfile.gettempdir(), "omgr_no_such_folder", "a.png"))
+        rt._globals.update(
+            rendSaveFile=True, rendOutputFilename=os.path.join(tempfile.gettempdir(), "omgr_no_such_folder", "a.png")
+        )
         maxlink.take_rejected()
 
 
@@ -216,7 +281,9 @@ class ClassNamesLeftOut(Base):
         self.assertEqual(rt.executed, [])
         self.assertEqual([str(o.cls) for o in rt.chain()], ["FilmicOperatorPlugin"])
         self.assertEqual(w.toasts, [CLASS_TOAST % 2])
-        self.assertIn('OpenManager: left out "Box(); messageBox "x"": it is not a tone-mapping operator class', listener)
+        self.assertIn(
+            'OpenManager: left out "Box(); messageBox "x"": it is not a tone-mapping operator class', listener
+        )
         self.assertIn('OpenManager: left out "Box": it is not a tone-mapping operator class', listener)
 
     def test_a_setup_with_real_classes_tells_nothing(self):
@@ -272,9 +339,12 @@ class ClassNamesLeftOut(Base):
 class StoredBaseState(Base):
     """The base state (what the setup applied before changed) is stored in the file and put back without being
     shown, so nothing in it may run a script."""
-    HIDDEN = [[["x"], ["code", 'messageBox "x"']],
-              [["y"], ["renderscripts", "D:/s/pre.ms", "", "print 3", ""]],
-              [["z"], ["preset", "D:/s/a.rps"]]]
+
+    HIDDEN = [
+        [["x"], ["code", 'messageBox "x"']],
+        [["y"], ["renderscripts", "D:/s/pre.ms", "", "print 3", ""]],
+        [["z"], ["preset", "D:/s/a.rps"]],
+    ]
     BASE_TOAST = "3 stored change(s) of this file were ignored: they could run a script without asking"
 
     def assert_no_script(self):
@@ -320,11 +390,14 @@ class StoredBaseState(Base):
 
 class SettingsOfAFile(Base):
     """A change names the property it sets; the setups and the base state of a file only set what the cards set."""
+
     CODE = "OM_PAYLOAD_RAN = true"
     READS = ("omgr_getRawNode", "omgr_getRawRS", "omgr_getRawLayer", "omgr_getRawMap")
 
     def test_a_base_state_can_not_write_the_script_of_a_script_controller(self):
-        w = opened(stored([setup(1)], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]]))
+        w = opened(
+            stored([setup(1)], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]])
+        )
         listener = quiet(w.activate, 1)
         self.assertEqual(rt.executed, [])
         self.assertEqual(called("omgr_setNode"), [])
@@ -334,11 +407,18 @@ class SettingsOfAFile(Base):
         self.assertEqual(w.base, {})
 
     def test_nor_when_the_scene_is_put_back(self):
-        w = opened(stored([setup(1)], base=[[["node", 7, "Proceed_Script"], ["node", 7, "Proceed_Script", self.CODE]],
-                                            [["rs", "a.b.script"], ["rs", "a.b.script", self.CODE]],
-                                            [["map", "Checker", "m", "coords.x"], ["map", "Checker", "m", "coords.x", 1]],
-                                            [["layer", "0", "x.y"], ["layer", "0", "x.y", True]],
-                                            [["res"], ["res", 800, 600]]]))
+        w = opened(
+            stored(
+                [setup(1)],
+                base=[
+                    [["node", 7, "Proceed_Script"], ["node", 7, "Proceed_Script", self.CODE]],
+                    [["rs", "a.b.script"], ["rs", "a.b.script", self.CODE]],
+                    [["map", "Checker", "m", "coords.x"], ["map", "Checker", "m", "coords.x", 1]],
+                    [["layer", "0", "x.y"], ["layer", "0", "x.y", True]],
+                    [["res"], ["res", 800, 600]],
+                ],
+            )
+        )
         quiet(w.restore_scene)
         self.assertEqual([c[0] for c in rt.calls if c[0].startswith("omgr_set")], ["omgr_setRes"])
         self.assertEqual(w.toasts[-1], SETTING_TOAST % 4)
@@ -346,15 +426,26 @@ class SettingsOfAFile(Base):
     def test_a_setup_can_not_reach_other_objects_through_the_renderer(self):
         s = setup(1)
         s["rs_override"].update(enabled=True, set={"bg_texmap.coords.script": self.CODE, "a.b": 1, "gi_on": True})
-        s["post"].update(enabled=True, cats={"bloom": {"props": {"x.controller.script": self.CODE, "bloomGlare_enabled": True}}})
+        s["post"].update(
+            enabled=True, cats={"bloom": {"props": {"x.controller.script": self.CODE, "bloomGlare_enabled": True}}}
+        )
         w = opened(stored([s], rs_default={"other.path": 1, "progressive_passLimit": 5}))
         quiet(w.activate, 1)
-        self.assertEqual(sorted(called("omgr_setRS")), [("bloomGlare_enabled", True), ("gi_on", True), ("progressive_passLimit", 5)])
-        self.assertEqual(sorted(set(c[1] for c in rt.calls if c[0] == "omgr_getRawRS")), ["bloomGlare_enabled", "gi_on", "progressive_passLimit"])
+        self.assertEqual(
+            sorted(called("omgr_setRS")), [("bloomGlare_enabled", True), ("gi_on", True), ("progressive_passLimit", 5)]
+        )
+        self.assertEqual(
+            sorted(set(c[1] for c in rt.calls if c[0] == "omgr_getRawRS")),
+            ["bloomGlare_enabled", "gi_on", "progressive_passLimit"],
+        )
         self.assertEqual(w.toasts, [SETTING_TOAST % 4])
 
     def test_everything_left_out_is_told_in_one_message(self):
-        s = setup(1, [{"class": "a;b", "props": {}}, {"class": "FilmicOperatorPlugin", "props": {"x.y": 1}}], pre_setup="print 1")
+        s = setup(
+            1,
+            [{"class": "a;b", "props": {}}, {"class": "FilmicOperatorPlugin", "props": {"x.y": 1}}],
+            pre_setup="print 1",
+        )
         w = opened(stored([s], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]]))
         quiet(w.activate, 1)
         self.assertEqual(w.toasts, ["\n".join([SCRIPT_TOAST % 1, CLASS_TOAST % 1, SETTING_TOAST % 2])])
@@ -366,7 +457,9 @@ class SettingsOfAFile(Base):
         self.assertEqual(w.toasts, [SETTING_TOAST % 1])
 
     def test_batch_render_says_it_in_its_report(self):
-        w = opened(stored([setup(1)], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]]))
+        w = opened(
+            stored([setup(1)], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]])
+        )
         report = batch_render(w)
         self.assertEqual(called("omgr_setNode"), [])
         self.assertIn("1 setting(s) not applied: OpenManager's cards don't set them", report[0][2])
@@ -374,21 +467,39 @@ class SettingsOfAFile(Base):
     # ---- what the cards make keeps working
     def test_render_settings_override_as_the_card_stores_it(self):
         s = setup(1)
-        s["rs_override"].update(enabled=True, set={"gi_on": True, "lut_path": "D:/luts/a.cube", "progressive_passLimit": 20})
+        s["rs_override"].update(
+            enabled=True, set={"gi_on": True, "lut_path": "D:/luts/a.cube", "progressive_passLimit": 20}
+        )
         w = opened(stored([s], rs_default={"gi_on": False, "progressive_passLimit": 5, "image_filter_width": 1.5}))
         listener = quiet(w.activate, 1)
-        self.assertEqual(called("omgr_setRS"), [("image_filter_width", 1.5), ("gi_on", True), ("lut_path", "D:/luts/a.cube"),
-                                                ("progressive_passLimit", 20)])
+        self.assertEqual(
+            called("omgr_setRS"),
+            [
+                ("image_filter_width", 1.5),
+                ("gi_on", True),
+                ("lut_path", "D:/luts/a.cube"),
+                ("progressive_passLimit", 20),
+            ],
+        )
         self.assertEqual(w.toasts, [])
         self.assertNotIn("left out", listener)
 
     def test_post_production_as_the_card_stores_it(self):
-        s = setup(1, [{"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 2.0,
-                                                                   "colorMappingOperator_enabled": True}}])
+        s = setup(
+            1,
+            [
+                {
+                    "class": "FilmicOperatorPlugin",
+                    "props": {"colorMappingOperator_highlightCompression": 2.0, "colorMappingOperator_enabled": True},
+                }
+            ],
+        )
         s["post"]["cats"].update({key: {"props": {n: True for n in names}} for key, _, names in model.POST_CATS})
         w = opened(stored([s]))
         quiet(w.activate, 1)
-        self.assertEqual(sorted(c[0] for c in called("omgr_setRS")), sorted(n for _, _, names in model.POST_CATS for n in names))
+        self.assertEqual(
+            sorted(c[0] for c in called("omgr_setRS")), sorted(n for _, _, names in model.POST_CATS for n in names)
+        )
         self.assertEqual(rt.chain()[0].props["colorMappingOperator_highlightCompression"], 2.0)
         self.assertEqual(w.toasts, [])
 
@@ -405,16 +516,55 @@ class SettingsOfAFile(Base):
 
     def test_a_setup_converted_from_pulze(self):
         import base64
-        cam = next(p["name"] for t in model.tabs_for(1, "corona") if t["v_class"] == "CoronaCam" for p in t["props"] if p["class"] == "Float")
+
+        cam = next(
+            p["name"]
+            for t in model.tabs_for(1, "corona")
+            if t["v_class"] == "CoronaCam"
+            for p in t["props"]
+            if p["class"] == "Float"
+        )
         rs = next(p["name"] for t in model.tabs_for(25, "corona") for p in t["props"] if p["class"] == "BooleanClass")
-        pulze = [{"camera": {"enabled": True, "handle": 7, "props": [{"name": cam, "v_class": "CoronaCam", "value": "35.5"}]},
-                  "renderCustom": {"enabled": "true", "props": [{"name": rs, "v_class": "CoronaRenderer", "value": "true"},
-                                                                {"name": "a.b.script", "v_class": "CoronaRenderer", "value": self.CODE}]},
-                  "objects": {"enabled": True, "set": [{"handle": 7, "name": "Cam", "props": [
-                      {"name": "isNodeHidden", "value": "true"}, {"name": "renderable", "value": False}, {"name": "script", "value": True}]}]},
-                  "layers": {"enabled": True, "set": [{"name": "0", "props": [{"name": "on", "value": False}, {"name": "script", "value": True}]}]}}]
+        pulze = [
+            {
+                "camera": {
+                    "enabled": True,
+                    "handle": 7,
+                    "props": [{"name": cam, "v_class": "CoronaCam", "value": "35.5"}],
+                },
+                "renderCustom": {
+                    "enabled": "true",
+                    "props": [
+                        {"name": rs, "v_class": "CoronaRenderer", "value": "true"},
+                        {"name": "a.b.script", "v_class": "CoronaRenderer", "value": self.CODE},
+                    ],
+                },
+                "objects": {
+                    "enabled": True,
+                    "set": [
+                        {
+                            "handle": 7,
+                            "name": "Cam",
+                            "props": [
+                                {"name": "isNodeHidden", "value": "true"},
+                                {"name": "renderable", "value": False},
+                                {"name": "script", "value": True},
+                            ],
+                        }
+                    ],
+                },
+                "layers": {
+                    "enabled": True,
+                    "set": [
+                        {"name": "0", "props": [{"name": "on", "value": False}, {"name": "script", "value": True}]}
+                    ],
+                },
+            }
+        ]
         text = base64.b64encode(json.dumps(pulze).encode("utf-8")).decode("ascii")
-        w = opened("", pulze=text, settings={"enabled_props": {"1": ["CoronaCam|" + cam], "25": ["CoronaRenderer|" + rs]}})
+        w = opened(
+            "", pulze=text, settings={"enabled_props": {"1": ["CoronaCam|" + cam], "25": ["CoronaRenderer|" + rs]}}
+        )
         self.assertEqual(w.toasts, ["Read 1 setup(s) saved by Pulze Scene Manager in this file"])
         listener = quiet(w.activate, 1)
         self.assertIn((7, cam, 35.5), called("omgr_setNode"))
@@ -430,16 +580,31 @@ class SettingsOfAFile(Base):
 class ScriptsOfAFile(Base):
     """Batch Render and Bake Setups apply setups too: the scripts that came with the file go through the same
     question and the same check as when a setup is clicked."""
+
     FILE = "D:/s/pre.ms"
 
     def setups(self):
-        return [setup(1, pre_setup="print 1", post_setup="print 2", pre_render="print 3", post_render="print 4", pre_file=self.FILE),
-                setup(2, pre_setup="print 5")]
+        return [
+            setup(
+                1,
+                pre_setup="print 1",
+                post_setup="print 2",
+                pre_render="print 3",
+                post_render="print 4",
+                pre_file=self.FILE,
+            ),
+            setup(2, pre_setup="print 5"),
+        ]
 
     def all_scripts(self):
-        return [("#1 Cam", "Pre-Setup script", "code", "print 1"), ("#1 Cam", "Post-Setup script", "code", "print 2"),
-                ("#1 Cam", "Pre-Render script", "code", "print 3"), ("#1 Cam", "Post-Render script", "code", "print 4"),
-                ("#1 Cam", "Pre-Render file", "file", self.FILE), ("#2 Cam", "Pre-Setup script", "code", "print 5")]
+        return [
+            ("#1 Cam", "Pre-Setup script", "code", "print 1"),
+            ("#1 Cam", "Post-Setup script", "code", "print 2"),
+            ("#1 Cam", "Pre-Render script", "code", "print 3"),
+            ("#1 Cam", "Post-Render script", "code", "print 4"),
+            ("#1 Cam", "Pre-Render file", "file", self.FILE),
+            ("#2 Cam", "Pre-Setup script", "code", "print 5"),
+        ]
 
     def assert_no_script_ran(self):
         self.assertEqual(rt.executed, [])
@@ -572,6 +737,7 @@ class ScriptsOfAFile(Base):
 class RenderPresetOfAFile(Base):
     """The render preset of a setup (Render Settings - Preset card) is a file that replaces the render settings; its
     path comes with the setup. It is asked about and trusted like a script file."""
+
     PRESET = "D:/project/presets/final.rps"
     ROW = ("#1 Cam", "Render preset", "preset", PRESET)
 
@@ -708,32 +874,53 @@ class RenderPresetOfAFile(Base):
 
     # ---- what the dialog says
     def test_the_dialog_for_scripts_alone_reads_as_before(self):
-        title, message, listed, yes, no = window.dialogs.review_text([("#1 Cam", "Pre-Setup script", "code", "print 1\n"),
-                                                                      ("#1 Cam", "Pre-Render file", "file", "D:/s/pre.ms")])
+        title, message, listed, yes, no = window.dialogs.review_text(
+            [("#1 Cam", "Pre-Setup script", "code", "print 1\n"), ("#1 Cam", "Pre-Render file", "file", "D:/s/pre.ms")]
+        )
         self.assertEqual(title, "Scripts in this file")
-        self.assertEqual(message, "These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
-                                  "deleting files, so only run scripts you trust. OpenManager remembers your answer for these scripts; "
-                                  "if one changes, it asks again.")
-        self.assertEqual(listed, '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Pre-Render file\nfileIn @"D:/s/pre.ms"')
+        self.assertEqual(
+            message,
+            "These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
+            "deleting files, so only run scripts you trust. OpenManager remembers your answer for these scripts; "
+            "if one changes, it asks again.",
+        )
+        self.assertEqual(
+            listed, '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Pre-Render file\nfileIn @"D:/s/pre.ms"'
+        )
         self.assertEqual((yes, no), ("Run these scripts", "Don't run them"))
 
     def test_the_dialog_for_a_preset(self):
         title, message, listed, yes, no = window.dialogs.review_text([self.ROW])
         self.assertEqual(title, "Render presets in this file")
-        self.assertEqual(message, "These setups load a render preset that came with the file. A preset replaces the render settings "
-                                  "of the scene with the ones in its file, so only load presets you trust. OpenManager leaves the "
-                                  "scripts of Render Setup as they are. OpenManager remembers your answer for these render presets; "
-                                  "if one changes, it asks again.")
+        self.assertEqual(
+            message,
+            "These setups load a render preset that came with the file. A preset replaces the render settings "
+            "of the scene with the ones in its file, so only load presets you trust. OpenManager leaves the "
+            "scripts of Render Setup as they are. OpenManager remembers your answer for these render presets; "
+            "if one changes, it asks again.",
+        )
         self.assertEqual(listed, '-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"')
         self.assertEqual((yes, no), ("Load these presets", "Don't load them"))
 
     def test_the_dialog_for_both(self):
-        title, message, listed, yes, no = window.dialogs.review_text([("#1 Cam", "Pre-Setup script", "code", "print 1"), self.ROW])
+        title, message, listed, yes, no = window.dialogs.review_text(
+            [("#1 Cam", "Pre-Setup script", "code", "print 1"), self.ROW]
+        )
         self.assertEqual(title, "Scripts and render presets in this file")
         self.assertIn("so only run scripts you trust. They also load a render preset that came with the file.", message)
-        self.assertIn("so only load presets you trust. OpenManager leaves the scripts of Render Setup as they are. OpenManager remembers", message)
-        self.assertTrue(message.endswith("OpenManager remembers your answer for these scripts and render presets; if one changes, it asks again."))
-        self.assertEqual(listed, '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"')
+        self.assertIn(
+            "so only load presets you trust. OpenManager leaves the scripts of Render Setup as they are. OpenManager remembers",
+            message,
+        )
+        self.assertTrue(
+            message.endswith(
+                "OpenManager remembers your answer for these scripts and render presets; if one changes, it asks again."
+            )
+        )
+        self.assertEqual(
+            listed,
+            '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"',
+        )
         self.assertEqual((yes, no), ("Run and load them", "Don't run or load them"))
 
 
@@ -741,17 +928,20 @@ class RenderSetupScriptsOfAPreset(Base):
     """A render preset also keeps the scripts of Render Setup (Scripts rollout: a script file run before each render,
     one run after it, and their switches), so a preset the person agreed to could still set a script that runs at
     the next render. Loading a preset leaves them as they were (maxlink.load_preset)."""
+
     PRESET = "D:/project/presets/final.rps"
     BROUGHT = [True, "//server/share/before.ms", True, "//server/share/after.ms"]
     FILE = "D:/s/pre.ms"
 
     def preset_brings_scripts(self, fails=False):
         """What 3ds Max does with this preset: the four script settings of Render Setup become the ones it keeps."""
+
         def load(path):
             rt.render_setup_scripts = list(self.BROUGHT)
             if fails:
                 raise RuntimeError("the preset could not be read")
             return True
+
         rt.returns["omgr_loadPreset"] = load
 
     def file(self, **more):
@@ -764,8 +954,15 @@ class RenderSetupScriptsOfAPreset(Base):
         self.preset_brings_scripts()
         self.assertTrue(maxlink.load_preset(self.PRESET))
         self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
-        self.assertEqual(rt.calls, [("omgr_renderSetupScripts",), ("omgr_loadPreset", self.PRESET),
-                                    ("omgr_setRenderSetupScripts", False, "", False, ""), ("omgr_renderSetupScripts",)])
+        self.assertEqual(
+            rt.calls,
+            [
+                ("omgr_renderSetupScripts",),
+                ("omgr_loadPreset", self.PRESET),
+                ("omgr_setRenderSetupScripts", False, "", False, ""),
+                ("omgr_renderSetupScripts",),
+            ],
+        )
 
     def test_scripts_the_person_has_in_render_setup_stay(self):
         mine = [True, "D:/mine/before.ms", False, "D:/mine/after.ms"]
@@ -782,7 +979,9 @@ class RenderSetupScriptsOfAPreset(Base):
 
     def test_a_preset_that_is_not_loaded_changes_nothing(self):
         rt.render_setup_scripts = [True, "D:/mine/before.ms", False, ""]
-        self.assertFalse(maxlink.load_preset("D:/no/such.rps"))  # omgr_loadPreset gives false for a file that is not there
+        self.assertFalse(
+            maxlink.load_preset("D:/no/such.rps")
+        )  # omgr_loadPreset gives false for a file that is not there
         self.assertEqual(rt.render_setup_scripts, [True, "D:/mine/before.ms", False, ""])
 
     def test_no_preset_is_loaded_when_they_can_not_be_read(self):
@@ -790,6 +989,7 @@ class RenderSetupScriptsOfAPreset(Base):
 
         def broken(self):
             raise RuntimeError("no such global")
+
         with mock.patch.object(type(rt), "omgr_renderSetupScripts", broken), self.assertRaises(RuntimeError):
             maxlink.load_preset(self.PRESET)
         self.assertEqual(called("omgr_loadPreset"), [])
@@ -799,15 +999,23 @@ class RenderSetupScriptsOfAPreset(Base):
         self.preset_brings_scripts()
         with mock.patch.object(type(rt), "omgr_setRenderSetupScripts", lambda self, values: True):
             listener = quiet(maxlink.load_preset, self.PRESET)
-        self.assertIn("OpenManager: the scripts of Render Setup could not be put back after loading %s" % self.PRESET, listener)
+        self.assertIn(
+            "OpenManager: the scripts of Render Setup could not be put back after loading %s" % self.PRESET, listener
+        )
         self.assertNotIn("could not be put back", quiet(maxlink.load_preset, self.PRESET))
 
     def test_the_same_path_written_another_way_is_no_change(self):
         rt.render_setup_scripts = [True, "d:\\MINE\\before.ms", False, ""]
 
         def load(path):
-            rt.render_setup_scripts = [True, "D:/mine/before.ms", False, ""]  # the same file, as 3ds Max may give it back
+            rt.render_setup_scripts = [
+                True,
+                "D:/mine/before.ms",
+                False,
+                "",
+            ]  # the same file, as 3ds Max may give it back
             return True
+
         rt.returns["omgr_loadPreset"] = load
         with mock.patch.object(type(rt), "omgr_setRenderSetupScripts", lambda self, values: True):
             self.assertNotIn("could not be put back", quiet(maxlink.load_preset, self.PRESET))
@@ -850,13 +1058,28 @@ class RenderSetupScriptsOfAPreset(Base):
     # ---- the scripts of the setup itself are another thing, and still apply
     def test_the_scripts_of_the_setup_still_apply(self):
         self.preset_brings_scripts()
-        w = self.file(pre_setup="print 1", pre_render="print 3", post_render="print 4", pre_file=self.FILE,
-                      trust=[("code", "print 1"), ("code", "print 3"), ("code", "print 4"), ("file", self.FILE)])
+        w = self.file(
+            pre_setup="print 1",
+            pre_render="print 3",
+            post_render="print 4",
+            pre_file=self.FILE,
+            trust=[("code", "print 1"), ("code", "print 3"), ("code", "print 4"), ("file", self.FILE)],
+        )
         quiet(w.activate, 1)
-        order = [c for c in rt.calls if c[0] in ("omgr_runCode", "omgr_loadPreset", "omgr_setRenderSetupScripts", "omgr_setRenderScripts")]
-        self.assertEqual(order, [("omgr_runCode", "print 1"), ("omgr_loadPreset", self.PRESET),
-                                 ("omgr_setRenderSetupScripts", False, "", False, ""),
-                                 ("omgr_setRenderScripts", self.FILE, "", "print 3", "print 4")])
+        order = [
+            c
+            for c in rt.calls
+            if c[0] in ("omgr_runCode", "omgr_loadPreset", "omgr_setRenderSetupScripts", "omgr_setRenderScripts")
+        ]
+        self.assertEqual(
+            order,
+            [
+                ("omgr_runCode", "print 1"),
+                ("omgr_loadPreset", self.PRESET),
+                ("omgr_setRenderSetupScripts", False, "", False, ""),
+                ("omgr_setRenderScripts", self.FILE, "", "print 3", "print 4"),
+            ],
+        )
         self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
         self.assertEqual(w.toasts, [])
 

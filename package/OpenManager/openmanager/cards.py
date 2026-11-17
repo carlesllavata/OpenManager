@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """The cards of the board. Each one reads the active setup in fill() and writes it back on change."""
+
 import datetime
 import json
 import os
@@ -7,7 +8,21 @@ import os
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import model
-from .widgets import Blocker, Card, ColorButton, Combo, NumberRow, Spin, TabBar, icon, menu_tool, tool, blend, pal, text_color
+from .widgets import (
+    Blocker,
+    Card,
+    ColorButton,
+    Combo,
+    NumberRow,
+    Spin,
+    TabBar,
+    icon,
+    menu_tool,
+    tool,
+    blend,
+    pal,
+    text_color,
+)
 
 
 def hrow(*widgets, stretch_index=None, spacing=4):
@@ -61,9 +76,11 @@ NAME_MIN = 130
 
 # ---------------------------------------------------------------- ticked settings shown as rows
 
+
 class PropRows(QtWidgets.QWidget):
     """Rows for the settings ticked in the Property Selector: slider/number, tick box, text, file, color,
     map or tone-mapping chain, each with a pencil that takes the value from the scene."""
+
     SHOWN = ("BooleanClass", "Float", "Integer", "String", "Filename", "Color", "Texturemap", "Pipeline", "Date")
 
     def __init__(self, sm, card_id, parent=None):
@@ -158,14 +175,18 @@ class PropRows(QtWidgets.QWidget):
                 ed = QtWidgets.QDateEdit()
                 ed.setCalendarPopup(True)
                 ed.setDisplayFormat("dd / MM / yyyy")
-                ed.dateChanged.connect(lambda d, k=key: self._set(k, model.date_to_solar(datetime.date(d.year(), d.month(), d.day()))))
+                ed.dateChanged.connect(
+                    lambda d, k=key: self._set(k, model.date_to_solar(datetime.date(d.year(), d.month(), d.day())))
+                )
                 widget = hrow(ed, None)
             elif cls in ("Float", "Integer"):
                 lo = p.get("min") if p.get("min") is not None else 0.0
                 hi = p.get("max") if p.get("max") is not None else max(100.0, float(p.get("value") or 0) * 10)
                 if p["name"] == "progressive_timeLimit":
                     hi = max(hi, 600)
-                ed = NumberRow(lo, hi, p.get("step"), integer=(cls == "Integer" and p["name"] != "progressive_timeLimit"))
+                ed = NumberRow(
+                    lo, hi, p.get("step"), integer=(cls == "Integer" and p["name"] != "progressive_timeLimit")
+                )
                 ed.changed.connect(lambda v, k=key: self._set(k, v))
             elif cls == "Color":
                 ed = ColorButton()
@@ -209,8 +230,12 @@ class PropRows(QtWidgets.QWidget):
         combo.showPopup()
 
     def _browse(self, edit, key):
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Choose a file", os.path.dirname(edit.text()),
-                                                     "Images (*.hdr *.exr *.jpg *.png *.tif *.tga);;All (*.*)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Choose a file",
+            os.path.dirname(edit.text()),
+            "Images (*.hdr *.exr *.jpg *.png *.tif *.tga);;All (*.*)",
+        )
         if f:
             edit.setText(f.replace("\\", "/"))
             self._set(key, edit.text())
@@ -228,6 +253,7 @@ class PropRows(QtWidgets.QWidget):
 
 
 # ---------------------------------------------------------------- simple cards
+
 
 class SceneNameCard(Card):
     CARD_ID = 15
@@ -330,7 +356,9 @@ class ResolutionCard(Card):
         self.presets.setMenu(m)
         dbl = tool("expand", "Double width and height (active and selected setups)", slot=lambda: self._scale(2.0))
         half = tool("shrink", "Half width and height (active and selected setups)", slot=lambda: self._scale(0.5))
-        self.body_layout.addWidget(hrow(self.w, QtWidgets.QLabel("x"), self.h, self.presets, dbl, half, stretch_index=0))
+        self.body_layout.addWidget(
+            hrow(self.w, QtWidgets.QLabel("x"), self.h, self.presets, dbl, half, stretch_index=0)
+        )
         self.body_layout.itemAt(0).widget().layout().setStretch(2, 1)
         self.aspect = NumberRow(0.1, 10.0, 0.01)
         self.aspect.changed.connect(self._aspect)
@@ -484,6 +512,7 @@ class TimeCard(Card):
 
 class EntryTabs(QtWidgets.QWidget):
     """The tabs of a card that can hold more than one sun or environment. Hidden while there is only one."""
+
     picked = QtCore.Signal(int)
     closed = QtCore.Signal(int)
 
@@ -518,6 +547,7 @@ class EntryTabs(QtWidgets.QWidget):
 
 class LightPickCard(Card):
     """Sun and Dome: the chosen light of that kind on, the others off. The arrow selects it in the scene."""
+
     KIND = "sun"
     NONE_TEXT = "Disable sun lights"
     MULTI = False
@@ -592,8 +622,10 @@ class LightPickCard(Card):
         rows = [(t, p) for t, p in self.sm.enabled_rows(self.CARD_ID) if any(model.tab_matches(t, x) for x in classes)]
         self.rows.fill(s, rows, store=model.entry_store(s, s[self.KIND], self.tab), entry=self.tab)
         if l and not rows:
-            self.hint.setText("No settings of %s are ticked: choose them with the puzzle piece (Property Selector)."
-                              % " / ".join(classes))
+            self.hint.setText(
+                "No settings of %s are ticked: choose them with the puzzle piece (Property Selector)."
+                % " / ".join(classes)
+            )
         self.hint.setVisible(bool(l) and not rows)
 
     def _chosen(self, i):
@@ -650,6 +682,7 @@ class DomeCard(LightPickCard):
 class EnvironmentCard(Card):
     """3ds Max has one environment slot. With Corona the tabs are mixed in it like a LightMix (each tab on/off with its
     intensity); otherwise the first tab goes in it and the others keep their settings up to date."""
+
     CARD_ID = 6
 
     def build(self):
@@ -657,7 +690,11 @@ class EnvironmentCard(Card):
         self.combo = Combo()
         self.combo.activated.connect(self._chosen)
         self.combo.before_popup = lambda: self.sm.sync_scene(force=True)
-        add = tool("add", "Add another environment to this setup (a tab for each one, mixed like a LightMix)", slot=self._add_entry)
+        add = tool(
+            "add",
+            "Add another environment to this setup (a tab for each one, mixed like a LightMix)",
+            slot=self._add_entry,
+        )
         more, m = menu_tool("more", "Environment map tools")
         m.addAction(icon("fetch"), "Fetch Current (environment map of the scene)", self._fetch_current)
         m.addAction(icon("image"), "Create New Hdri...", self._new_hdri)
@@ -672,8 +709,10 @@ class EnvironmentCard(Card):
         self.body_layout.addWidget(hrow(self.combo, add, more, stretch_index=0))
         # the mix: one switch for the card, and on/off + intensity for the tab shown
         self.mix_box = QtWidgets.QCheckBox("Mix the tabs (LightMix)")
-        self.mix_box.setToolTip("All the tabs that are on go in the environment at once, added together, each one\n"
-                                "multiplied by its intensity. Off: only the first tab is the environment.")
+        self.mix_box.setToolTip(
+            "All the tabs that are on go in the environment at once, added together, each one\n"
+            "multiplied by its intensity. Off: only the first tab is the environment."
+        )
         self.mix_box.toggled.connect(self._mix_toggled)
         self.mix_on = QtWidgets.QCheckBox()
         self.mix_on.setToolTip("This tab is part of the environment")
@@ -727,7 +766,7 @@ class EnvironmentCard(Card):
         m = self.sm.scene.map(e.get("cls"), e.get("name"))
         store = model.entry_store(s, block, self.tab)
         files = []
-        for link in ((m.get("chain") or [m]) if m else []):
+        for link in (m.get("chain") or [m]) if m else []:
             # a file typed in the Filename row is what this setup really uses
             f = store.get("6|%s|filename" % link["class"]) or link.get("path")
             if f:
@@ -762,18 +801,23 @@ class EnvironmentCard(Card):
 
     def _new_hdri(self):
         from . import maxlink
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "HDRI", "", "HDRI (*.hdr *.exr);;Images (*.jpg *.png *.tif);;All (*.*)")
+
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "HDRI", "", "HDRI (*.hdr *.exr);;Images (*.jpg *.png *.tif);;All (*.*)"
+        )
         if f:
             m = maxlink.new_hdri(os.path.normpath(f))
             self.use(m["class"], m["name"])
 
     def _new_sky(self):
         from . import maxlink
+
         m = maxlink.new_sky()
         self.use(m["class"], m["name"])
 
     def _show(self):
         from . import maxlink
+
         s = self.setup()
         e = self._entry(s) if s else None
         if e and e.get("cls"):
@@ -865,8 +909,11 @@ class XrefCard(Card):
         s = self.setup()
         if not s:
             return
-        s["xref"]["set"] = [self.list.item(i).text() for i in range(self.list.count())
-                            if self.list.item(i).checkState() == QtCore.Qt.Checked]
+        s["xref"]["set"] = [
+            self.list.item(i).text()
+            for i in range(self.list.count())
+            if self.list.item(i).checkState() == QtCore.Qt.Checked
+        ]
         self.sm.changed()
 
 
@@ -933,8 +980,10 @@ class TodoCard(Card):
                 self.list.addItem(it)
 
     def _changed(self, it):
-        self.sm.todo = [{"text": self.list.item(i).text(), "done": self.list.item(i).checkState() == QtCore.Qt.Checked}
-                        for i in range(self.list.count())]
+        self.sm.todo = [
+            {"text": self.list.item(i).text(), "done": self.list.item(i).checkState() == QtCore.Qt.Checked}
+            for i in range(self.list.count())
+        ]
         self.sm.changed(apply=False, list_too=False)
 
     def _add(self):
@@ -954,6 +1003,7 @@ class TodoCard(Card):
 
 
 # ---------------------------------------------------------------- tables: layers, objects, lights
+
 
 class FlagTable(QtWidgets.QTableWidget):
     def __init__(self, parent=None):
@@ -988,7 +1038,11 @@ class LayersCard(Card):
         self.filter.setClearButtonEnabled(True)
         self.filter.textChanged.connect(lambda _: self.fill(self.setup()) if self.setup() else None)
         fetch = tool("fetch", "Take every layer as it is now in the scene", slot=self._fetch)
-        self.add = tool("add", "Add the selected layers (in the Layer Explorer, or those of the selected objects)", slot=self._add_selected)
+        self.add = tool(
+            "add",
+            "Add the selected layers (in the Layer Explorer, or those of the selected objects)",
+            slot=self._add_selected,
+        )
         rm = tool("delete", "Remove the selected layers from this setup", slot=self._remove)
         self.body_layout.addWidget(hrow(self.filter, fetch, self.add, rm, stretch_index=0))
         self.table = FlagTable()
@@ -1055,8 +1109,10 @@ class LayersCard(Card):
         s = self.setup()
         if not s:
             return
-        s["layers"]["set"] = [model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True))
-                              for l in self.sm.scene.layers]
+        s["layers"]["set"] = [
+            model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True))
+            for l in self.sm.scene.layers
+        ]
         if not s["layers"]["enabled"]:
             s["layers"]["enabled"] = True
             self.refresh()
@@ -1066,6 +1122,7 @@ class LayersCard(Card):
 
     def _add_selected(self):
         from . import maxlink
+
         s = self.setup()
         if not s:
             return
@@ -1081,7 +1138,9 @@ class LayersCard(Card):
         if not s:
             return
         for l in layers:
-            s["layers"]["set"].append(model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True)))
+            s["layers"]["set"].append(
+                model.layer_entry(l["name"], l["visible"], l.get("frozen", False), l.get("render", True))
+            )
         self.fill(s)
         self.sm.changed()
 
@@ -1089,7 +1148,9 @@ class LayersCard(Card):
         s = self.setup()
         if not s:
             return
-        names = set(self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems()))
+        names = set(
+            self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems())
+        )
         s["layers"]["set"] = [l for l in s["layers"]["set"] if l["name"] not in names]
         self.fill(s)
         self.sm.changed()
@@ -1121,11 +1182,17 @@ class ObjectsCard(Card):
     def fill(self, s):
         cols = self.columns()
         rows = s["objects"]["set"]
-        self.count.setText("%d object%s" % (len(rows), "" if len(rows) == 1 else "s") if rows else "Select objects in the scene, then +")
+        self.count.setText(
+            "%d object%s" % (len(rows), "" if len(rows) == 1 else "s")
+            if rows
+            else "Select objects in the scene, then +"
+        )
         with Blocker(self.table):
             self.table.clear()
             self.table.setColumnCount(1 + len(cols))
-            self.table.setHorizontalHeaderLabels(["Name"] + [("Visible" if p["name"] == "isNodeHidden" else p.get("short") or p["name"]) for p in cols])
+            self.table.setHorizontalHeaderLabels(
+                ["Name"] + [("Visible" if p["name"] == "isNodeHidden" else p.get("short") or p["name"]) for p in cols]
+            )
             self.table.setRowCount(len(rows))
             for r, o in enumerate(rows):
                 so = self.sm.scene.obj(o["handle"])
@@ -1182,7 +1249,9 @@ class ObjectsCard(Card):
         s = self.setup()
         if not s:
             return
-        hs = set(self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems()))
+        hs = set(
+            self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems())
+        )
         s["objects"]["set"] = [o for o in s["objects"]["set"] if o["handle"] not in hs]
         self.fill(s)
         self.sm.changed()
@@ -1206,7 +1275,9 @@ class LightsCard(Card):
         rm = tool("delete", "Remove the selected lights from this setup", slot=self._remove)
         self.body_layout.addWidget(hrow(muted("Lights and their settings in this setup"), None, self.add, rm))
         self.table = FlagTable()
-        self.table.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.EditKeyPressed)
+        self.table.setEditTriggers(
+            QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.EditKeyPressed
+        )
         self.table.setMinimumHeight(140)
         self.table.itemChanged.connect(self._changed)
         self.body_layout.addWidget(self.table)
@@ -1233,8 +1304,12 @@ class LightsCard(Card):
                     it = QtWidgets.QTableWidgetItem()
                     it.setData(QtCore.Qt.UserRole, p["name"])
                     if p["class"] == "BooleanClass":
-                        it.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable)
-                        it.setCheckState(QtCore.Qt.Checked if (v if v is not None else p.get("value")) else QtCore.Qt.Unchecked)
+                        it.setFlags(
+                            QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsSelectable
+                        )
+                        it.setCheckState(
+                            QtCore.Qt.Checked if (v if v is not None else p.get("value")) else QtCore.Qt.Unchecked
+                        )
                     else:
                         it.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsSelectable)
                         it.setText("" if v is None else ("%g" % float(v)))
@@ -1291,7 +1366,9 @@ class LightsCard(Card):
         s = self.setup()
         if not s:
             return
-        hs = set(self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems()))
+        hs = set(
+            self.table.item(r, 0).data(QtCore.Qt.UserRole) for r in set(i.row() for i in self.table.selectedItems())
+        )
         s["lights"]["set"] = [h for h in s["lights"]["set"] if h not in hs]
         for k in [k for k in s["props"] if k.startswith("26|") and int(k.split("|")[1]) in hs]:
             del s["props"][k]
@@ -1300,6 +1377,7 @@ class LightsCard(Card):
 
 
 # ---------------------------------------------------------------- render output
+
 
 class OutputCard(Card):
     CARD_ID = 9
@@ -1362,8 +1440,11 @@ class OutputCard(Card):
         if problem:
             text += '<br><span style="color:%s">%s</span>' % (color, problem.replace("<", "&lt;"))
         self.final.setText(text)
-        self.final.setToolTip("This path is used when rendering" if problem is None else
-                              "Not a complete file path yet: the render output is left as it is, and Batch Render skips this setup")
+        self.final.setToolTip(
+            "This path is used when rendering"
+            if problem is None
+            else "Not a complete file path yet: the render output is left as it is, and Batch Render skips this setup"
+        )
 
     def _build_tokens(self, s):
         while self.tok_layout.count():
@@ -1423,11 +1504,12 @@ class OutputCard(Card):
             "FileName (Filtered)": model.filtered_file_name(self.sm.scene.file),
             "FileVersion": model.file_version(self.sm.scene.file),
             "Index": str(self.sm.index_of(s) + 1),
-            "PcName": self.sm.pc_name, "UserName": self.sm.user_name,
+            "PcName": self.sm.pc_name,
+            "UserName": self.sm.user_name,
             "SceneName": s["scenename"],
         }
         for row, t in zip(self.rows, s["output"]["preset"]):
-            with Blocker(row.val, row.folder, *( [row.digits] if row.digits else [])):
+            with Blocker(row.val, row.folder, *([row.digits] if row.digits else [])):
                 if isinstance(row.val, QtWidgets.QComboBox):
                     row.val.setCurrentText(t["value"])
                 elif row.val.isReadOnly():
@@ -1512,16 +1594,20 @@ class OutputCard(Card):
             self.sm.changed()
 
     def _browse(self):
-        d = QtWidgets.QFileDialog.getExistingDirectory(self, "Project path", self.project.text() or self.sm.scene.folder)
+        d = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Project path", self.project.text() or self.sm.scene.folder
+        )
         if d:
             self._set_project(d)
 
 
 # ---------------------------------------------------------------- HDRI quick browser
 
+
 class HdriCard(Card):
     """HDRIs of a folder with their pictures. An HDRI without a picture gets one made by 3ds Max from the HDRI itself
     (kept in a cache folder, so only once): small files straight away, big ones with the "Make previews" button."""
+
     CARD_ID = 28
     NEEDS_SETUP = False
     AUTO_MB = 60  # HDRIs up to this size get their preview made without asking
@@ -1572,6 +1658,7 @@ class HdriCard(Card):
     def cache_dir():
         try:
             from pymxs import runtime as rt
+
             base = str(rt.getDir(rt.Name("plugcfg")))
         except Exception:
             base = os.path.expanduser("~")
@@ -1738,6 +1825,7 @@ class HdriCard(Card):
             return
         it, raw = self._missing.pop(nxt)
         from . import maxlink
+
         cached, _ = self.cache_file(raw)
         ok = False
         try:
@@ -1755,5 +1843,21 @@ class HdriCard(Card):
         self.sm.apply_hdri(it.data(QtCore.Qt.UserRole))
 
 
-CARD_CLASSES = [SceneNameCard, CameraCard, ResolutionCard, TimeCard, SunCard, LightsCard, DomeCard, EnvironmentCard,
-                HdriCard, LayersCard, ObjectsCard, XrefCard, OutputCard, RenderCustomCard, NotesCard, TodoCard]
+CARD_CLASSES = [
+    SceneNameCard,
+    CameraCard,
+    ResolutionCard,
+    TimeCard,
+    SunCard,
+    LightsCard,
+    DomeCard,
+    EnvironmentCard,
+    HdriCard,
+    LayersCard,
+    ObjectsCard,
+    XrefCard,
+    OutputCard,
+    RenderCustomCard,
+    NotesCard,
+    TodoCard,
+]

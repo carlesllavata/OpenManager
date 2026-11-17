@@ -39,7 +39,9 @@ def compact(items):
 
 def _push(items, cid, user):
     me = items[cid]
-    hit = sorted((i for i, o in items.items() if i != cid and collides(me, o)), key=lambda i: (items[i][1], items[i][0]))
+    hit = sorted(
+        (i for i, o in items.items() if i != cid and collides(me, o)), key=lambda i: (items[i][1], items[i][0])
+    )
     for other in hit:
         o = items[other]
         if not collides(me, o):

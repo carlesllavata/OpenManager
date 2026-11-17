@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Small icons drawn at run time: Windows' own symbol font plus a few hand-drawn shapes.
 Nothing to ship, sharp at any DPI."""
+
 from PySide6 import QtCore, QtGui
 
 _FONT = None
@@ -8,20 +9,75 @@ _CACHE = {}
 _ORIGIN = {}  # cacheKey of a glyph icon -> (name, color, size): lets a theme change redraw icons that already exist
 
 GLYPH = {
-    "add": "", "delete": "", "copy": "", "paste": "", "camera": "",
-    "refresh": "", "lock": "", "unlock": "", "color": "", "import": "",
-    "export": "", "list": "", "stop": "", "sun": "", "globe": "",
-    "folder": "", "eye": "", "hide": "", "edit": "", "more": "",
-    "close": "", "filter": "", "photo": "", "clock": "", "layers": "",
-    "link": "", "bulb": "", "save": "", "grip": "", "menu": "",
-    "pick": "", "up": "", "down": "", "expand": "", "shrink": "",
-    "fetch": "", "cube": "", "settings": "", "note": "", "check": "",
-    "checklist": "", "cards": "", "cut": "", "select": "", "dup": "",
-    "transfer": "", "text": "", "resolution": "", "image": "",
-    "dome": "", "mountain": "", "wind": "", "swatch": "", "sliders": "",
-    "preset": "", "elements": "", "post": "", "codefile": "", "code": "",
-    "view": "", "sync": "", "bake": "", "play": "", "pin": "",
-    "wand": "", "magic": "", "gear": "", "folderopen": "", "minus": "",
+    "add": "",
+    "delete": "",
+    "copy": "",
+    "paste": "",
+    "camera": "",
+    "refresh": "",
+    "lock": "",
+    "unlock": "",
+    "color": "",
+    "import": "",
+    "export": "",
+    "list": "",
+    "stop": "",
+    "sun": "",
+    "globe": "",
+    "folder": "",
+    "eye": "",
+    "hide": "",
+    "edit": "",
+    "more": "",
+    "close": "",
+    "filter": "",
+    "photo": "",
+    "clock": "",
+    "layers": "",
+    "link": "",
+    "bulb": "",
+    "save": "",
+    "grip": "",
+    "menu": "",
+    "pick": "",
+    "up": "",
+    "down": "",
+    "expand": "",
+    "shrink": "",
+    "fetch": "",
+    "cube": "",
+    "settings": "",
+    "note": "",
+    "check": "",
+    "checklist": "",
+    "cards": "",
+    "cut": "",
+    "select": "",
+    "dup": "",
+    "transfer": "",
+    "text": "",
+    "resolution": "",
+    "image": "",
+    "dome": "",
+    "mountain": "",
+    "wind": "",
+    "swatch": "",
+    "sliders": "",
+    "preset": "",
+    "elements": "",
+    "post": "",
+    "codefile": "",
+    "code": "",
+    "view": "",
+    "sync": "",
+    "bake": "",
+    "play": "",
+    "pin": "",
+    "wand": "",
+    "magic": "",
+    "gear": "",
+    "folderopen": "",
+    "minus": "",
 }
 GLYPH.update({"undo": "\ue7a7", "redo": "\ue7a6"})  # Segoe MDL2 Undo / Redo
 
@@ -122,8 +178,13 @@ def logo_path(r):
 
     def card(c, grow=0.0):
         p = QtGui.QPainterPath()
-        p.addRoundedRect(QtCore.QRectF(x + w * (c[0] - grow), y + h * (c[1] - grow), w * (c[2] - c[0] + 2 * grow),
-                                       h * (c[3] - c[1] + 2 * grow)), w * (rad + grow), h * (rad + grow))
+        p.addRoundedRect(
+            QtCore.QRectF(
+                x + w * (c[0] - grow), y + h * (c[1] - grow), w * (c[2] - c[0] + 2 * grow), h * (c[3] - c[1] + 2 * grow)
+            ),
+            w * (rad + grow),
+            h * (rad + grow),
+        )
         return p
 
     path = card(cards[0])

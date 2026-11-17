@@ -3,6 +3,7 @@
 
 A change names the property it sets. The setups and the base state travel inside the .max, so a file from someone
 else can name any property, or a path through other objects to one, such as the script of a script controller."""
+
 import contextlib
 import io
 import json
@@ -19,13 +20,51 @@ rt = fake_max.install()
 from openmanager import maxlink, model  # noqa: E402
 
 CODE = "OM_PAYLOAD_RAN = true"
-VALUES = {"BooleanClass": True, "Float": 1.5, "Integer": 2, "Color": "#ff0000", "Texturemap": "Checker|m", "Pipeline": [],
-          "Date": 3.0, "Filename": "D:/x.hdr", "String": "x", "Matrix3": "x", "Material": "x"}
+VALUES = {
+    "BooleanClass": True,
+    "Float": 1.5,
+    "Integer": 2,
+    "Color": "#ff0000",
+    "Texturemap": "Checker|m",
+    "Pipeline": [],
+    "Date": 3.0,
+    "Filename": "D:/x.hdr",
+    "String": "x",
+    "Matrix3": "x",
+    "Material": "x",
+}
 ENGINES = {"vray": "V-Ray", "corona": "Corona", "fstorm": "FStorm", "arnold": "Arnold", None: "Scanline"}
 # what a file could put where the name of a property belongs
-NOT_NAMES = ["a b", "a;b", "fov()", 'fov"', "fov = 1; x", "a..b", ".fov", "fov.", "a.b c", "1fov", "fov[1]", "$.fov", "", "café"]
-CODE_NAMES = ["script", "Script", "SCRIPT", "Proceed_Script", "Every_Step_Update_Script", "preRenderScript", "scriptFile",
-              "script_file", "MAXScriptCode", "maxscript", "OSLCode", "oslcode"]
+NOT_NAMES = [
+    "a b",
+    "a;b",
+    "fov()",
+    'fov"',
+    "fov = 1; x",
+    "a..b",
+    ".fov",
+    "fov.",
+    "a.b c",
+    "1fov",
+    "fov[1]",
+    "$.fov",
+    "",
+    "café",
+]
+CODE_NAMES = [
+    "script",
+    "Script",
+    "SCRIPT",
+    "Proceed_Script",
+    "Every_Step_Update_Script",
+    "preRenderScript",
+    "scriptFile",
+    "script_file",
+    "MAXScriptCode",
+    "maxscript",
+    "OSLCode",
+    "oslcode",
+]
 
 
 def table(card):
@@ -37,18 +76,21 @@ def built_by_the_cards():
     value, for every renderer and every class of camera, sun, dome and map the table knows: {kind: paths}."""
     out = {"node": set(), "layer": set(), "map": set(), "rs": set(), "pipeline": set()}
     for eng, eng_name in ENGINES.items():
+
         def ticked(card):
             return [(t, p) for t in model.tabs_for(card, eng) for p in t["props"]]
 
         def setup(card=None):
             s = model.empty_setup(1)
             s["resolution"]["enabled"] = s["camera"]["enabled"] = False
-            for t, p in (ticked(card) if card else []):
+            for t, p in ticked(card) if card else []:
                 s["props"]["%d|%s|%s" % (card, t["v_class"], p["name"])] = VALUES[p["class"]]
             return s
 
         def collect(s, **scene):
-            for a in maxlink.actions(s, maxlink.Scene(dict(scene, engine=eng_name)), ticked, None, False, None, {"gi_default": 1}):
+            for a in maxlink.actions(
+                s, maxlink.Scene(dict(scene, engine=eng_name)), ticked, None, False, None, {"gi_default": 1}
+            ):
                 if a[0] in maxlink.PROP_AT:
                     out[a[0]].add(a[maxlink.PROP_AT[a[0]]])
                     if a[0] == "node" and isinstance(a[3], tuple) and a[3][0] == "$pipeline":
@@ -56,7 +98,7 @@ def built_by_the_cards():
 
         for card, block in ((1, "camera"), (3, "sun"), (4, "dome")):  # one node of each class the tabs are for
             for cls in sorted(set(c for t in model.tabs_for(card, eng) for c in t.get("classes") or [])):
-                for inside_daylight in ((False, True) if card == 3 else (False,)):
+                for inside_daylight in (False, True) if card == 3 else (False,):
                     node = {"handle": 7, "name": "n", "class": cls, "kind": block, "locked": False}
                     if inside_daylight:
                         node.update({"class": "DaylightAssemblyHead", "sun_class": cls})
@@ -68,11 +110,26 @@ def built_by_the_cards():
             s["environment"].update(enabled=True, cls=cls, name="m")
             for t, p in ticked(6):
                 s["props"]["6|%s|%s" % (cls, p["name"])] = VALUES[p["class"]]
-            collect(s, maps=[{"name": "m", "class": cls, "path": "", "offer": True, "chain": [{"name": "m", "class": cls, "path": ""}]}])
+            collect(
+                s,
+                maps=[
+                    {
+                        "name": "m",
+                        "class": cls,
+                        "path": "",
+                        "offer": True,
+                        "chain": [{"name": "m", "class": cls, "path": ""}],
+                    }
+                ],
+            )
         s = setup(25)  # everything else in one setup
         s["render_custom"]["enabled"] = True
-        s["layers"].update(enabled=True, set=[dict(model.layer_entry("0"), extra={p["name"]: True for _, p in ticked(14)})])
-        s["objects"].update(enabled=True, set=[dict(model.object_entry(7, "o"), extra={p["name"]: True for _, p in ticked(23)})])
+        s["layers"].update(
+            enabled=True, set=[dict(model.layer_entry("0"), extra={p["name"]: True for _, p in ticked(14)})]
+        )
+        s["objects"].update(
+            enabled=True, set=[dict(model.object_entry(7, "o"), extra={p["name"]: True for _, p in ticked(23)})]
+        )
         s["lights"].update(enabled=True, set=[7])
         for _, p in ticked(26):
             s["props"]["26|7|%s" % p["name"]] = VALUES[p["class"]]
@@ -103,10 +160,14 @@ class Rules(unittest.TestCase):
                 self.assertIsNone(model.prop_refusal(kind, path), "%s: %s" % (kind, path))
         # the cards were all there: settings of every kind, with the ones they write in their own way
         self.assertGreater(len(built["node"]), 150)
-        self.assertLessEqual({"isHidden", "renderable", "controller.solar_date.controller.value", "sun." + table(3)[0]}, built["node"])
+        self.assertLessEqual(
+            {"isHidden", "renderable", "controller.solar_date.controller.value", "sun." + table(3)[0]}, built["node"]
+        )
         self.assertLessEqual({"on", "isfrozen", "renderable"}, built["layer"])
         self.assertLessEqual({"uAngle", "output.output_amount", "uvwOffset.y"}, built["map"])
-        self.assertLessEqual({"gi_on", "gi_default", "lut_path", "bloomGlare_enabled", "sharpening_amount"}, built["rs"])
+        self.assertLessEqual(
+            {"gi_on", "gi_default", "lut_path", "bloomGlare_enabled", "sharpening_amount"}, built["rs"]
+        )
         self.assertEqual(built["pipeline"], {"colorMappingPipeline"})
 
     def test_and_nothing_else_of_an_object_a_layer_or_a_map(self):
@@ -120,23 +181,50 @@ class Rules(unittest.TestCase):
 
     def test_what_the_table_lists_but_no_card_sets(self):
         # names, transforms and materials are in the table for the Property Selector; no change is built from them
-        for kind, name in (("node", "name"), ("node", "transform"), ("node", "material"), ("node", "isNodeHidden"), ("layer", "name")):
+        for kind, name in (
+            ("node", "name"),
+            ("node", "transform"),
+            ("node", "material"),
+            ("node", "isNodeHidden"),
+            ("layer", "name"),
+        ):
             self.assertEqual(model.prop_refusal(kind, name), "no card of OpenManager sets it", (kind, name))
 
     def test_paths_of_the_table_are_the_only_paths(self):
         self.assertIsNone(model.prop_refusal("node", "controller.solar_date.controller.value"))
         self.assertIsNone(model.prop_refusal("map", "output.output_amount"))
-        for kind, path in (("node", "controller.script"), ("node", "controller.solar_date.controller.script"),
-                           ("node", "pos.controller.value"), ("node", "sun.controller.script"), ("node", "target.fov"),
-                           ("map", "coords.controller.script"), ("map", "output.anything"), ("layer", "on.x"),
-                           ("rs", "a.b"), ("rs", "bg_texmap.coords.U_Offset"), ("operator", "a.b"), ("lightmix", "a.b")):
-            self.assertEqual(model.prop_refusal(kind, path), "no card of OpenManager sets it" if "script" not in path
-                             else "it holds code", (kind, path))
+        for kind, path in (
+            ("node", "controller.script"),
+            ("node", "controller.solar_date.controller.script"),
+            ("node", "pos.controller.value"),
+            ("node", "sun.controller.script"),
+            ("node", "target.fov"),
+            ("map", "coords.controller.script"),
+            ("map", "output.anything"),
+            ("layer", "on.x"),
+            ("rs", "a.b"),
+            ("rs", "bg_texmap.coords.U_Offset"),
+            ("operator", "a.b"),
+            ("lightmix", "a.b"),
+        ):
+            self.assertEqual(
+                model.prop_refusal(kind, path),
+                "no card of OpenManager sets it" if "script" not in path else "it holds code",
+                (kind, path),
+            )
 
     def test_a_node_layer_or_map_only_takes_what_its_cards_set(self):
-        for kind, name in (("node", "Proceed_Script"), ("node", "wirecolor"), ("node", "parent"), ("node", "FOV"),
-                           ("layer", "wirecolor"), ("map", "anything"), ("pipeline", "directOverrideTexmap"),
-                           ("lightmix", "any_renderer_property"), ("other", "fov")):
+        for kind, name in (
+            ("node", "Proceed_Script"),
+            ("node", "wirecolor"),
+            ("node", "parent"),
+            ("node", "FOV"),
+            ("layer", "wirecolor"),
+            ("map", "anything"),
+            ("pipeline", "directOverrideTexmap"),
+            ("lightmix", "any_renderer_property"),
+            ("other", "fov"),
+        ):
             self.assertIsNotNone(model.prop_refusal(kind, name), (kind, name))
 
     def test_the_renderer_takes_any_plain_setting(self):
@@ -163,7 +251,13 @@ class Rules(unittest.TestCase):
     def test_code_is_told_by_the_word_not_by_letters_inside_one(self):
         for name in CODE_NAMES:
             self.assertTrue(model.holds_code(name), name)
-        for name in ("description", "imageDescription", "descriptor_size", "colorMappingOperator_simpleExposure", "scr_ipt"):
+        for name in (
+            "description",
+            "imageDescription",
+            "descriptor_size",
+            "colorMappingOperator_simpleExposure",
+            "scr_ipt",
+        ):
             self.assertFalse(model.holds_code(name), name)
 
     def test_nothing_in_the_table_holds_code(self):
@@ -188,6 +282,7 @@ class Base(unittest.TestCase):
 
 class Changes(Base):
     """maxlink.run and maxlink.capture: every change that names a property."""
+
     SETS = ("omgr_setNode", "omgr_setRS", "omgr_setLayer", "omgr_setMap")
     READS = ("omgr_getRawNode", "omgr_getRawRS", "omgr_getRawLayer", "omgr_getRawMap")
 
@@ -197,19 +292,40 @@ class Changes(Base):
         listener = run([act])
         self.assertEqual(called(*self.SETS + self.READS), [])
         self.assert_refused(listener, ["node controller.script"])
-        self.assertIn('OpenManager: left out the object setting "controller.script": it holds code '
-                      '(settings stored in a file are checked before they are applied)', listener)
+        self.assertIn(
+            'OpenManager: left out the object setting "controller.script": it holds code '
+            "(settings stored in a file are checked before they are applied)",
+            listener,
+        )
 
     def test_changes_no_card_makes(self):
-        acts = [("node", 7, "Proceed_Script", CODE), ("node", 7, "pos.controller.value", 1.0), ("node", 7, "wirecolor", 1),
-                ("rs", "a.b", 1), ("rs", "environment_map.script", CODE), ("layer", "0", "x.y", True),
-                ("map", "Checker", "m", "coords.script", CODE), ("map", "Checker", "m", "anything", 1)]
+        acts = [
+            ("node", 7, "Proceed_Script", CODE),
+            ("node", 7, "pos.controller.value", 1.0),
+            ("node", 7, "wirecolor", 1),
+            ("rs", "a.b", 1),
+            ("rs", "environment_map.script", CODE),
+            ("layer", "0", "x.y", True),
+            ("map", "Checker", "m", "coords.script", CODE),
+            ("map", "Checker", "m", "anything", 1),
+        ]
         for a in acts:
             self.assertIsNone(maxlink.capture(a), a)
         listener = run(acts)
         self.assertEqual(called(*self.SETS + self.READS), [])
-        self.assert_refused(listener, ["node Proceed_Script", "node pos.controller.value", "node wirecolor", "rs a.b",
-                                       "rs environment_map.script", "layer x.y", "map coords.script", "map anything"])
+        self.assert_refused(
+            listener,
+            [
+                "node Proceed_Script",
+                "node pos.controller.value",
+                "node wirecolor",
+                "rs a.b",
+                "rs environment_map.script",
+                "layer x.y",
+                "map coords.script",
+                "map anything",
+            ],
+        )
         self.assertIn('the renderer setting "a.b": no card of OpenManager sets it', listener)
         self.assertIn('the layer setting "x.y": no card of OpenManager sets it', listener)
         self.assertIn('the map setting "coords.script": it holds code', listener)
@@ -217,24 +333,39 @@ class Changes(Base):
     def test_text_that_is_not_a_property_name(self):
         for name in NOT_NAMES:
             rt.reset()
-            listener = run([("node", 7, name, 1), ("rs", name, 1), ("layer", "0", name, True), ("map", "Checker", "m", name, 1)])
+            listener = run(
+                [("node", 7, name, 1), ("rs", name, 1), ("layer", "0", name, True), ("map", "Checker", "m", name, 1)]
+            )
             self.assertEqual(called(*self.SETS + self.READS), [], repr(name))
             self.assert_refused(listener, ["%s %s" % (k, name) for k in ("node", "rs", "layer", "map")])
             self.assertIn("it is not the name of a property", listener)
 
     def test_the_changes_of_the_cards_still_run(self):
-        acts = [("node", 7, table(1)[0], 45.0), ("node", 7, "sun." + table(3)[0], 1.0), ("node", 7, "isHidden", True),
-                ("node", 7, "controller.solar_date.controller.value", 10.0), ("layer", "0", "on", False),
-                ("layer", "0", table(14)[0], True), ("map", "CoronaBitmap", "hdr", "uAngle", 90.0),
-                ("map", "CoronaBitmap", "hdr", "output.output_amount", 2.0), ("rs", table(25)[0], 5),
-                ("rs", "any_setting_the_override_card_kept", 3), ("rs", "bloomGlare_enabled", True)]
+        acts = [
+            ("node", 7, table(1)[0], 45.0),
+            ("node", 7, "sun." + table(3)[0], 1.0),
+            ("node", 7, "isHidden", True),
+            ("node", 7, "controller.solar_date.controller.value", 10.0),
+            ("layer", "0", "on", False),
+            ("layer", "0", table(14)[0], True),
+            ("map", "CoronaBitmap", "hdr", "uAngle", 90.0),
+            ("map", "CoronaBitmap", "hdr", "output.output_amount", 2.0),
+            ("rs", table(25)[0], 5),
+            ("rs", "any_setting_the_override_card_kept", 3),
+            ("rs", "bloomGlare_enabled", True),
+        ]
         rt.returns.update(omgr_getRawNode=1.0, omgr_getRawRS=1, omgr_getRawLayer=True, omgr_getRawMap=1.0)
         for a in acts:
             self.assertIsNotNone(maxlink.capture(a), a)
         del rt.calls[:]
         listener = run(acts)
-        self.assertEqual([c[:-1] for c in called(*self.SETS)],
-                         [("omgr_set" + {"node": "Node", "rs": "RS", "layer": "Layer", "map": "Map"}[a[0]],) + a[1:-1] for a in acts])
+        self.assertEqual(
+            [c[:-1] for c in called(*self.SETS)],
+            [
+                ("omgr_set" + {"node": "Node", "rs": "RS", "layer": "Layer", "map": "Map"}[a[0]],) + a[1:-1]
+                for a in acts
+            ],
+        )
         self.assert_refused(listener, [])
 
     def test_a_chain_of_operators_only_goes_where_a_card_puts_one(self):
@@ -251,14 +382,34 @@ class Changes(Base):
 
 class Operators(Base):
     """The values of tone-mapping operators (Post-Production card, and the chain of a Corona camera)."""
-    PROPS = {"colorMappingOperator_highlightCompression": 2.5, "colorMappingOperator_enabled": False,
-             "colorMappingOperator_nextOperator": 5, "a.b": 1, "weird name": 1, "script": CODE, "Proceed_Script": CODE}
-    REFUSED = ["operator colorMappingOperator_nextOperator", "operator a.b", "operator weird name", "operator script",
-               "operator Proceed_Script"]
+
+    PROPS = {
+        "colorMappingOperator_highlightCompression": 2.5,
+        "colorMappingOperator_enabled": False,
+        "colorMappingOperator_nextOperator": 5,
+        "a.b": 1,
+        "weird name": 1,
+        "script": CODE,
+        "Proceed_Script": CODE,
+    }
+    REFUSED = [
+        "operator colorMappingOperator_nextOperator",
+        "operator a.b",
+        "operator weird name",
+        "operator script",
+        "operator Proceed_Script",
+    ]
 
     def assert_only_its_values(self, op):
-        self.assertEqual(op.props, {"colorMappingOperator_nextOperator": None, "colorMappingOperator_enabled": False,
-                                    "colorMappingOperator_id": 0, "colorMappingOperator_highlightCompression": 2.5})
+        self.assertEqual(
+            op.props,
+            {
+                "colorMappingOperator_nextOperator": None,
+                "colorMappingOperator_enabled": False,
+                "colorMappingOperator_id": 0,
+                "colorMappingOperator_highlightCompression": 2.5,
+            },
+        )
 
     def test_the_vfb(self):
         listener = run([("posttone", json.dumps([{"class": "FilmicOperatorPlugin", "props": self.PROPS}]))])
@@ -267,15 +418,40 @@ class Operators(Base):
         self.assertIn('the tone-mapping operator setting "a.b": no card of OpenManager sets it', listener)
 
     def test_the_chain_of_a_camera(self):
-        listener = run([("node", 7, "colorMappingPipeline", ("$pipeline", json.dumps([{"class": "FilmicOperatorPlugin", "props": self.PROPS}])))])
+        listener = run(
+            [
+                (
+                    "node",
+                    7,
+                    "colorMappingPipeline",
+                    ("$pipeline", json.dumps([{"class": "FilmicOperatorPlugin", "props": self.PROPS}])),
+                )
+            ]
+        )
         self.assert_only_its_values(rt.chain(self.cam, "colorMappingPipeline")[0])
         self.assert_refused(listener, self.REFUSED)
 
     def test_only_the_lists_of_the_lightmix(self):
         r = rt.renderers.current
-        r.props.update(colorMap_lightmixIntensities=None, colorMap_lightmixColors=None, any_renderer_property=None, script=None)
-        listener = run([("postlm", json.dumps({"colorMap_lightmixIntensities": [1.0, 2.0], "colorMap_lightmixColors": [[255, 0, 0]],
-                                               "colormap_lightselect_elementNames": ["a"], "any_renderer_property": [1], "script": CODE}))])
+        r.props.update(
+            colorMap_lightmixIntensities=None, colorMap_lightmixColors=None, any_renderer_property=None, script=None
+        )
+        listener = run(
+            [
+                (
+                    "postlm",
+                    json.dumps(
+                        {
+                            "colorMap_lightmixIntensities": [1.0, 2.0],
+                            "colorMap_lightmixColors": [[255, 0, 0]],
+                            "colormap_lightselect_elementNames": ["a"],
+                            "any_renderer_property": [1],
+                            "script": CODE,
+                        }
+                    ),
+                )
+            ]
+        )
         self.assertEqual(r.props["colorMap_lightmixIntensities"], [1.0, 2.0])
         self.assertEqual(len(r.props["colorMap_lightmixColors"]), 1)
         self.assertIsNone(r.props["any_renderer_property"])

@@ -8,6 +8,7 @@
 
 Pure Python, nothing to install.
 """
+
 import os
 import re
 import shutil
@@ -76,7 +77,10 @@ def draw_icon(size, theme="Dark", ss=6):
                     if _in_logo((i + (si + 0.5) / ss) / size, (j + (sj + 0.5) / ss) / size):
                         cov += 1
             t = min(1.0, max(0.0, (i + j) / (2.0 * size)))
-            row.append(tuple(int(round(c0[k] + (c1[k] - c0[k]) * t)) for k in range(3)) + (int(round(cov * 255.0 / (ss * ss))),))
+            row.append(
+                tuple(int(round(c0[k] + (c1[k] - c0[k]) * t)) for k in range(3))
+                + (int(round(cov * 255.0 / (ss * ss))),)
+            )
         px.append(row)
     return px
 
@@ -129,6 +133,7 @@ def build_icons():
 
 # ---------------------------------------------------------------- package
 
+
 def check_mzp_run():
     """3ds Max refuses the whole package, without a word to the user, when mzp.run doesn't compile. A "version" line
     must be a plain number (0.2, never 0.2.0); the app's version lives in openmanager/window.py instead."""
@@ -160,6 +165,7 @@ def build_mzp():
 
 # ---------------------------------------------------------------- bundle
 
+
 def read_version():
     """VERSION in openmanager/window.py; the README status line must say the same."""
     with open(os.path.join(PKG, "OpenManager", "openmanager", "window.py"), encoding="utf-8") as f:
@@ -184,24 +190,31 @@ COMPONENTS = (
 
 
 def package_contents(version):
-    req = '<RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="%s" SeriesMax="%s" />' % (SERIES_MIN, SERIES_MAX)
+    req = '<RuntimeRequirements OS="Win64" Platform="3ds Max" SeriesMin="%s" SeriesMax="%s" />' % (
+        SERIES_MIN,
+        SERIES_MAX,
+    )
     parts = "".join(
         '    <Components Description="%s">\n        %s\n'
         '        <ComponentEntry AppName="OpenManager" Version="%s" ModuleName="%s" />\n    </Components>\n'
-        % (desc, req, version, module) for desc, module in COMPONENTS)
-    return ('<?xml version="1.0" encoding="utf-8"?>\n'
-            '<ApplicationPackage\n'
-            '    SchemaVersion="1.0"\n'
-            '    AutodeskProduct="3ds Max"\n'
-            '    ProductType="Application"\n'
-            '    Name="OpenManager"\n'
-            '    Description="Open-source scene setups and batch render manager for 3ds Max."\n'
-            '    AppVersion="%s"\n'
-            '    ProductCode="%s"\n'
-            '    UpgradeCode="%s">\n'
-            '    <CompanyDetails Name="OpenManager contributors" />\n'
-            '    %s\n%s'
-            '</ApplicationPackage>\n') % (version, PRODUCT_CODE, UPGRADE_CODE, req, parts)
+        % (desc, req, version, module)
+        for desc, module in COMPONENTS
+    )
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        "<ApplicationPackage\n"
+        '    SchemaVersion="1.0"\n'
+        '    AutodeskProduct="3ds Max"\n'
+        '    ProductType="Application"\n'
+        '    Name="OpenManager"\n'
+        '    Description="Open-source scene setups and batch render manager for 3ds Max."\n'
+        '    AppVersion="%s"\n'
+        '    ProductCode="%s"\n'
+        '    UpgradeCode="%s">\n'
+        '    <CompanyDetails Name="OpenManager contributors" />\n'
+        "    %s\n%s"
+        "</ApplicationPackage>\n"
+    ) % (version, PRODUCT_CODE, UPGRADE_CODE, req, parts)
 
 
 def check_bundle(target, version):
@@ -231,7 +244,9 @@ def build_bundle(version, dist=DIST, icons=None):
         old = "%s.old-%d" % (target, os.getpid())
         os.rename(target, old)
         shutil.rmtree(old, ignore_errors=True)
-    for stale in [f for f in os.listdir(dist) if f.startswith("OpenManager.bundle.old-")] if os.path.isdir(dist) else []:
+    for stale in (
+        [f for f in os.listdir(dist) if f.startswith("OpenManager.bundle.old-")] if os.path.isdir(dist) else []
+    ):
         shutil.rmtree(os.path.join(dist, stale), ignore_errors=True)
     contents = os.path.join(target, "Contents")
     skip = shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo")

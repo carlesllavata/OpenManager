@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """References to nodes and layers survive merges and renames (model.py, no 3ds Max)."""
+
 import os
 import sys
 import unittest
@@ -24,8 +25,18 @@ def setup_with_refs():
 class Query(unittest.TestCase):
     def test_every_reference_in_order(self):
         q = model.resolve_query([setup_with_refs()])
-        self.assertEqual(q, [[10, "u-cam", "Cam"], [20, "u-sun", "Sun"], [21, "", "Sun2"], [-1, "", ""],
-                             [30, "", "Chair"], [40, "u-l40", ""], [41, "", ""]])
+        self.assertEqual(
+            q,
+            [
+                [10, "u-cam", "Cam"],
+                [20, "u-sun", "Sun"],
+                [21, "", "Sun2"],
+                [-1, "", ""],
+                [30, "", "Chair"],
+                [40, "u-l40", ""],
+                [41, "", ""],
+            ],
+        )
 
 
 class ApplyResolved(unittest.TestCase):
@@ -44,7 +55,9 @@ class ApplyResolved(unittest.TestCase):
         s = setup_with_refs()
         results = [(-1, "Cam"), (20, "Sun"), (21, "Sun2"), (-1, ""), (-1, "Chair"), (-1, ""), (41, "")]
         self.assertFalse(model.apply_resolved([s], results))
-        self.assertEqual((s["camera"]["handle"], s["objects"]["set"][0]["handle"], s["lights"]["set"]), (10, 30, [40, 41]))
+        self.assertEqual(
+            (s["camera"]["handle"], s["objects"]["set"][0]["handle"], s["lights"]["set"]), (10, 30, [40, 41])
+        )
 
     def test_handle_of_another_node_is_not_used(self):
         s = setup_with_refs()
@@ -68,8 +81,10 @@ class Layers(unittest.TestCase):
     def test_layer_refs_cover_cards_and_variants(self):
         s = setup_with_refs()
         refs = model.layer_refs(s)
-        self.assertEqual([model.layer_ref_get(r) for r in refs],
-                         [("Furniture", ""), ("Walls", "u-walls"), ("Wood", ""), ("Tiles", "")])
+        self.assertEqual(
+            [model.layer_ref_get(r) for r in refs],
+            [("Furniture", ""), ("Walls", "u-walls"), ("Wood", ""), ("Tiles", "")],
+        )
 
     def test_rename_follows(self):
         s = setup_with_refs()
@@ -77,8 +92,10 @@ class Layers(unittest.TestCase):
         model.layer_ref_set(refs[1], name="Walls_v2")
         model.layer_ref_set(refs[3], name="Tiles_new", uid="u-tiles")
         self.assertEqual(s["layers"]["set"][1]["name"], "Walls_v2")
-        self.assertEqual((s["variants"]["set"][0]["layers"], s["variants"]["set"][0]["uids"]),
-                         (["Wood", "Tiles_new"], ["", "u-tiles"]))
+        self.assertEqual(
+            (s["variants"]["set"][0]["layers"], s["variants"]["set"][0]["uids"]),
+            (["Wood", "Tiles_new"], ["", "u-tiles"]),
+        )
 
     def test_variant_ids_follow_the_list_length(self):
         s = setup_with_refs()

@@ -4,6 +4,7 @@
 Setups travel inside the .max file, so text from a setup must only reach `execute` / `fileIn` through the scripts
 the person has reviewed (model.py, "scripts that come with a file"). These tests list every such place in the
 package, so a new one can't slip in unnoticed: add it here only after checking where its text comes from."""
+
 import os
 import re
 import sys
@@ -53,8 +54,8 @@ def calls(source, word):
     code = code_of(source)
     found = []
     for m in re.finditer(r"(?<![\w.])%s\b" % re.escape(word), code, re.I):
-        inside = re.findall(r"^fn\s+(\w+)", code[:m.start()], re.M)
-        literal = re.match(r'\s*\(?\s*"((?:[^"\\]|\\.)*)"', source[m.end():])
+        inside = re.findall(r"^fn\s+(\w+)", code[: m.start()], re.M)
+        literal = re.match(r'\s*\(?\s*"((?:[^"\\]|\\.)*)"', source[m.end() :])
         found.append((inside[-1] if inside else None, literal.group(1) if literal else None))
     return found
 
@@ -86,16 +87,24 @@ class CoreMs(unittest.TestCase):
         self.assertEqual(calls(self.src, "fileIn"), [("omgr_preRender", None), ("omgr_postRender", None)])
 
     def test_nothing_else_that_runs_text_or_programs(self):
-        for word in ("python.Execute", "python.ExecuteFile", "DOSCommand", "HiddenDOSCommand", "ShellLaunch", "readValue",
-                     "readExpr", "include"):
+        for word in (
+            "python.Execute",
+            "python.ExecuteFile",
+            "DOSCommand",
+            "HiddenDOSCommand",
+            "ShellLaunch",
+            "readValue",
+            "readExpr",
+            "include",
+        ):
             self.assertEqual(calls(self.src, word), [], word)
 
     def test_a_map_class_is_found_by_name_not_run(self):
         code = code_of(self.src)
-        body = code[code.index("fn omgr_findMap"):code.index("fn omgr_isDome")]
+        body = code[code.index("fn omgr_findMap") : code.index("fn omgr_isDome")]
         self.assertNotIn("execute", body.lower())
         self.assertIn("omgr_mapClass cls", body)
-        finder = code[code.index("fn omgr_mapClass"):code.index("global omgr_mapCache")]
+        finder = code[code.index("fn omgr_mapClass") : code.index("global omgr_mapCache")]
         self.assertIn("omgr_isClassName cls", finder)
         self.assertIn("textureMap.classes", finder)
         self.assertIn("omgr_badClass cls", finder)
@@ -105,15 +114,25 @@ class CoreMs(unittest.TestCase):
         self.assertEqual(sorted(set(fn for fn, _ in calls(self.src, "setProperty"))), ["omgr_setIf", "omgr_setPath"])
         code = code_of(self.src)
         # ... which, like omgr_getPath, is only reached through the three functions that check the name first
-        for name, end in (("omgr_set", "fn omgr_get "), ("omgr_get", "fn omgr_node "), ("omgr_getRaw", "fn omgr_getRawNode ")):
-            body = code[code.index("fn %s obj prop" % name):code.index(end)]
+        for name, end in (
+            ("omgr_set", "fn omgr_get "),
+            ("omgr_get", "fn omgr_node "),
+            ("omgr_getRaw", "fn omgr_getRawNode "),
+        ):
+            body = code[code.index("fn %s obj prop" % name) : code.index(end)]
             self.assertIn("omgr_propOk prop", body, name)
             self.assertLess(body.index("omgr_propOk prop"), body.index("omgr_getPath obj"), name)
         bodies = re.findall(r"^fn[ \t]+(\w+)[^\n]*\n((?:(?!fn[ \t]|global[ \t]).*\n)*)", code, re.M)
         users = set(name for name, body in bodies if re.search(r"\bomgr_(?:set|get)Path\b", body))
         self.assertEqual(users, {"omgr_setPath", "omgr_getPath", "omgr_set", "omgr_get", "omgr_getRaw"})
-        check = self.src[self.src.index("fn omgr_propOk"):self.src.index("global omgr_setPath")]
-        for piece in ("omgr_isClassName part", 'pattern:"script*"', 'pattern:"*script"', '"oslcode"', "append omgr_badProps"):
+        check = self.src[self.src.index("fn omgr_propOk") : self.src.index("global omgr_setPath")]
+        for piece in (
+            "omgr_isClassName part",
+            'pattern:"script*"',
+            'pattern:"*script"',
+            '"oslcode"',
+            "append omgr_badProps",
+        ):
             self.assertIn(piece, check)
 
     def test_a_render_preset_is_loaded_in_one_place(self):
@@ -130,9 +149,13 @@ class CoreMs(unittest.TestCase):
             self.assertRegex(setter, r"\b%s = \(.*v\[%d\]" % (name, i))
         link = read("openmanager", "maxlink.py")
         self.assertEqual(len(re.findall(r"omgr_loadPreset", link)), 1)
-        loader = link[link.index("def load_preset(path):"):link.index("def run_code(code):")]
-        for piece in ("kept = list(rt.omgr_renderSetupScripts())", "return bool(rt.omgr_loadPreset(path))", "finally:",
-                      "rt.omgr_setRenderSetupScripts(kept)"):
+        loader = link[link.index("def load_preset(path):") : link.index("def run_code(code):")]
+        for piece in (
+            "kept = list(rt.omgr_renderSetupScripts())",
+            "return bool(rt.omgr_loadPreset(path))",
+            "finally:",
+            "rt.omgr_setRenderSetupScripts(kept)",
+        ):
             self.assertIn(piece, loader)
         self.assertLess(loader.index("rt.omgr_renderSetupScripts()"), loader.index("rt.omgr_loadPreset(path)"))
         self.assertLess(loader.index("finally:"), loader.index("rt.omgr_setRenderSetupScripts(kept)"))
@@ -154,8 +177,10 @@ class OtherMs(unittest.TestCase):
 class Python(unittest.TestCase):
     def test_the_package_runs_no_text(self):
         folder = os.path.join(TOOL, "openmanager")
-        banned = re.compile(r"rt\.execute|\.executeScriptFile|python\.Execute|(?<![\w.])(?:eval|exec|compile|__import__)\s*\("
-                            r"|\bsubprocess\b|os\.(?:system|popen|startfile|spawn\w*|exec\w*)\b|\bQProcess\b|\bShellLaunch\b|\bDOSCommand\b")
+        banned = re.compile(
+            r"rt\.execute|\.executeScriptFile|python\.Execute|(?<![\w.])(?:eval|exec|compile|__import__)\s*\("
+            r"|\bsubprocess\b|os\.(?:system|popen|startfile|spawn\w*|exec\w*)\b|\bQProcess\b|\bShellLaunch\b|\bDOSCommand\b"
+        )
         for name in sorted(os.listdir(folder)):
             if name.endswith(".py"):
                 with open(os.path.join(folder, name), encoding="utf-8") as f:

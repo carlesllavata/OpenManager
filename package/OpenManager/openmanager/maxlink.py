@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Everything that talks to 3ds Max: reading the scene, applying a setup, storing setups, rendering."""
+
 import json
 import os
 import tempfile
@@ -25,6 +26,7 @@ def _none(v):
 
 
 # ---------------------------------------------------------------- scene
+
 
 class Scene(object):
     def __init__(self, data=None):
@@ -135,6 +137,7 @@ def layer_uids():
 
 # ---------------------------------------------------------------- values
 
+
 def _value(prop, v):
     """Stored value -> what the change list carries (hashable). Colors, maps and tone-mapping
     chains travel as tagged tuples and become 3ds Max objects only when applied."""
@@ -195,7 +198,9 @@ def _reject(name, kind):
     text = name if isinstance(name, str) else repr(name)
     if len(text) > 80:
         text = text[:80] + "..."
-    print('OpenManager: left out "%s": it is not %s (class names stored in a file are never run as code)' % (text, kind))
+    print(
+        'OpenManager: left out "%s": it is not %s (class names stored in a file are never run as code)' % (text, kind)
+    )
     if text not in _rejected and len(_rejected) < 20:
         _rejected.append(text)
 
@@ -218,8 +223,15 @@ def take_rejected():
 # cards set, never a path into another object, never a property that holds code. A change that fails is left out
 # and reported like the class names: a line in the Listener, and take_refused() for the window to tell.
 
-PROP_OF = {"node": "object", "pipeline": "object", "layer": "layer", "map": "map", "rs": "renderer",
-           "operator": "tone-mapping operator", "lightmix": "LightMix"}
+PROP_OF = {
+    "node": "object",
+    "pipeline": "object",
+    "layer": "layer",
+    "map": "map",
+    "rs": "renderer",
+    "operator": "tone-mapping operator",
+    "lightmix": "LightMix",
+}
 _refused = []
 
 
@@ -230,8 +242,10 @@ def _prop_ok(kind, path):
     text = path if isinstance(path, str) else repr(path)
     if len(text) > 80:
         text = text[:80] + "..."
-    print('OpenManager: left out the %s setting "%s": %s (settings stored in a file are checked before they are applied)'
-          % (PROP_OF.get(kind, kind), text, why))
+    print(
+        'OpenManager: left out the %s setting "%s": %s (settings stored in a file are checked before they are applied)'
+        % (PROP_OF.get(kind, kind), text, why)
+    )
     text = "%s %s" % (kind, text)
     if text not in _refused and len(_refused) < 20:
         _refused.append(text)
@@ -307,6 +321,7 @@ def new_operator(name):
 
 # ---------------------------------------------------------------- tone-mapping chains (Corona colour mapping operators)
 
+
 def read_pipeline(obj, prop):
     """The chain of operators in obj.prop as a list of {"class", "props"} (texture inputs are left out)."""
     out = []
@@ -365,6 +380,7 @@ def write_pipeline(obj, prop, chain):
 
 # ---------------------------------------------------------------- Post-Production / VFB (Corona)
 
+
 def _live_operators():
     ops = []
     op = rt.getProperty(rt.renderers.current, "colorMap_pipeline")
@@ -409,7 +425,11 @@ def read_post(key, only_active=False):
         if not (isinstance(v, str) and v == "<none>"):
             props[n] = v
     if only_active:
-        switches = [n for n in names if isinstance(props.get(n), bool) and n.endswith(("_enabled", "_enable", "_on", "_blendEnabled"))]
+        switches = [
+            n
+            for n in names
+            if isinstance(props.get(n), bool) and n.endswith(("_enabled", "_enable", "_on", "_blendEnabled"))
+        ]
         if not any(props.get(n) for n in switches):
             return None
     return {"props": props} if props else None
@@ -464,6 +484,7 @@ def apply_lightmix(arrays):
 
 # ---------------------------------------------------------------- what a setup does
 
+
 def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=None):
     """The list of changes a setup makes, in order. `enabled(card)` gives the ticked (tab, prop) pairs.
     opts: settings of the window (viewport mode, time output type...)."""
@@ -489,8 +510,18 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
             out.append(("rs", k, v))
     f = s["frames"]
     if f["enabled"]:
-        out.append(("time", int(f["kind"]), int(f["single"]), int(f["start"]), int(f["end"]), max(1, int(f["nth"])),
-                    f["list"], bool(rendering or opts.get("update_time_output_type"))))
+        out.append(
+            (
+                "time",
+                int(f["kind"]),
+                int(f["single"]),
+                int(f["start"]),
+                int(f["end"]),
+                max(1, int(f["nth"])),
+                f["list"],
+                bool(rendering or opts.get("update_time_output_type")),
+            )
+        )
     if s["render_custom"]["enabled"]:
         for t, p in enabled(25):
             v = stored(25, t, p)
@@ -500,7 +531,9 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
         out.append(("renderview",))
     c = s["camera"]
     if c["enabled"] and c.get("handle") is not None:
-        out.append(("camera", c["handle"], bool(c["locked"]), 2 if rendering else int(opts.get("viewport_update_type", 0))))
+        out.append(
+            ("camera", c["handle"], bool(c["locked"]), 2 if rendering else int(opts.get("viewport_update_type", 0)))
+        )
         cam = scene.camera(c["handle"])
         cls = cam["class"] if cam else None
         for t, p in enabled(1):
@@ -515,8 +548,13 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
     if sun["enabled"]:
         suns = model.entries(sun)
         # the suns of the scene go in too: a sun added later is switched off as soon as the scene is read again
-        out.append(("sun", tuple(int(x["handle"]) for x in suns if x.get("handle") is not None),
-                    tuple(sorted(int(l["handle"]) for l in scene.suns()))))
+        out.append(
+            (
+                "sun",
+                tuple(int(x["handle"]) for x in suns if x.get("handle") is not None),
+                tuple(sorted(int(l["handle"]) for l in scene.suns())),
+            )
+        )
         for i, en in enumerate(suns):
             h = en.get("handle")
             if h is None:
@@ -531,8 +569,13 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
                         out.append(("node", h, model.light_prop(l, t, p), _value(p, v)))
     dome = s["dome"]
     if dome["enabled"]:
-        out.append(("dome", (int(dome["handle"]),) if dome.get("handle") is not None else (),
-                    tuple(sorted(int(l["handle"]) for l in scene.domes()))))
+        out.append(
+            (
+                "dome",
+                (int(dome["handle"]),) if dome.get("handle") is not None else (),
+                tuple(sorted(int(l["handle"]) for l in scene.domes())),
+            )
+        )
         if dome.get("handle") is not None:
             l = scene.light(dome["handle"])
             cls = l["class"] if l else None
@@ -779,6 +822,7 @@ def _run_one(a):
 
 # ---------------------------------------------------------------- base state: the value a change replaces
 
+
 def _stored(v, like):
     """A value read from 3ds Max in the form a change carries (`like`: the value the change sets), or None when it
     can't be stored."""
@@ -909,6 +953,7 @@ def texmaps():
 
 # ---------------------------------------------------------------- storage inside the .max file
 
+
 def save_setups(text):
     rt.omgr_saveSetups(text)
 
@@ -932,6 +977,7 @@ def read_setups(first_id):
 
 # ---------------------------------------------------------------- module helpers
 
+
 def atmospherics():
     return json.loads(str(rt.omgr_atmospherics()))
 
@@ -953,16 +999,25 @@ def load_preset(path):
     (the script files run before and after a render, and their switches), so loading one could set a script that
     runs at the next render. They are read before the load and put back after it, whatever the preset holds, and
     also when the load fails: a preset only brings render settings."""
+
     def plain(v):  # the two switches as they are, the two paths as Windows compares them
-        return [bool(v[0]), os.path.normcase(os.path.normpath(str(v[1] or ""))), bool(v[2]), os.path.normcase(os.path.normpath(str(v[3] or "")))]
+        return [
+            bool(v[0]),
+            os.path.normcase(os.path.normpath(str(v[1] or ""))),
+            bool(v[2]),
+            os.path.normcase(os.path.normpath(str(v[3] or ""))),
+        ]
+
     kept = list(rt.omgr_renderSetupScripts())
     try:
         return bool(rt.omgr_loadPreset(path))
     finally:
         rt.omgr_setRenderSetupScripts(kept)
         if plain(list(rt.omgr_renderSetupScripts())) != plain(kept):
-            print("OpenManager: the scripts of Render Setup could not be put back after loading %s: look at them "
-                  "in Render Setup > Common > Scripts before rendering" % path)
+            print(
+                "OpenManager: the scripts of Render Setup could not be put back after loading %s: look at them "
+                "in Render Setup > Common > Scripts before rendering" % path
+            )
 
 
 def run_code(code):
@@ -1015,6 +1070,7 @@ def save_copy(path):
 
 
 # ---------------------------------------------------------------- misc
+
 
 def new_hdri(path):
     return json.loads(str(rt.omgr_newHdri(path)))
@@ -1087,6 +1143,7 @@ def watch(callback):
 def main_window():
     try:
         import qtmax
+
         return qtmax.GetQMaxMainWindow()
     except Exception:
         return None

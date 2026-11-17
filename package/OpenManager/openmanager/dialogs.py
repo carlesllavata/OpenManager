@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Dialogs: Batch Render progress, Property Selector, Settings (the gear) and Bake Setups."""
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import model
@@ -14,12 +15,18 @@ class Dialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super(Dialog, self).__init__(parent)
-        self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint)
+        self.setWindowFlags(
+            QtCore.Qt.Dialog
+            | QtCore.Qt.WindowTitleHint
+            | QtCore.Qt.WindowSystemMenuHint
+            | QtCore.Qt.WindowCloseButtonHint
+        )
 
     def nativeEvent(self, event_type, message):
         try:
             if event_type == b"windows_generic_MSG" or bytes(event_type) == b"windows_generic_MSG":
                 import ctypes.wintypes
+
                 msg = ctypes.wintypes.MSG.from_address(int(message))
                 if msg.message == WM_CLOSE or (msg.message == WM_SYSCOMMAND and (msg.wParam & 0xFFF0) == SC_CLOSE):
                     QtCore.QTimer.singleShot(0, self.close_from_title_bar)
@@ -31,13 +38,22 @@ class Dialog(QtWidgets.QDialog):
     def close_from_title_bar(self):
         self.reject()
 
+
 DEFAULT_SETTINGS_MAX = {
-    "viewport_update_type": 0, "viewport_refresh": True, "ipr_corona_restart": False, "ipr_vray_resolution": True,
-    "update_time_output_type": False, "animate_camera": False, "restore_base": True,
+    "viewport_update_type": 0,
+    "viewport_refresh": True,
+    "ipr_corona_restart": False,
+    "ipr_vray_resolution": True,
+    "update_time_output_type": False,
+    "animate_camera": False,
+    "restore_base": True,
     "scripts": "ask",
 }
-SCRIPT_POLICIES = [("ask", "Show them and ask before they run"), ("always", "Always run them"),
-                   ("never", "Never run them")]
+SCRIPT_POLICIES = [
+    ("ask", "Show them and ask before they run"),
+    ("always", "Always run them"),
+    ("never", "Never run them"),
+]
 
 
 def hrow_label(text, w):
@@ -50,10 +66,26 @@ def hrow_label(text, w):
 
 
 DEFAULT_THEME = {"main": "auto", "header": "colored"}
-COLUMNS = [("name", "Scene Name"), ("camera", "Camera"), ("resolution", "Resolution"), ("sun", "Sun"),
-           ("dome", "Dome"), ("environment", "Environment"), ("frame", "Frame"), ("id", "Id")]
-DEFAULT_COLUMNS = {"name": True, "camera": True, "resolution": True, "sun": True, "dome": False,
-                   "environment": True, "frame": False, "id": False}
+COLUMNS = [
+    ("name", "Scene Name"),
+    ("camera", "Camera"),
+    ("resolution", "Resolution"),
+    ("sun", "Sun"),
+    ("dome", "Dome"),
+    ("environment", "Environment"),
+    ("frame", "Frame"),
+    ("id", "Id"),
+]
+DEFAULT_COLUMNS = {
+    "name": True,
+    "camera": True,
+    "resolution": True,
+    "sun": True,
+    "dome": False,
+    "environment": True,
+    "frame": False,
+    "id": False,
+}
 
 
 class BatchDialog(Dialog):
@@ -86,8 +118,14 @@ class BatchDialog(Dialog):
         self.bar.setValue(done)
 
 
-STATUS_COLORS = {"Ready": "#23d160", "Saved": "#23d160", "Warning": "#ffb020", "Skipped": "#ff3860",
-                 "Failed": "#ff3860", "Not rendered": "#9a9a9a"}
+STATUS_COLORS = {
+    "Ready": "#23d160",
+    "Saved": "#23d160",
+    "Warning": "#ffb020",
+    "Skipped": "#ff3860",
+    "Failed": "#ff3860",
+    "Not rendered": "#9a9a9a",
+}
 
 
 def _job_table(rows):
@@ -120,20 +158,24 @@ def review_text(rows):
     what = "scripts and render presets" if (scripts and presets) else ("scripts" if scripts else "render presets")
     msg = []
     if scripts:
-        msg.append("These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
-                   "deleting files, so only run scripts you trust.")
+        msg.append(
+            "These setups run MAXScript that came with the file. A script can do anything 3ds Max can, like "
+            "deleting files, so only run scripts you trust."
+        )
     if presets:
-        msg.append("%s a render preset that came with the file. A preset replaces the render settings of the scene "
-                   "with the ones in its file, so only load presets you trust. OpenManager leaves the scripts of "
-                   "Render Setup as they are." % ("They also load" if scripts else "These setups load"))
+        msg.append(
+            "%s a render preset that came with the file. A preset replaces the render settings of the scene "
+            "with the ones in its file, so only load presets you trust. OpenManager leaves the scripts of "
+            "Render Setup as they are." % ("They also load" if scripts else "These setups load")
+        )
     msg.append("OpenManager remembers your answer for these %s; if one changes, it asks again." % what)
     blocks = []
     for label, slot, kind, body in rows:
         head = "-- %s · %s" % (label, slot)
         if kind == "file":
-            body = "fileIn @\"%s\"" % body
+            body = 'fileIn @"%s"' % body
         elif kind == "preset":
-            body = "renderPresets.LoadAll 0 @\"%s\"" % body
+            body = 'renderPresets.LoadAll 0 @"%s"' % body
         blocks.append("%s\n%s" % (head, body.rstrip()))
     yes = "Run and load them" if (scripts and presets) else ("Run these scripts" if scripts else "Load these presets")
     no = "Don't run or load them" if (scripts and presets) else ("Don't run them" if scripts else "Don't load them")
@@ -178,8 +220,10 @@ class BatchCheckDialog(Dialog):
         self.resize(760, 360)
         v = QtWidgets.QVBoxLayout(self)
         skipped = sum(1 for r in rows if r[1] == "Skipped")
-        msg = QtWidgets.QLabel(("%d setup(s) can't be rendered and will be skipped. " % skipped if skipped else "")
-                               + "Fix them in their cards, or render the others now.")
+        msg = QtWidgets.QLabel(
+            ("%d setup(s) can't be rendered and will be skipped. " % skipped if skipped else "")
+            + "Fix them in their cards, or render the others now."
+        )
         msg.setWordWrap(True)
         v.addWidget(msg)
         v.addWidget(_job_table(rows), 1)
@@ -333,10 +377,14 @@ class SettingsDialog(Dialog):
         tl.addRow("Module Headers", self.header)
         form.addRow(section("Theme"), tw)
         # Setups
-        self.restore_base = QtWidgets.QCheckBox("Put back what the previous setup changed and the new one doesn't control")
-        self.restore_base.setToolTip("On: every setup starts from the scene as it was before any setup.\n"
-                                     "Off: a setup only changes its own cards; the rest stays as the previous setup left it.\n"
-                                     "Viewport camera and background, scripts and render presets are never put back.")
+        self.restore_base = QtWidgets.QCheckBox(
+            "Put back what the previous setup changed and the new one doesn't control"
+        )
+        self.restore_base.setToolTip(
+            "On: every setup starts from the scene as it was before any setup.\n"
+            "Off: a setup only changes its own cards; the rest stays as the previous setup left it.\n"
+            "Viewport camera and background, scripts and render presets are never put back."
+        )
         self.restore_base.setChecked(bool(mx["restore_base"]))
         sw = QtWidgets.QWidget()
         sl = QtWidgets.QVBoxLayout(sw)
@@ -345,9 +393,11 @@ class SettingsDialog(Dialog):
         self.scripts = Combo()
         self.scripts.addItems([t for _, t in SCRIPT_POLICIES])
         self.scripts.setCurrentIndex(next((i for i, (k, _) in enumerate(SCRIPT_POLICIES) if k == mx["scripts"]), 0))
-        self.scripts.setToolTip("Scripts of the Script Editor and Script File cards, and the render preset of the\n"
-                                "Render Settings - Preset card. The ones you write or choose yourself are always\n"
-                                "used; this is about the ones that came with a file.")
+        self.scripts.setToolTip(
+            "Scripts of the Script Editor and Script File cards, and the render preset of the\n"
+            "Render Settings - Preset card. The ones you write or choose yourself are always\n"
+            "used; this is about the ones that came with a file."
+        )
         sl.addWidget(hrow_label("Scripts and render presets that came with a file", self.scripts))
         form.addRow(section("Setups"), sw)
         # Time output
@@ -359,9 +409,13 @@ class SettingsDialog(Dialog):
         vl = QtWidgets.QVBoxLayout(vw)
         vl.setContentsMargins(0, 0, 0, 0)
         self.vp_group = QtWidgets.QButtonGroup(self)
-        for i, t in enumerate(["Switch the currently Active Viewport",
-                               "Only switch if the Active Viewport is Perspective, Camera or Orthographic",
-                               "Switch to the locked View to Render, based on the Render Settings Dialog"]):
+        for i, t in enumerate(
+            [
+                "Switch the currently Active Viewport",
+                "Only switch if the Active Viewport is Perspective, Camera or Orthographic",
+                "Switch to the locked View to Render, based on the Render Settings Dialog",
+            ]
+        ):
             r = QtWidgets.QRadioButton(t)
             self.vp_group.addButton(r, i)
             vl.addWidget(r)
@@ -437,13 +491,20 @@ class SettingsDialog(Dialog):
                 pres.append([int(parts[0]), int(parts[1])])
         return {
             "notify": self.notify.isChecked(),
-            "theme": {"main": ["auto", "light", "dark"][self.main.currentIndex()],
-                      "header": "colored" if self.header.currentIndex() == 0 else "default"},
-            "max": {"viewport_update_type": self.vp_group.checkedId(), "viewport_refresh": self.redraw.isChecked(),
-                    "ipr_corona_restart": self.ipr_corona.isChecked(), "ipr_vray_resolution": self.ipr_vray.isChecked(),
-                    "update_time_output_type": self.time_type.isChecked(), "animate_camera": False,
-                    "restore_base": self.restore_base.isChecked(),
-                    "scripts": SCRIPT_POLICIES[self.scripts.currentIndex()][0]},
+            "theme": {
+                "main": ["auto", "light", "dark"][self.main.currentIndex()],
+                "header": "colored" if self.header.currentIndex() == 0 else "default",
+            },
+            "max": {
+                "viewport_update_type": self.vp_group.checkedId(),
+                "viewport_refresh": self.redraw.isChecked(),
+                "ipr_corona_restart": self.ipr_corona.isChecked(),
+                "ipr_vray_resolution": self.ipr_vray.isChecked(),
+                "update_time_output_type": self.time_type.isChecked(),
+                "animate_camera": False,
+                "restore_base": self.restore_base.isChecked(),
+                "scripts": SCRIPT_POLICIES[self.scripts.currentIndex()][0],
+            },
             "columns_visible": {k: cb.isChecked() for k, cb in self.col_boxes.items()},
             "resolution_presets": pres or [list(x) for x in model.RESOLUTION_PRESETS],
         }
@@ -451,10 +512,13 @@ class SettingsDialog(Dialog):
 
 class BakeDialog(Dialog):
     """Bake Setups: turn the setups into something that renders without the window."""
-    METHODS = ["Convert to 3ds Max Batch Render (scene state + view per setup)",
-               "Export 3ds Max (.max), one file per setup",
-               "Export Corona Scene (.scn), one file per setup",
-               "Run Custom MAXScript on every setup"]
+
+    METHODS = [
+        "Convert to 3ds Max Batch Render (scene state + view per setup)",
+        "Export 3ds Max (.max), one file per setup",
+        "Export Corona Scene (.scn), one file per setup",
+        "Run Custom MAXScript on every setup",
+    ]
 
     def __init__(self, parent, setups, folder):
         super(BakeDialog, self).__init__(parent)
@@ -502,14 +566,16 @@ class BakeDialog(Dialog):
     def _method(self, i):
         self.code.setVisible(i == 3)
         self.folder.setEnabled(i in (1, 2))
-        self.note.setText([
-            "A scene state and a render preset are made for each setup and added to Rendering > Batch Render, "
-            "so the setups can go to Backburner or any render farm. Atmosphere, Background, Scripts, Xref, "
-            "object transforms and Corona LightMix can't be carried over this way.",
-            "Each setup is applied and the scene is saved as a copy. This can take a while on big files.",
-            "Each setup is applied and exported with Corona's own scene export.",
-            "Each setup is applied, then your script runs.",
-        ][i])
+        self.note.setText(
+            [
+                "A scene state and a render preset are made for each setup and added to Rendering > Batch Render, "
+                "so the setups can go to Backburner or any render farm. Atmosphere, Background, Scripts, Xref, "
+                "object transforms and Corona LightMix can't be carried over this way.",
+                "Each setup is applied and the scene is saved as a copy. This can take a while on big files.",
+                "Each setup is applied and exported with Corona's own scene export.",
+                "Each setup is applied, then your script runs.",
+            ][i]
+        )
 
     def _browse(self):
         d = QtWidgets.QFileDialog.getExistingDirectory(self, "Folder", self.folder.text())
@@ -517,5 +583,8 @@ class BakeDialog(Dialog):
             self.folder.setText(d.replace("\\", "/"))
 
     def chosen(self):
-        return [self.list.item(i).data(QtCore.Qt.UserRole) for i in range(self.list.count())
-                if self.list.item(i).checkState() == QtCore.Qt.Checked]
+        return [
+            self.list.item(i).data(QtCore.Qt.UserRole)
+            for i in range(self.list.count())
+            if self.list.item(i).checkState() == QtCore.Qt.Checked
+        ]

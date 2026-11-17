@@ -1,23 +1,49 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Cards added to match the original module list: Background, Atmosphere, Variants, Render Elements,
 Render Settings Preset / Override, Post-Production, Scripts and Thumbnail."""
+
 import os
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import maxlink, model
 from .cards import FlagTable, fit_columns, hrow, muted
-from .widgets import Blocker, Card, ColorButton, Combo, DoubleSpin, FlowLayout, NumberRow, Spin, TabBar, icon, menu_tool, tool
+from .widgets import (
+    Blocker,
+    Card,
+    ColorButton,
+    Combo,
+    DoubleSpin,
+    FlowLayout,
+    NumberRow,
+    Spin,
+    TabBar,
+    icon,
+    menu_tool,
+    tool,
+)
 
 # short names for the values of a tone-mapping operator that shows several of them in one line
-POST_SHORT = {"highlightCompression": "H. Compr.", "richShadows": "Rich Shadows", "toeStrength": "Toe Str.", "toeLength": "Toe Len.",
-              "shoulderStrength": "Shoulder Str.", "shoulderLength": "Shoulder Len.", "shoulderAngle": "Shoulder Ang.",
-              "linear": "Lin", "logarithmic": "Log", "opacity": "Opacity", "intensity": "Intensity", "falloff": "Falloff"}
+POST_SHORT = {
+    "highlightCompression": "H. Compr.",
+    "richShadows": "Rich Shadows",
+    "toeStrength": "Toe Str.",
+    "toeLength": "Toe Len.",
+    "shoulderStrength": "Shoulder Str.",
+    "shoulderLength": "Shoulder Len.",
+    "shoulderAngle": "Shoulder Ang.",
+    "linear": "Lin",
+    "logarithmic": "Log",
+    "opacity": "Opacity",
+    "intensity": "Intensity",
+    "falloff": "Falloff",
+}
 LUT_FILES = "LUT (*.cube *.3dl *.csp *.lut *.spi1d *.spi3d *.cc *.ccc);;All (*.*)"
 
 
 class BackgroundCard(Card):
     """What the viewport shows behind the scene."""
+
     CARD_ID = 8
 
     def build(self):
@@ -58,8 +84,12 @@ class BackgroundCard(Card):
             self.sm.changed()
 
     def _browse(self):
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Background image", self.path.text(),
-                                                     "Images (*.jpg *.jpeg *.png *.tif *.tga *.bmp *.exr *.hdr);;All (*.*)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Background image",
+            self.path.text(),
+            "Images (*.jpg *.jpeg *.png *.tif *.tga *.bmp *.exr *.hdr);;All (*.*)",
+        )
         if f:
             s = self.setup()
             if s:
@@ -77,6 +107,7 @@ class BackgroundCard(Card):
 
 class AtmosphereCard(Card):
     """Which atmospheric effects (fog, volume light...) are on in this setup."""
+
     CARD_ID = 20
 
     def build(self):
@@ -140,6 +171,7 @@ class AtmosphereCard(Card):
 
 class VariantsCard(Card):
     """Layer variants: a group of layers where only the chosen one is visible in this setup."""
+
     CARD_ID = 30
 
     def build(self):
@@ -165,7 +197,11 @@ class VariantsCard(Card):
             combo.addItems(v.get("layers", []))
             combo.setCurrentIndex(max(0, int(v.get("value", 1)) - 1))
             combo.currentIndexChanged.connect(lambda k, i=i: self._pick(i, k + 1))
-            edit_b = tool("layers", "Use the layers selected in the Layer Explorer (or pick from the list)", slot=lambda _=False, i=i: self._layers(i))
+            edit_b = tool(
+                "layers",
+                "Use the layers selected in the Layer Explorer (or pick from the list)",
+                slot=lambda _=False, i=i: self._layers(i),
+            )
             rm = tool("delete", "Delete variation set", slot=lambda _=False, i=i: self._delete(i))
             self.box_layout.addWidget(hrow(name, combo, edit_b, rm, stretch_index=1))
 
@@ -175,12 +211,15 @@ class VariantsCard(Card):
             return
         layers = self._choose_layers([])
         if layers:
-            s["variants"]["set"].append({"name": "Variant %d" % (len(s["variants"]["set"]) + 1), "layers": layers, "value": 1})
+            s["variants"]["set"].append(
+                {"name": "Variant %d" % (len(s["variants"]["set"]) + 1), "layers": layers, "value": 1}
+            )
             self.fill(s)
             self.sm.changed()
 
     def _choose_layers(self, current):
         from .dialogs import Dialog
+
         dlg = Dialog(self)
         dlg.setWindowTitle("Layers of this variant")
         v = QtWidgets.QVBoxLayout(dlg)
@@ -234,6 +273,7 @@ class VariantsCard(Card):
 
 class ElementsCard(Card):
     """Which render elements are on in this setup."""
+
     CARD_ID = 21
 
     def build(self):
@@ -296,14 +336,18 @@ class ElementsCard(Card):
 class RenderPresetCard(Card):
     """A 3ds Max render preset (.rps) loaded with the setup (the scripts of Render Setup that it keeps are not:
     maxlink.load_preset)."""
+
     CARD_ID = 18
 
     def build(self):
         self.path = QtWidgets.QLineEdit()
         self.path.setPlaceholderText("Render preset file (.rps)")
         self.path.editingFinished.connect(self._path)
-        browse = tool("folder", "Choose a render preset. When it is loaded, OpenManager leaves the scripts of Render Setup as they are.",
-                      slot=self._browse)
+        browse = tool(
+            "folder",
+            "Choose a render preset. When it is loaded, OpenManager leaves the scripts of Render Setup as they are.",
+            slot=self._browse,
+        )
         save = tool("save", "Save the current render settings as a preset and use it here", slot=self._save)
         clear = tool("close", "Clear", size=12, slot=lambda: self._set(""))
         self.body_layout.addWidget(hrow(clear, self.path, browse, save, stretch_index=1))
@@ -321,7 +365,9 @@ class RenderPresetCard(Card):
         if s:
             s["render_preset"]["path"] = p.replace("\\", "/")
             if p.strip():
-                self.sm.trust_scripts([("preset", s["render_preset"]["path"])])  # a preset you typed, chose or saved is yours
+                self.sm.trust_scripts(
+                    [("preset", s["render_preset"]["path"])]
+                )  # a preset you typed, chose or saved is yours
             self.fill(s)
             self.sm.changed()
 
@@ -331,20 +377,23 @@ class RenderPresetCard(Card):
             self._set(self.path.text())
 
     def _browse(self):
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Render preset", self.path.text() or self.sm.scene.folder,
-                                                     "Render Presets (*.rps)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Render preset", self.path.text() or self.sm.scene.folder, "Render Presets (*.rps)"
+        )
         if f:
             self._set(f)
 
     def _save(self):
-        f, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save render preset", os.path.join(self.sm.scene.folder or "", "setup.rps"),
-                                                     "Render Presets (*.rps)")
+        f, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save render preset", os.path.join(self.sm.scene.folder or "", "setup.rps"), "Render Presets (*.rps)"
+        )
         if f and maxlink.save_preset(f):
             self._set(f)
 
 
 class RenderOverrideCard(Card):
     """A default set of render settings (for the whole file) and, per setup, only what differs from it."""
+
     CARD_ID = 19
 
     def build(self):
@@ -423,7 +472,11 @@ class PostSection(QtWidgets.QFrame):
         f = self.title.font()
         f.setBold(True)
         self.title.setFont(f)
-        take = tool("fetch", "Eyedropper: take the %s that is on in the VFB, with its values" % model.POST_TITLES[key], slot=lambda: card.take(key))
+        take = tool(
+            "fetch",
+            "Eyedropper: take the %s that is on in the VFB, with its values" % model.POST_TITLES[key],
+            slot=lambda: card.take(key),
+        )
         drop = tool("close", "Stop controlling this category in this setup", size=11, slot=lambda: card.drop(key))
         self.drop = drop
         v.addWidget(hrow(self.title, None, take, drop))
@@ -456,7 +509,11 @@ class PostSection(QtWidgets.QFrame):
             ed = ColorButton()
             c = value["$color"]
             ed.set_color(QtGui.QColor(int(c[0]), int(c[1]), int(c[2])).name())
-            ed.changed.connect(lambda hexa: on_change({"$color": [QtGui.QColor(hexa).red(), QtGui.QColor(hexa).green(), QtGui.QColor(hexa).blue()]}))
+            ed.changed.connect(
+                lambda hexa: on_change(
+                    {"$color": [QtGui.QColor(hexa).red(), QtGui.QColor(hexa).green(), QtGui.QColor(hexa).blue()]}
+                )
+            )
         elif isinstance(value, (int, float)):
             lo, hi = model.post_range(name, value)
             if isinstance(value, int):
@@ -503,6 +560,7 @@ class PostSection(QtWidgets.QFrame):
             if f:
                 on_change("colorMappingOperator_path", os.path.normpath(f))
                 self.card.refresh()
+
         pick = tool("folder", "Choose the LUT file", size=14, slot=browse)
         self.grid.addWidget(QtWidgets.QLabel("LUT"), r, 0)
         self.grid.addWidget(hrow(name, pick, stretch_index=0), r, 1, 1, 2)
@@ -531,6 +589,7 @@ class PostSection(QtWidgets.QFrame):
             def from_button(hexa):
                 q = QtGui.QColor(hexa)
                 on_change({"$color": [q.red(), q.green(), q.blue()]})
+
             ed.changed.connect(from_button)
             ed = hrow(ed, None)
         elif isinstance(value, (int, float)):
@@ -547,6 +606,7 @@ class PostSection(QtWidgets.QFrame):
 class PostCard(Card):
     """Corona post-production of the VFB by category, like the VFB shows it: tone mapping (each operator that is on,
     with its values), LightMix, bloom and glare... An eyedropper takes a category; its values can then be edited here."""
+
     CARD_ID = 29
 
     def build(self):
@@ -571,7 +631,9 @@ class PostCard(Card):
     def fill(self, s):
         p = s["post"]
         cats = p.get("cats") or {}
-        self.note.setText("Stored by an older version: press Fetch VFB to see it by category." if (p.get("conf") and not cats) else "")
+        self.note.setText(
+            "Stored by an older version: press Fetch VFB to see it by category." if (p.get("conf") and not cats) else ""
+        )
         self.note.setVisible(bool(p.get("conf") and not cats))
         for key, sec in self.sections.items():
             sec.clear()
@@ -602,7 +664,9 @@ class PostCard(Card):
                 pairs = []
                 for n, v in vals:
                     leaf = n.split("_")[-1]
-                    pairs.append((POST_SHORT.get(leaf, model.post_label(n)), n, v, lambda x, i=i, n=n: self._set_op(i, n, x)))
+                    pairs.append(
+                        (POST_SHORT.get(leaf, model.post_label(n)), n, v, lambda x, i=i, n=n: self._set_op(i, n, x))
+                    )
                 sec.line_row(r, title, pairs)
             r += 1
         if not r:
@@ -621,7 +685,9 @@ class PostCard(Card):
             sec.value_row(i, label, float(v), lambda x, i=i: self._set_lm("colorMap_lightmixIntensities", i, x))
             if i < len(cols):
                 # the tint goes at the end of the same line
-                tint = sec.small_editor("tint", {"$color": cols[i]}, lambda x, i=i: self._set_lm("colorMap_lightmixColors", i, x["$color"]))
+                tint = sec.small_editor(
+                    "tint", {"$color": cols[i]}, lambda x, i=i: self._set_lm("colorMap_lightmixColors", i, x["$color"])
+                )
                 tint.setToolTip("Tint of %s" % label)
                 sec.grid.addWidget(tint, i, 2)
 
@@ -696,6 +762,7 @@ class PostCard(Card):
 
 class ScriptFileCard(Card):
     """MAXScript files run before / after each render of this setup."""
+
     CARD_ID = 17
 
     def build(self):
@@ -734,7 +801,9 @@ class ScriptFileCard(Card):
             self.sm.changed()
 
     def _browse(self, k):
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Script", self.sm.scene.folder, "Scripts (*.ms *.mse *.py);;All (*.*)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Script", self.sm.scene.folder, "Scripts (*.ms *.mse *.py);;All (*.*)"
+        )
         if f:
             s = self.setup()
             if s:
@@ -746,8 +815,14 @@ class ScriptFileCard(Card):
 
 class ScriptEditorCard(Card):
     """MAXScript typed here, run before / after the setup is applied and before / after each render."""
+
     CARD_ID = 22
-    TABS = (("pre_setup", "Pre-Setup"), ("post_setup", "Post-Setup"), ("pre_render", "Pre-Render"), ("post_render", "Post-Render"))
+    TABS = (
+        ("pre_setup", "Pre-Setup"),
+        ("post_setup", "Post-Setup"),
+        ("pre_render", "Pre-Render"),
+        ("post_render", "Post-Render"),
+    )
 
     def build(self):
         self.tabs = TabBar()
@@ -793,6 +868,7 @@ class ScriptEditorCard(Card):
 
 class ThumbnailCard(Card):
     """A picture of the setup: from the viewport or from the last render."""
+
     CARD_ID = 31
 
     def build(self):
@@ -813,7 +889,11 @@ class ThumbnailCard(Card):
         if p and os.path.isfile(p):
             pm = QtGui.QPixmap(p)
             w = max(80, self.pic.width() or 300)
-            self.pic.setPixmap(pm.scaled(w, max(60, self.pic.height() or 160), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation))
+            self.pic.setPixmap(
+                pm.scaled(
+                    w, max(60, self.pic.height() or 160), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation
+                )
+            )
         else:
             self.pic.setPixmap(QtGui.QPixmap())
             self.pic.setText("No thumbnail yet")
@@ -824,5 +904,15 @@ class ThumbnailCard(Card):
             QtCore.QTimer.singleShot(0, lambda: self.setup() and self.fill(self.setup()))
 
 
-CARD_CLASSES = [BackgroundCard, AtmosphereCard, VariantsCard, ElementsCard, RenderPresetCard, RenderOverrideCard,
-                PostCard, ScriptFileCard, ScriptEditorCard, ThumbnailCard]
+CARD_CLASSES = [
+    BackgroundCard,
+    AtmosphereCard,
+    VariantsCard,
+    ElementsCard,
+    RenderPresetCard,
+    RenderOverrideCard,
+    PostCard,
+    ScriptFileCard,
+    ScriptEditorCard,
+    ThumbnailCard,
+]

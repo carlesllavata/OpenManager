@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """OpenManager.bundle as tools/build.py writes it (no 3ds Max)."""
+
 import os
 import shutil
 import sys
@@ -46,8 +47,13 @@ class Bundle(unittest.TestCase):
 
     def test_tool_files_in_place(self):
         home = os.path.join(self.target, "Contents", "OpenManager")
-        for f in ("omgr_core.ms", "omgr_setup.ms", "OpenManager_startup.ms", os.path.join("openmanager", "__init__.py"),
-                  os.path.join("openmanager", "props.json")):
+        for f in (
+            "omgr_core.ms",
+            "omgr_setup.ms",
+            "OpenManager_startup.ms",
+            os.path.join("openmanager", "__init__.py"),
+            os.path.join("openmanager", "props.json"),
+        ):
             self.assertTrue(os.path.isfile(os.path.join(home, f)), f)
         for base, dirs, files in os.walk(self.target):
             self.assertNotIn("__pycache__", dirs)

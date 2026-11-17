@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Output path building and the batch checks (model.py: no 3ds Max needed).
 
-    "C:\\Program Files\\Autodesk\\3ds Max 2027\\Python\\python.exe" -I tests\\run.py
+"C:\\Program Files\\Autodesk\\3ds Max 2027\\Python\\python.exe" -I tests\\run.py
 """
+
 import os
 import sys
 import unittest
@@ -79,8 +80,10 @@ class BuildPath(unittest.TestCase):
         self.assertIn("project path", build(output(("Camera", None), ("Extension", ".png"), project="D:/a|b"))[1])
 
     def test_final_path_still_returns_valid_flag(self):
-        self.assertEqual(model.final_path(output(("Camera", None), ("Extension", ".png")), "a.max", "C", "", 0, "", ""),
-                         ("D:/out/C.png", True))
+        self.assertEqual(
+            model.final_path(output(("Camera", None), ("Extension", ".png")), "a.max", "C", "", 0, "", ""),
+            ("D:/out/C.png", True),
+        )
 
 
 class CheckJobs(unittest.TestCase):
@@ -106,8 +109,12 @@ class CheckJobs(unittest.TestCase):
         self.assertIn("Cam01", r[0]["errors"][0])
 
     def test_same_file_twice_warns_the_second(self):
-        r = model.check_jobs([{"label": "#1 A", "output": True, "path": "D:/x.png"},
-                              {"label": "#2 B", "output": False, "scene_output": "d:\\X.png"}])
+        r = model.check_jobs(
+            [
+                {"label": "#1 A", "output": True, "path": "D:/x.png"},
+                {"label": "#2 B", "output": False, "scene_output": "d:\\X.png"},
+            ]
+        )
         self.assertEqual(r[0]["warnings"], [])
         self.assertIn("#1 A", r[1]["warnings"][0])
 
@@ -116,11 +123,13 @@ class FindWritten(unittest.TestCase):
     def setUp(self):
         import tempfile
         import time
+
         self.dir = tempfile.mkdtemp(prefix="om_test_")
         self.now = time.time()
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.dir, ignore_errors=True)
 
     def touch(self, name, age=0.0):

@@ -4,6 +4,7 @@
 A setup names the tone-mapping operators of a chain by their class. The setups travel inside the .max, so a file
 from someone else can put anything there: every test here applies a manipulated setup and looks at what reached
 3ds Max."""
+
 import contextlib
 import io
 import json
@@ -20,10 +21,28 @@ rt = fake_max.install()
 from openmanager import maxlink, model  # noqa: E402
 
 # what a file could carry where the name of a class belongs
-NOT_NAMES = ['Box(); messageBox "x"', "a;b", "Filmic OperatorPlugin", " FilmicOperatorPlugin", "FilmicOperatorPlugin ",
-             "FilmicOperatorPlugin()", "(FilmicOperatorPlugin)", 'Filmic"OperatorPlugin', "Filmic'OperatorPlugin",
-             "rt.FilmicOperatorPlugin", "Box.height", "FilmicOperatorPlugin\n", "Filmic\tOperatorPlugin",
-             "FilmicOperatorPlugin--", 'Box name:"x"', "#Box", "$Box", "FilmicOperatorPluginé", "__class__", ""]
+NOT_NAMES = [
+    'Box(); messageBox "x"',
+    "a;b",
+    "Filmic OperatorPlugin",
+    " FilmicOperatorPlugin",
+    "FilmicOperatorPlugin ",
+    "FilmicOperatorPlugin()",
+    "(FilmicOperatorPlugin)",
+    'Filmic"OperatorPlugin',
+    "Filmic'OperatorPlugin",
+    "rt.FilmicOperatorPlugin",
+    "Box.height",
+    "FilmicOperatorPlugin\n",
+    "Filmic\tOperatorPlugin",
+    "FilmicOperatorPlugin--",
+    'Box name:"x"',
+    "#Box",
+    "$Box",
+    "FilmicOperatorPluginé",
+    "__class__",
+    "",
+]
 NOT_TEXT = [None, 5, ["FilmicOperatorPlugin"], {"class": "FilmicOperatorPlugin"}]
 
 
@@ -60,7 +79,9 @@ def camera_setup(chain):
 
 
 def apply_camera(chain):
-    scene = maxlink.Scene({"engine": "Corona", "cameras": [{"handle": 7, "name": "Cam", "class": "CoronaCam", "locked": False}]})
+    scene = maxlink.Scene(
+        {"engine": "Corona", "cameras": [{"handle": 7, "name": "Cam", "class": "CoronaCam", "locked": False}]}
+    )
     ticked = lambda card: model.enabled_rows(card, "corona", ["CoronaCam|colorMappingPipeline"]) if card == 1 else []
     return run(maxlink.actions(camera_setup(chain), scene, ticked, None, False))
 
@@ -167,8 +188,12 @@ class PostProductionCard(Base):
         self.assert_left_out(listener, ["NotAnOperator"])
 
     def test_operators_are_added_as_before(self):
-        listener = apply_post([{"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 2.5}},
-                               {"class": "ContrastOperatorPlugin", "props": {"colorMappingOperator_contrast": 1.5}}])
+        listener = apply_post(
+            [
+                {"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 2.5}},
+                {"class": "ContrastOperatorPlugin", "props": {"colorMappingOperator_contrast": 1.5}},
+            ]
+        )
         self.assert_nothing_ran(made=2)
         chain = rt.chain()
         self.assertEqual(classes(chain), ["FilmicOperatorPlugin", "ContrastOperatorPlugin"])
@@ -189,7 +214,9 @@ class PostProductionCard(Base):
         live.props["colorMappingOperator_nextOperator"] = other
         rt.renderers.current.props["colorMap_pipeline"] = live
         del rt.created[:]
-        listener = apply_post([{"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 3.0}}])
+        listener = apply_post(
+            [{"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 3.0}}]
+        )
         self.assert_nothing_ran()
         self.assertEqual(rt.chain(), [live, other])
         self.assertEqual(live.props["colorMappingOperator_highlightCompression"], 3.0)
@@ -197,10 +224,14 @@ class PostProductionCard(Base):
         self.assert_left_out(listener, [])
 
     def test_the_rest_of_the_chain_still_applies(self):
-        listener = apply_post([{"class": "FilmicOperatorPlugin", "props": {}},
-                               {"class": 'Box(); messageBox "x"', "props": {}},
-                               {"class": "Box", "props": {}},
-                               {"class": "ContrastOperatorPlugin", "props": {}}])
+        listener = apply_post(
+            [
+                {"class": "FilmicOperatorPlugin", "props": {}},
+                {"class": 'Box(); messageBox "x"', "props": {}},
+                {"class": "Box", "props": {}},
+                {"class": "ContrastOperatorPlugin", "props": {}},
+            ]
+        )
         self.assert_nothing_ran(made=2)
         self.assertEqual(classes(rt.chain()), ["FilmicOperatorPlugin", "ContrastOperatorPlugin"])
         self.assert_left_out(listener, ['Box(); messageBox "x"', "Box"])
@@ -252,9 +283,13 @@ class CameraCard(Base):
         self.assert_left_out(listener, ["NotAnOperator"])
 
     def test_operators_are_made_as_before(self):
-        listener = apply_camera([{"class": "SimpleExposureOperatorPlugin", "props": {"colorMappingOperator_simpleExposure": -1.0}},
-                                 {"class": "a;b", "props": {}},
-                                 {"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 4.0}}])
+        listener = apply_camera(
+            [
+                {"class": "SimpleExposureOperatorPlugin", "props": {"colorMappingOperator_simpleExposure": -1.0}},
+                {"class": "a;b", "props": {}},
+                {"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 4.0}},
+            ]
+        )
         self.assert_nothing_ran(made=2)
         chain = rt.chain(self.cam, "colorMappingPipeline")
         self.assertEqual(classes(chain), ["SimpleExposureOperatorPlugin", "FilmicOperatorPlugin"])
@@ -263,8 +298,12 @@ class CameraCard(Base):
         self.assert_left_out(listener, ["a;b"])
 
     def test_a_chain_read_from_the_scene_goes_back_as_it_was(self):
-        apply_camera([{"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 4.0}},
-                      {"class": "ContrastOperatorPlugin", "props": {"colorMappingOperator_contrast": 2.0}}])
+        apply_camera(
+            [
+                {"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 4.0}},
+                {"class": "ContrastOperatorPlugin", "props": {"colorMappingOperator_contrast": 2.0}},
+            ]
+        )
         stored = maxlink.read_pipeline(self.cam, "colorMappingPipeline")
         rt.reset()
         cam = rt.add_node(7, "CoronaCam", "Cam")
@@ -278,13 +317,17 @@ class StoredChanges(Base):
     """Changes kept in the file (the base state) go through the same look-up."""
 
     def test_tone_mapping_put_back(self):
-        listener = run([("posttone", json.dumps([{"class": 'Box(); messageBox "x"', "props": {}}, {"class": "Box", "props": {}}]))])
+        listener = run(
+            [("posttone", json.dumps([{"class": 'Box(); messageBox "x"', "props": {}}, {"class": "Box", "props": {}}]))]
+        )
         self.assert_nothing_ran()
         self.assertEqual(rt.chain(), [])
         self.assert_left_out(listener, ['Box(); messageBox "x"', "Box"])
 
     def test_camera_chain_put_back(self):
-        listener = run([("node", 7, "colorMappingPipeline", ("$pipeline", json.dumps([{"class": "a;b", "props": {}}])))])
+        listener = run(
+            [("node", 7, "colorMappingPipeline", ("$pipeline", json.dumps([{"class": "a;b", "props": {}}])))]
+        )
         self.assert_nothing_ran()
         self.assertEqual(rt.chain(self.cam, "colorMappingPipeline"), [])
         self.assert_left_out(listener, ["a;b"])

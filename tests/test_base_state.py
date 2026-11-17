@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Base state: what a setup changed is put back when the next one doesn't control it (model.py, no 3ds Max)."""
+
 import os
 import sys
 import unittest
@@ -32,11 +33,20 @@ class ActionKey(unittest.TestCase):
         self.assertEqual(model.action_key(("rs", "gi", 1)), model.action_key(("rs", "gi", 5)))
         self.assertEqual(model.action_key(("env", "CoronaSky", "Sky", -1)), model.action_key(("envoff",)))
         self.assertEqual(model.action_key(("node", 12, "fov", 45.0)), ("node", 12, "fov"))
-        self.assertEqual(model.action_key(("map", "CoronaBitmap", "hdr", "uAngle", 90.0)), ("map", "CoronaBitmap", "hdr", "uAngle"))
+        self.assertEqual(
+            model.action_key(("map", "CoronaBitmap", "hdr", "uAngle", 90.0)), ("map", "CoronaBitmap", "hdr", "uAngle")
+        )
 
     def test_views_and_scripts_are_not_put_back(self):
-        for a in (("camera", 1, False, 0), ("background", 1, ""), ("code", "x"), ("preset", "a.rps"),
-                  ("renderscripts", "", "", "", ""), ("mkdir", "D:/a.png"), ("renderview",)):
+        for a in (
+            ("camera", 1, False, 0),
+            ("background", 1, ""),
+            ("code", "x"),
+            ("preset", "a.rps"),
+            ("renderscripts", "", "", "", ""),
+            ("mkdir", "D:/a.png"),
+            ("renderview",),
+        ):
             self.assertIsNone(model.action_key(a), a)
 
 
@@ -112,9 +122,12 @@ class Undo(unittest.TestCase):
 
 class Storage(unittest.TestCase):
     def test_round_trip_through_the_max_file_text(self):
-        base = {("res",): ("res", 1920, 1080), ("node", 7, "fov"): ("node", 7, "fov", 45.0),
-                ("sun",): ("lightson", ((3, True), (4, False))),
-                ("rs", "bg"): ("rs", "bg", ("$color", "#ff0000"))}
+        base = {
+            ("res",): ("res", 1920, 1080),
+            ("node", 7, "fov"): ("node", 7, "fov", 45.0),
+            ("sun",): ("lightson", ((3, True), (4, False))),
+            ("rs", "bg"): ("rs", "bg", ("$color", "#ff0000")),
+        }
         text = model.encode([model.empty_setup(1)], [], {"base": model.base_to_json(base)})
         self.assertEqual(model.decode(text)["base"], base)
 
