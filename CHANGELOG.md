@@ -37,6 +37,8 @@ What each version of OpenManager adds, newest first.
   it now leaves those scripts as they were, whatever the preset holds and also when the load fails: for a click
   on a setup, Batch Render, Bake Setups, Viewport Preview, and for a preset you chose yourself. The question about
   presets says so. The scripts of the setup's own Script cards are another thing and run as before.
+- **Clean-up.** The code now follows the common OPEN3D format and checks (ruff for Python, spaces instead of tabs
+  in MAXScript). OpenManager works exactly as before.
 
 ## 0.3.0 — 11 November 2026
 
