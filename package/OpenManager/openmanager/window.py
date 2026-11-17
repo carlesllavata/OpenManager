@@ -592,6 +592,10 @@ class SceneManager(QtWidgets.QDockWidget):
             self.last_saved = None
         elif source == "legacy":
             self.last_saved = None  # saved again under the new name with the file
+        if data.get("base_dropped"):
+            # the stored base held something OpenManager never puts there (model.base_from_json)
+            print("OpenManager: ignored %d stored change(s) of this file: they could run a script without asking" % data["base_dropped"])
+            self.toast("%d stored change(s) of this file were ignored: they could run a script without asking" % data["base_dropped"])
         self.resolve_scene_refs()
         self.active_id = None
         self.last_sent = []

@@ -57,5 +57,49 @@ class FilterScripts(unittest.TestCase):
         self.assertEqual(model.filter_scripts(self.acts, lambda kind, text: True), (list(self.acts), []))
 
 
+class StoredBase(unittest.TestCase):
+    """The base state is stored in the file and applied without being shown: it can't carry a script."""
+    hidden = [[["x"], ["code", 'messageBox "x"']],
+              [["rs", "gi"], ["renderscripts", "D:/s/pre.ms", "", "print 3", ""]],
+              [["output"], ["preset", "D:/s/a.rps"]],
+              [["y"], ["mkdir", "D:/s/a.png"]],
+              [["z"], ["post", "conf", "{}"]],
+              [["w"], "code"]]
+    kept = [[["res"], ["res", 1920, 1080]], [["rs", "gi"], ["rs", "gi", 1]],
+            [["node", 7, "fov"], ["node", 7, "fov", 45.0]], [["env"], ["envraw", "CoronaSky", "Sky", True]]]
+
+    def test_only_changes_that_put_a_value_back_are_read(self):
+        dropped = []
+        base = model.base_from_json(self.hidden[:3] + self.kept + self.hidden[3:], dropped)
+        self.assertEqual(base, {("res",): ("res", 1920, 1080), ("rs", "gi"): ("rs", "gi", 1),
+                                ("node", 7, "fov"): ("node", 7, "fov", 45.0), ("env",): ("envraw", "CoronaSky", "Sky", True)})
+        self.assertEqual(len(dropped), len(self.hidden))
+
+    def test_the_file_text_says_how_many_were_left_out(self):
+        d = model.decode(model.encode([model.empty_setup(1)], [], {"base": self.hidden + self.kept}))
+        self.assertEqual(d["base_dropped"], len(self.hidden))
+        self.assertEqual(len(d["base"]), len(self.kept))
+        self.assertEqual(model.decode(model.encode([], [], {"base": self.kept}))["base_dropped"], 0)
+
+    def test_nothing_read_from_a_file_puts_a_script_back(self):
+        base = model.decode(model.encode([], [], {"base": self.hidden + self.kept}))["base"]
+        restore, _ = model.base_step(base, [], lambda a: None)
+        self.assertEqual(len(restore), len(self.kept))
+        self.assertEqual(model.filter_scripts(restore, lambda kind, text: False), (restore, []))
+
+    def test_what_openmanager_stores_comes_back_whole(self):
+        # every kind of change a base holds (maxlink.capture), through the text of the file
+        base = {("rs", "gi"): ("rs", "gi", 1), ("node", 7, "fov"): ("node", 7, "fov", 45.0),
+                ("layer", "L", "on"): ("layer", "L", "on", True), ("map", "CoronaBitmap", "hdr", "uAngle"): ("map", "CoronaBitmap", "hdr", "uAngle", 90.0),
+                ("res",): ("res", 1920, 1080), ("time",): ("timeraw", 0, 100, 0, 1, 0, 100, 1, ""),
+                ("sun",): ("lightson", "sun", ((3, True),)), ("dome",): ("lightson", "dome", ()),
+                ("env",): ("envraw", "", "", True), ("output",): ("outputraw", False, "", ()),
+                ("xref", "a.max"): ("xref", "a.max", True), ("atmos", "Fog"): ("atmos", "Fog", True),
+                ("element", "Beauty"): ("element", "Beauty", True), ("posttone",): ("posttone", "[]"), ("postlm",): ("postlm", "{}")}
+        d = model.decode(model.encode([], [], {"base": model.base_to_json(base)}))
+        self.assertEqual(d["base"], base)
+        self.assertEqual(d["base_dropped"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -417,7 +417,8 @@ def encode(setups, todo=None, extra=None):
 
 
 def decode(text):
-    """Stored text -> {"setups": [...], "todo": [...]}, or None when it isn't ours."""
+    """Stored text -> {"setups": [...], "todo": [...], "rs_default": {...}, "base": {...}, "base_dropped": how many
+    changes of the stored base were left out (base_from_json)}, or None when it isn't ours."""
     if not text:
         return None
     try:
@@ -425,10 +426,12 @@ def decode(text):
     except ValueError:
         return None
     if isinstance(data, dict) and isinstance(data.get("setups"), list):
+        dropped = []
         return {"setups": [normalize(s) for s in data["setups"] if isinstance(s, dict)],
                 "todo": [t for t in data.get("todo", []) if isinstance(t, dict)],
                 "rs_default": data.get("rs_default") or {},
-                "base": base_from_json(data.get("base"))}
+                "base": base_from_json(data.get("base"), dropped),
+                "base_dropped": len(dropped)}
     return None
 
 
@@ -750,13 +753,21 @@ def base_to_json(base):
     return [[list(k), r] for k, r in base.items()]
 
 
-def base_from_json(data):
+def base_from_json(data, dropped=None):
+    """The base state as the file stores it. It only ever holds changes that put a value back (the ones action_key
+    knows). The file can come from someone else, and what is in the base is applied without being shown: a script
+    or a render preset in it would run without asking. Those are left out, and added to `dropped` when given."""
     out = {}
     for item in data or []:
         try:
             k, r = item
-            out[as_tuples(k)] = as_tuples(r)
-        except (TypeError, ValueError):
+            k, r = as_tuples(k), as_tuples(r)
+            if action_key(r) is None:
+                if dropped is not None:
+                    dropped.append(r)
+                continue
+            out[k] = r
+        except (TypeError, ValueError, IndexError):
             pass
     return out
 

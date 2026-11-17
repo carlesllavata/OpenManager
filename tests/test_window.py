@@ -122,6 +122,12 @@ def called(name):
     return [c[1:] for c in rt.calls if c[0] == name]
 
 
+def opened(text, **kwargs):
+    """The window after a file with this stored text was opened (what that wrote to the Listener is dropped)."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return Window(text, **kwargs)
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         rt.reset()
@@ -190,6 +196,55 @@ class ClassNamesLeftOut(Base):
         rt.bad_classes = ["a;b"]
         quiet(w.restore_scene)
         self.assertEqual(w.toasts[-1], CLASS_TOAST % 1)
+
+
+class StoredBaseState(Base):
+    """The base state (what the setup applied before changed) is stored in the file and put back without being
+    shown, so nothing in it may run a script."""
+    HIDDEN = [[["x"], ["code", 'messageBox "x"']],
+              [["y"], ["renderscripts", "D:/s/pre.ms", "", "print 3", ""]],
+              [["z"], ["preset", "D:/s/a.rps"]]]
+    BASE_TOAST = "3 stored change(s) of this file were ignored: they could run a script without asking"
+
+    def assert_no_script(self):
+        self.assertEqual(rt.executed, [])
+        self.assertEqual(called("omgr_runCode"), [])
+        self.assertEqual(called("omgr_loadPreset"), [])
+        self.assertEqual(set(called("omgr_setRenderScripts")) - {("", "", "", "")}, set())
+
+    def test_opening_the_file_leaves_them_out_and_tells(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            w = Window(stored([setup(1)], base=self.HIDDEN + [[["res"], ["res", 800, 600]]]))
+        self.assertEqual(w.base, {("res",): ("res", 800, 600)})
+        self.assertEqual(w.toasts, [self.BASE_TOAST])
+        self.assertIn("OpenManager: ignored 3 stored change(s) of this file", out.getvalue())
+
+    def test_clicking_a_setup_runs_none_of_them(self):
+        w = opened(stored([setup(1)], base=self.HIDDEN))
+        quiet(w.activate, 1)
+        self.assert_no_script()
+        self.assertEqual(w.asked, [])
+
+    def test_putting_the_scene_back_runs_none_of_them(self):
+        w = opened(stored([setup(1)], base=self.HIDDEN + [[["res"], ["res", 800, 600]]]))
+        quiet(w.restore_scene)
+        self.assert_no_script()
+        self.assertEqual(called("omgr_setRes"), [(800, 600)])
+
+    def test_always_run_scripts_does_not_cover_them(self):
+        # the setting is about the scripts the cards show; these are in no card
+        w = opened(stored([setup(1)], base=self.HIDDEN), settings={"max": {"scripts": "always"}})
+        quiet(w.activate, 1)
+        self.assert_no_script()
+
+    def test_a_base_of_openmanager_is_put_back_as_before(self):
+        base = model.base_to_json({("res",): ("res", 800, 600), ("rs", "gi"): ("rs", "gi", 1)})
+        w = Window(stored([setup(1)], base=base))
+        self.assertEqual(w.toasts, [])
+        quiet(w.activate, 1)
+        self.assertEqual(called("omgr_setRes"), [(800, 600)])
+        self.assertEqual(called("omgr_setRS"), [("gi", 1)])
 
 
 if __name__ == "__main__":
