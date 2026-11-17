@@ -222,7 +222,8 @@ def package_contents(version):
 def check_bundle(target, version):
     """Refuses a bundle 3ds Max would load wrongly or not at all: versions that differ, a missing SeriesMax, a part
     that points nowhere."""
-    root = ET.parse(os.path.join(target, "PackageContents.xml")).getroot()
+    # the file build_bundle has just written from package_contents: it is ours, not XML from someone else
+    root = ET.parse(os.path.join(target, "PackageContents.xml")).getroot()  # noqa: S314
     problems = []
     if root.get("AppVersion") != version:
         problems.append("AppVersion %s != VERSION %s" % (root.get("AppVersion"), version))

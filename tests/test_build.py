@@ -23,7 +23,8 @@ class Bundle(unittest.TestCase):
             build.write_png(os.path.join(icons, theme, "OpenManager_24.png"), build.draw_icon(24, theme, 1))
         cls.version = build.read_version()
         cls.target = build.build_bundle(cls.version, os.path.join(cls.tmp, "dist"), icons)
-        cls.xml = ET.parse(os.path.join(cls.target, "PackageContents.xml")).getroot()
+        # the file the build has just written in a temporary folder: it is ours, not XML from someone else
+        cls.xml = ET.parse(os.path.join(cls.target, "PackageContents.xml")).getroot()  # noqa: S314
 
     @classmethod
     def tearDownClass(cls):
