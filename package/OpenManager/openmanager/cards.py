@@ -1816,7 +1816,7 @@ class HdriCard(Card):
         if self.sm.rendering:
             return
         nxt = None
-        for k, (it, raw) in enumerate(self._missing):
+        for k, (_it, raw) in enumerate(self._missing):
             if not self._auto or self._size_mb(raw) <= self.AUTO_MB:
                 nxt = k
                 break

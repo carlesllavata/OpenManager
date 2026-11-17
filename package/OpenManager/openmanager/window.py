@@ -185,7 +185,7 @@ class SideBar(QtWidgets.QWidget):
 
     def paintEvent(self, e):
         p = QtGui.QPainter(self)
-        for cid, b in self.buttons.items():
+        for _cid, b in self.buttons.items():
             g = b.geometry()
             c = QtGui.QColor(b.property("tint"))
             if not b.isChecked():
@@ -1928,7 +1928,7 @@ class SceneManager(QtWidgets.QDockWidget):
         if not self.setups:
             self.toast("There are no setups")
             return
-        for i, s in enumerate(self.setups):
+        for _i, s in enumerate(self.setups):
             cam = self.scene.camera(s["camera"]["handle"])
             s["_label"] = s["scenename"] or (cam["name"] if cam else "")
         folder = os.path.join(self.scene.folder or cfg_dir(), "OpenManager_export").replace("\\", "/")

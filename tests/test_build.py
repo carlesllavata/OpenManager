@@ -55,7 +55,7 @@ class Bundle(unittest.TestCase):
             os.path.join("openmanager", "props.json"),
         ):
             self.assertTrue(os.path.isfile(os.path.join(home, f)), f)
-        for base, dirs, files in os.walk(self.target):
+        for _base, dirs, files in os.walk(self.target):
             self.assertNotIn("__pycache__", dirs)
             self.assertFalse([f for f in files if f.endswith(".pyc")])
 

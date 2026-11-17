@@ -108,7 +108,7 @@ def built_by_the_cards():
         for cls in sorted(set(c for t in model.tabs_for(6, eng) for c in t.get("classes") or [])):  # one map of each
             s = setup()
             s["environment"].update(enabled=True, cls=cls, name="m")
-            for t, p in ticked(6):
+            for _t, p in ticked(6):
                 s["props"]["6|%s|%s" % (cls, p["name"])] = VALUES[p["class"]]
             collect(
                 s,

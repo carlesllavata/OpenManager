@@ -601,7 +601,7 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
             if not mm:
                 continue
             store = props if i == 0 else en.get("props", {})
-            for t, p, link, key_cls in model.env_rows(mm, enabled(6)):
+            for _t, p, link, key_cls in model.env_rows(mm, enabled(6)):
                 v = store.get("6|%s|%s" % (key_cls, p["name"]))
                 if v is not None:
                     out.append(("map", link["class"], link["name"], p["name"], _value(p, v)))

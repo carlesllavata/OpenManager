@@ -92,7 +92,7 @@ def preview(size=128, pad=16):
     dark, light = draw_icon(size, "Dark", 3), draw_icon(size, "Light", 3)
     for j in range(n):
         row = []
-        for side, bg, ic in ((0, (0x2B, 0x2B, 0x2B), dark), (1, (0xF0, 0xF0, 0xF0), light)):
+        for _side, bg, ic in ((0, (0x2B, 0x2B, 0x2B), dark), (1, (0xF0, 0xF0, 0xF0), light)):
             for i in range(n):
                 c = bg
                 if pad <= i < pad + size and pad <= j < pad + size:
