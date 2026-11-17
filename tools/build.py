@@ -143,7 +143,9 @@ def check_mzp_run():
             try:
                 float(parts[1])
             except (IndexError, ValueError):
-                raise SystemExit("mzp.run line %d: 'version' must be a plain number, got: %s" % (n, line.strip()))
+                raise SystemExit(
+                    "mzp.run line %d: 'version' must be a plain number, got: %s" % (n, line.strip())
+                ) from None
 
 
 def build_mzp():

@@ -24,7 +24,7 @@ from openmanager import maxlink, model  # noqa: E402
 try:
     from openmanager import window
 except ImportError as ex:  # PySide6 comes with the Python of 3ds Max
-    raise unittest.SkipTest("the window needs PySide6 (%s)" % ex)
+    raise unittest.SkipTest("the window needs PySide6 (%s)" % ex) from ex
 
 SCENE = {
     "file": "scene.max",
