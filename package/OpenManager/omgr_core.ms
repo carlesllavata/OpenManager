@@ -274,7 +274,7 @@ fn omgr_mapClass cls =
 	if (omgr_isClassName cls) do
 	(
 		local want = toLower cls
-		for c in textureMap.classes while (found == undefined) do (if ((toLower (c as string)) == want) do found = c)
+		for c in textureMap.classes do (if (found == undefined and (toLower (c as string)) == want) do found = c)
 	)
 	if (found == undefined) do omgr_badClass cls
 	found
