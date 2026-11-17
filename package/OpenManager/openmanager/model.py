@@ -665,6 +665,70 @@ def is_class_name(text):
     return isinstance(text, str) and _CLASS_NAME.match(text) is not None
 
 
+# ---------------------------------------------------------------- settings that come with a file
+#
+# A change names the property it sets. When a card builds the change the name is one of the table (props.json), but
+# the setups and the base state are stored in the .max, so a file from someone else can name any property, or a path
+# through other objects to one ("controller.script" is the script of a script controller). A change read from a file
+# only sets what the cards set, and never a property whose value 3ds Max runs.
+
+LIGHTMIX_ARRAYS = ("colorMap_lightmixIntensities", "colorMap_lightmixColors", "colorMap_lightmixEnabledLayers",
+                   "colormap_lightselect_elementNames")
+# properties that hold code whatever object they are on: the shader source of an OSL map; and, by the word "script"
+# in their name, the script of a script controller, the scripts of the Particle Flow operators...
+CODE_PROPS = ("oslcode",)
+_PROP_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+_WORDS = re.compile(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+")
+_CARD_PROPS = None
+
+
+def holds_code(name):
+    """Is this the name of a property whose value 3ds Max runs? (script, Proceed_Script, preRenderScript, OSLCode...)"""
+    words = [w.lower() for w in _WORDS.findall(name)]
+    return name.lower() in CODE_PROPS or any(w.startswith("script") or w.endswith("script") for w in words)
+
+
+def card_props():
+    """The property names (and paths) the cards put in a change, by kind of change: node (Camera, Sun, Dome,
+    Objects and Lights cards), layer (Layers, Variants), map (Environment), rs (Render Settings - Custom), and
+    pipeline (the node properties that take a chain of tone-mapping operators)."""
+    global _CARD_PROPS
+    if _CARD_PROPS is None:
+        rows = [(t["id"], p["name"], p["class"]) for t in all_tabs() for p in t["props"]]
+
+        def names(card, skip=(), only=None):
+            return set(n for c, n, cls in rows if c == card and cls not in skip and (only is None or cls == only))
+        # As maxlink.actions builds them: every setting of the Camera, Sun and Dome cards; the Lights card without
+        # names and transforms; the switches of the Objects and Layers cards. A sun inside a Daylight is set
+        # through "sun."; hiding an object is written through isHidden.
+        node = (names(1) | names(3) | set("sun." + n for n in names(3) if "." not in n) | names(4) | names(26, skip=("String", "Matrix3"))
+                | (names(23, only="BooleanClass") - {"isNodeHidden"}) | {"isHidden"})
+        _CARD_PROPS = {"node": node, "layer": names(14, only="BooleanClass") | {"on"}, "map": names(6), "rs": names(25),
+                       "pipeline": set(n for c, n, cls in rows if cls == "Pipeline")}
+    return _CARD_PROPS
+
+
+def prop_refusal(kind, path):
+    """Why a change can't set the property `path`, or None when it can. kind: what the property is of. node, layer
+    and map: only what the table has for their cards (pipeline: a node property that takes a chain of operators).
+    rs (a setting of the renderer): any plain name, since Render Settings - Override keeps whichever settings
+    differ, but never a path into another object. operator (a tone-mapping operator): a plain name, not its link
+    to the next one. lightmix: its own lists."""
+    if not isinstance(path, str) or not all(_PROP_NAME.match(p) for p in path.split(".")):
+        return "it is not the name of a property"
+    if any(holds_code(p) for p in path.split(".")):
+        return "it holds code"
+    if kind == "rs":
+        ok = "." not in path or path in card_props()["rs"]
+    elif kind == "operator":
+        ok = "." not in path and not path.lower().endswith("_nextoperator")
+    elif kind == "lightmix":
+        ok = path in LIGHTMIX_ARRAYS
+    else:
+        ok = path in card_props().get(kind, ())
+    return None if ok else "no card of OpenManager sets it"
+
+
 # ---------------------------------------------------------------- base state
 #
 # A setup only sets what its cards control. So that nothing it changed stays behind when another setup is applied,

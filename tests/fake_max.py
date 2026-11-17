@@ -74,6 +74,7 @@ class Runtime(object):
         self.calls = []  # every omgr_ function called: (name, arguments...)
         self.returns = {}  # what an omgr_ function gives back: {name: value, or a function of its arguments}
         self.bad_classes = []  # what omgr_core.ms would have in omgr_badClasses
+        self.bad_props = []  # and in omgr_badProps
         self.nodes = {}  # handle -> object
         self._kinds = {}
         self._globals = {}
@@ -171,6 +172,10 @@ class Runtime(object):
 
     def omgr_takeBadClasses(self):
         out, self.bad_classes = self.bad_classes, []
+        return out
+
+    def omgr_takeBadProps(self):
+        out, self.bad_props = self.bad_props, []
         return out
 
 

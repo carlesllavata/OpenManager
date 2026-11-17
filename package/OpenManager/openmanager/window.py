@@ -939,14 +939,19 @@ class SceneManager(QtWidgets.QDockWidget):
             self.toast(first)
 
     def tell_rejected(self, first=None):
-        """Says how many class names stored in the file were left out since the last time: text that is no class
-        name, or no class of the kind expected (maxlink.take_rejected; a class name is never run as code). The
-        names themselves are in the MAXScript Listener. `first`: a line shown above it. Returns how many."""
-        n = len(maxlink.take_rejected())
-        if n:
-            text = "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)" % n
-            self.toast_label.show_text("%s\n%s" % (first, text) if first else text, 8000)
-        return n
+        """Says how many things stored in the file were left out since the last time. Class names: text that is no
+        class name, or no class of the kind expected (maxlink.take_rejected; a class name is never run as code).
+        Settings: properties the cards don't set (maxlink.take_refused). What they are is in the MAXScript
+        Listener. `first`: a line shown above. Returns how many."""
+        classes, settings = len(maxlink.take_rejected()), len(maxlink.take_refused())
+        lines = [first] if first else []
+        if classes:
+            lines.append("%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)" % classes)
+        if settings:
+            lines.append("%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)" % settings)
+        if classes or settings:
+            self.toast_label.show_text("\n".join(lines), 8000)
+        return classes + settings
 
     def run_actions(self, acts, redraw=True):
         """Applies changes; events 3ds Max fires because of them (a render preset load looks like a file
@@ -1873,7 +1878,7 @@ class SceneManager(QtWidgets.QDockWidget):
             acts = self.actions_for(s, True)
             refused = len(self._refused)
             self.run_actions(self.base_restore(acts) + acts)
-            left_out = len(maxlink.take_rejected())
+            left_out, not_set = len(maxlink.take_rejected()), len(maxlink.take_refused())
             target = maxlink.render_output()
             if not target:
                 # never render a frame that isn't saved
@@ -1897,6 +1902,8 @@ class SceneManager(QtWidgets.QDockWidget):
                 details.append("%d script(s) not run: they came with the file and aren't trusted" % refused)
             if left_out:
                 details.append("%d class name(s) not used: they are not operator or map classes" % left_out)
+            if not_set:
+                details.append("%d setting(s) not applied: OpenManager's cards don't set them" % not_set)
         except Exception as ex:
             traceback.print_exc()
             details = [str(ex)]

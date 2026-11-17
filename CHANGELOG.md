@@ -17,6 +17,13 @@ What each version of OpenManager adds, newest first.
   there, and OpenManager says when it ignored anything else.
 - **Batch Render, Bake Setups and Viewport Preview were checked:** scripts that came with a file go through the
   same question there as when you click a setup. Tests now cover it.
+- **A file only sets what the cards set.** Every change a setup makes names the property it sets. A file from
+  someone else could name any property there, or a path through other objects to one: the script of a script
+  controller that is in the scene, for instance, which 3ds Max then runs. Now a change read from a file is only
+  applied when it names a setting the cards of OpenManager set (any plain setting of the renderer for Render
+  Settings - Override), never a path into another object and never a property that holds code. What is left out
+  is told like the class names: a message in the window, the detail in the MAXScript Listener. Your own setups
+  work as before, the ones converted from Pulze too.
 
 ## 0.3.0 — 11 November 2026
 

@@ -211,6 +211,44 @@ def take_rejected():
     return names
 
 
+# ---------------------------------------------------------------- settings that come with a file
+#
+# The property a change sets is named in the change, and changes are built from the setups and the base state, both
+# stored in the .max file. Before a property is read or set, its name is checked (model.prop_refusal): only what the
+# cards set, never a path into another object, never a property that holds code. A change that fails is left out
+# and reported like the class names: a line in the Listener, and take_refused() for the window to tell.
+
+PROP_OF = {"node": "object", "pipeline": "object", "layer": "layer", "map": "map", "rs": "renderer",
+           "operator": "tone-mapping operator", "lightmix": "LightMix"}
+_refused = []
+
+
+def _prop_ok(kind, path):
+    why = model.prop_refusal(kind, path)
+    if why is None:
+        return True
+    text = path if isinstance(path, str) else repr(path)
+    if len(text) > 80:
+        text = text[:80] + "..."
+    print('OpenManager: left out the %s setting "%s": %s (settings stored in a file are checked before they are applied)'
+          % (PROP_OF.get(kind, kind), text, why))
+    text = "%s %s" % (kind, text)
+    if text not in _refused and len(_refused) < 20:
+        _refused.append(text)
+    return False
+
+
+def take_refused():
+    """The settings left out since the last call, here and in omgr_core.ms (omgr_propOk), each one once."""
+    names = list(_refused)
+    del _refused[:]
+    try:
+        names += [n for n in (str(x) for x in rt.omgr_takeBadProps()) if n not in names]
+    except Exception:
+        pass
+    return names
+
+
 def _global(name):
     """What 3ds Max has under this name (a class, a function, a variable...), or None. A plain look-up by name:
     nothing is evaluated."""
@@ -307,6 +345,8 @@ def write_pipeline(obj, prop, chain):
         if op is None:
             continue
         for n, v in item.get("props", {}).items():
+            if not _prop_ok("operator", n):
+                continue
             try:
                 if isinstance(v, dict) and "$color" in v:
                     v = rt.Color(*v["$color"])
@@ -349,7 +389,7 @@ def read_post(key, only_active=False):
         return {"ops": ops}
     if key == "lightmix":
         arrays = {}
-        for name in ("colorMap_lightmixIntensities", "colorMap_lightmixColors", "colorMap_lightmixEnabledLayers", "colormap_lightselect_elementNames"):
+        for name in model.LIGHTMIX_ARRAYS:
             try:
                 vals = list(rt.getProperty(r, name) or [])
             except Exception:
@@ -393,6 +433,8 @@ def apply_tone(chain):
             live.append(op)
         used.append(op)
         for n, v in item.get("props", {}).items():
+            if not _prop_ok("operator", n):
+                continue
             try:
                 if isinstance(v, dict) and "$color" in v:
                     v = rt.Color(*v["$color"])
@@ -410,7 +452,7 @@ def apply_tone(chain):
 def apply_lightmix(arrays):
     r = rt.renderers.current
     for name, vals in arrays.items():
-        if name == "colormap_lightselect_elementNames":
+        if name == "colormap_lightselect_elementNames" or not _prop_ok("lightmix", name):
             continue
         if name == "colorMap_lightmixColors":
             vals = [rt.Color(*c) for c in vals]
@@ -644,15 +686,20 @@ def run(acts, redraw=True):
 
 def _node_prop(h, prop, v):
     if isinstance(v, tuple) and v and v[0] == "$pipeline":
-        n = rt.maxOps.getNodeByHandle(h)
+        n = rt.maxOps.getNodeByHandle(h) if _prop_ok("pipeline", prop) else None
         if n is not None:
             write_pipeline(n, prop, json.loads(v[1]) if v[1] else [])
         return
     rt.omgr_setNode(h, prop, _to_max(v))
 
 
+PROP_AT = {"rs": 1, "node": 2, "layer": 2, "map": 3}  # where these changes name the property they set
+
+
 def _run_one(a):
     k = a[0]
+    if k in PROP_AT and not _prop_ok(k, a[PROP_AT[k]]):
+        return
     if k == "time":
         rt.omgr_setTime(a[1], a[2], a[3], a[4], a[5], a[6], setType=a[7])
     elif k == "rs":
@@ -701,6 +748,8 @@ def _run_one(a):
             rt.omgr_postLoad(path)
         lm = json.loads(a[2]) if a[2] else {}
         for name, v in lm.items():
+            if not _prop_ok("rs", name):
+                continue
             try:
                 rt.setProperty(rt.renderers.current, name, v)
             except Exception:
@@ -762,12 +811,14 @@ def capture(a):
     be read (then it isn't put back)."""
     k = a[0]
     try:
+        if k in PROP_AT and model.prop_refusal(k, a[PROP_AT[k]]):
+            return None  # not a setting of the cards: never read, and left out (and told) when the change runs
         if k == "rs":
             v = _stored(rt.omgr_getRawRS(a[1]), a[2])
             return None if v is None else ("rs", a[1], v)
         if k == "node":
             if isinstance(a[3], tuple) and a[3] and a[3][0] == "$pipeline":
-                v = _pipeline_of(a[1], a[2])
+                v = None if model.prop_refusal("pipeline", a[2]) else _pipeline_of(a[1], a[2])
             else:
                 v = _stored(rt.omgr_getRawNode(a[1], a[2]), a[3])
             return None if v is None else ("node", a[1], a[2], v)

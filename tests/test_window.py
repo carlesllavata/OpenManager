@@ -27,6 +27,7 @@ except ImportError as ex:  # PySide6 comes with the Python of 3ds Max
 
 SCENE = {"file": "scene.max", "folder": "", "engine": "Corona", "cameras": [{"handle": 7, "name": "Cam", "class": "CoronaCam", "locked": False}]}
 CLASS_TOAST = "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)"
+SETTING_TOAST = "%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)"
 SCRIPT_TOAST = "%d script(s) of this setup were not run: they came with the file and aren't trusted"
 
 
@@ -56,8 +57,9 @@ class Window(object):
             "_run_over_setups", "viewport_preview", "bake_setups", "thumb_path", "start_render", "check_render", "_check_row",
             "_begin_render", "_job_label", "_next_job", "_cancel_render", "_end_render")
 
-    def __init__(self, stored="", settings=None, answer=False):
-        """stored: the text of rootNode.OpenManager_Dat; answer: what the person says when asked about scripts."""
+    def __init__(self, stored="", settings=None, answer=False, pulze=""):
+        """stored: the text of rootNode.OpenManager_Dat (pulze: of Pulze's SceneManager_Dat); answer: what the person
+        says when asked about scripts."""
         self.settings = settings or {}
         self.answer = answer
         self.toasts, self.asked = [], []
@@ -69,7 +71,7 @@ class Window(object):
         self.active_id, self.next_id, self.last_sent, self.last_saved = None, 1, [], None
         self.rendering, self.loading, self.applying = False, False, 0
         self.pc_name, self.user_name = "PC", "me"
-        rt.returns["omgr_readKey"] = lambda key: stored if key == maxlink.DATA_KEY else ""
+        rt.returns["omgr_readKey"] = lambda key: {maxlink.DATA_KEY: stored, maxlink.PULZE_KEY: pulze}.get(key, "")
         rt.returns["omgr_scene"] = lambda **kw: json.dumps(SCENE)
         self.reload_all()
 
@@ -310,6 +312,115 @@ class StoredBaseState(Base):
         quiet(w.activate, 1)
         self.assertEqual(called("omgr_setRes"), [(800, 600)])
         self.assertEqual(called("omgr_setRS"), [("gi", 1)])
+
+
+class SettingsOfAFile(Base):
+    """A change names the property it sets; the setups and the base state of a file only set what the cards set."""
+    CODE = "OM_PAYLOAD_RAN = true"
+    READS = ("omgr_getRawNode", "omgr_getRawRS", "omgr_getRawLayer", "omgr_getRawMap")
+
+    def test_a_base_state_can_not_write_the_script_of_a_script_controller(self):
+        w = opened(stored([setup(1)], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]]))
+        listener = quiet(w.activate, 1)
+        self.assertEqual(rt.executed, [])
+        self.assertEqual(called("omgr_setNode"), [])
+        self.assertEqual([c for c in rt.calls if c[0] in self.READS], [])
+        self.assertEqual(w.toasts, [SETTING_TOAST % 1])
+        self.assertIn('OpenManager: left out the object setting "controller.script": it holds code', listener)
+        self.assertEqual(w.base, {})
+
+    def test_nor_when_the_scene_is_put_back(self):
+        w = opened(stored([setup(1)], base=[[["node", 7, "Proceed_Script"], ["node", 7, "Proceed_Script", self.CODE]],
+                                            [["rs", "a.b.script"], ["rs", "a.b.script", self.CODE]],
+                                            [["map", "Checker", "m", "coords.x"], ["map", "Checker", "m", "coords.x", 1]],
+                                            [["layer", "0", "x.y"], ["layer", "0", "x.y", True]],
+                                            [["res"], ["res", 800, 600]]]))
+        quiet(w.restore_scene)
+        self.assertEqual([c[0] for c in rt.calls if c[0].startswith("omgr_set")], ["omgr_setRes"])
+        self.assertEqual(w.toasts[-1], SETTING_TOAST % 4)
+
+    def test_a_setup_can_not_reach_other_objects_through_the_renderer(self):
+        s = setup(1)
+        s["rs_override"].update(enabled=True, set={"bg_texmap.coords.script": self.CODE, "a.b": 1, "gi_on": True})
+        s["post"].update(enabled=True, cats={"bloom": {"props": {"x.controller.script": self.CODE, "bloomGlare_enabled": True}}})
+        w = opened(stored([s], rs_default={"other.path": 1, "progressive_passLimit": 5}))
+        quiet(w.activate, 1)
+        self.assertEqual(sorted(called("omgr_setRS")), [("bloomGlare_enabled", True), ("gi_on", True), ("progressive_passLimit", 5)])
+        self.assertEqual(sorted(set(c[1] for c in rt.calls if c[0] == "omgr_getRawRS")), ["bloomGlare_enabled", "gi_on", "progressive_passLimit"])
+        self.assertEqual(w.toasts, [SETTING_TOAST % 4])
+
+    def test_everything_left_out_is_told_in_one_message(self):
+        s = setup(1, [{"class": "a;b", "props": {}}, {"class": "FilmicOperatorPlugin", "props": {"x.y": 1}}], pre_setup="print 1")
+        w = opened(stored([s], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]]))
+        quiet(w.activate, 1)
+        self.assertEqual(w.toasts, ["\n".join([SCRIPT_TOAST % 1, CLASS_TOAST % 1, SETTING_TOAST % 2])])
+
+    def test_what_omgr_core_refused_is_told(self):
+        w = opened(stored([setup(1)]))
+        rt.bad_props = ["controller.script"]  # what omgr_propOk keeps
+        quiet(w.activate, 1)
+        self.assertEqual(w.toasts, [SETTING_TOAST % 1])
+
+    def test_batch_render_says_it_in_its_report(self):
+        w = opened(stored([setup(1)], base=[[["node", 7, "controller.script"], ["node", 7, "controller.script", self.CODE]]]))
+        report = batch_render(w)
+        self.assertEqual(called("omgr_setNode"), [])
+        self.assertIn("1 setting(s) not applied: OpenManager's cards don't set them", report[0][2])
+
+    # ---- what the cards make keeps working
+    def test_render_settings_override_as_the_card_stores_it(self):
+        s = setup(1)
+        s["rs_override"].update(enabled=True, set={"gi_on": True, "lut_path": "D:/luts/a.cube", "progressive_passLimit": 20})
+        w = opened(stored([s], rs_default={"gi_on": False, "progressive_passLimit": 5, "image_filter_width": 1.5}))
+        listener = quiet(w.activate, 1)
+        self.assertEqual(called("omgr_setRS"), [("image_filter_width", 1.5), ("gi_on", True), ("lut_path", "D:/luts/a.cube"),
+                                                ("progressive_passLimit", 20)])
+        self.assertEqual(w.toasts, [])
+        self.assertNotIn("left out", listener)
+
+    def test_post_production_as_the_card_stores_it(self):
+        s = setup(1, [{"class": "FilmicOperatorPlugin", "props": {"colorMappingOperator_highlightCompression": 2.0,
+                                                                   "colorMappingOperator_enabled": True}}])
+        s["post"]["cats"].update({key: {"props": {n: True for n in names}} for key, _, names in model.POST_CATS})
+        w = opened(stored([s]))
+        quiet(w.activate, 1)
+        self.assertEqual(sorted(c[0] for c in called("omgr_setRS")), sorted(n for _, _, names in model.POST_CATS for n in names))
+        self.assertEqual(rt.chain()[0].props["colorMappingOperator_highlightCompression"], 2.0)
+        self.assertEqual(w.toasts, [])
+
+    def test_ticked_settings_of_a_camera(self):
+        tab = next(t for t in model.tabs_for(1, "corona") if t["v_class"] == "CoronaCam")
+        names = [p["name"] for p in tab["props"] if p["class"] in ("Float", "BooleanClass", "Integer")][:5]
+        s = setup(1)
+        for n in names:
+            s["props"]["1|CoronaCam|%s" % n] = 1
+        w = opened(stored([s]), settings={"enabled_props": {"1": ["CoronaCam|%s" % n for n in names]}})
+        quiet(w.activate, 1)
+        self.assertEqual(sorted(c[1] for c in called("omgr_setNode")), sorted(names))
+        self.assertEqual(w.toasts, [])
+
+    def test_a_setup_converted_from_pulze(self):
+        import base64
+        cam = next(p["name"] for t in model.tabs_for(1, "corona") if t["v_class"] == "CoronaCam" for p in t["props"] if p["class"] == "Float")
+        rs = next(p["name"] for t in model.tabs_for(25, "corona") for p in t["props"] if p["class"] == "BooleanClass")
+        pulze = [{"camera": {"enabled": True, "handle": 7, "props": [{"name": cam, "v_class": "CoronaCam", "value": "35.5"}]},
+                  "renderCustom": {"enabled": "true", "props": [{"name": rs, "v_class": "CoronaRenderer", "value": "true"},
+                                                                {"name": "a.b.script", "v_class": "CoronaRenderer", "value": self.CODE}]},
+                  "objects": {"enabled": True, "set": [{"handle": 7, "name": "Cam", "props": [
+                      {"name": "isNodeHidden", "value": "true"}, {"name": "renderable", "value": False}, {"name": "script", "value": True}]}]},
+                  "layers": {"enabled": True, "set": [{"name": "0", "props": [{"name": "on", "value": False}, {"name": "script", "value": True}]}]}}]
+        text = base64.b64encode(json.dumps(pulze).encode("utf-8")).decode("ascii")
+        w = opened("", pulze=text, settings={"enabled_props": {"1": ["CoronaCam|" + cam], "25": ["CoronaRenderer|" + rs]}})
+        self.assertEqual(w.toasts, ["Read 1 setup(s) saved by Pulze Scene Manager in this file"])
+        listener = quiet(w.activate, 1)
+        self.assertIn((7, cam, 35.5), called("omgr_setNode"))
+        self.assertIn((7, "isHidden", True), called("omgr_setNode"))
+        self.assertIn((7, "renderable", False), called("omgr_setNode"))
+        self.assertIn(("0", "on", False), called("omgr_setLayer"))
+        self.assertEqual(called("omgr_setRS"), [(rs, True)])
+        # names Pulze stored that are not in the table never become a change: nothing to leave out
+        self.assertEqual(len(w.toasts), 1)
+        self.assertNotIn("left out", listener)
 
 
 class ScriptsOfAFile(Base):
