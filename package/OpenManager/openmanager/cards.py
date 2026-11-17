@@ -1508,7 +1508,7 @@ class OutputCard(Card):
             "UserName": self.sm.user_name,
             "SceneName": s["scenename"],
         }
-        for row, t in zip(self.rows, s["output"]["preset"]):
+        for row, t in zip(self.rows, s["output"]["preset"], strict=False):
             with Blocker(row.val, row.folder, *([row.digits] if row.digits else [])):
                 if isinstance(row.val, QtWidgets.QComboBox):
                     row.val.setCurrentText(t["value"])

@@ -249,7 +249,7 @@ class Blocker(object):
         self.old = [w.blockSignals(True) for w in self.widgets]
 
     def __exit__(self, *a):
-        for w, o in zip(self.widgets, self.old):
+        for w, o in zip(self.widgets, self.old, strict=False):
             w.blockSignals(o)
 
 

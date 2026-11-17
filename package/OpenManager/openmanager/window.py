@@ -739,14 +739,14 @@ class SceneManager(QtWidgets.QDockWidget):
         refs = [r for s in self.setups for r in model.node_refs(s) if r.get("handle") is not None and not r.get("uid")]
         lights = [(s, h) for s in self.setups for h in s["lights"]["set"] if not model.light_uids(s).get(str(h))]
         uids = maxlink.stamp_nodes([r["handle"] for r in refs] + [h for _, h in lights])
-        for r, u in zip(refs, uids):
+        for r, u in zip(refs, uids, strict=False):
             if u:
                 r["uid"] = u
-        for (s, h), u in zip(lights, uids[len(refs) :]):
+        for (s, h), u in zip(lights, uids[len(refs) :], strict=False):
             if u:
                 model.light_uids(s)[str(h)] = u
         lrefs = [ref for s in self.setups for ref in model.layer_refs(s) if not model.layer_ref_get(ref)[1]]
-        for ref, u in zip(lrefs, maxlink.stamp_layers([model.layer_ref_get(ref)[0] for ref in lrefs])):
+        for ref, u in zip(lrefs, maxlink.stamp_layers([model.layer_ref_get(ref)[0] for ref in lrefs]), strict=False):
             if u:
                 model.layer_ref_set(ref, uid=u)
 
@@ -2015,12 +2015,12 @@ class SceneManager(QtWidgets.QDockWidget):
         self.reload_scene()
         self.review_scripts(jobs)
         checks = self.check_render(jobs)
-        runnable = [s for s, c in zip(jobs, checks) if not c["errors"]]
+        runnable = [s for s, c in zip(jobs, checks, strict=False) if not c["errors"]]
         if any(c["errors"] or c["warnings"] for c in checks):
-            rows = [self._check_row(s, c) for s, c in zip(jobs, checks)]
+            rows = [self._check_row(s, c) for s, c in zip(jobs, checks, strict=False)]
             if dialogs.BatchCheckDialog(self, rows, len(runnable)).exec() != QtWidgets.QDialog.Accepted:
                 return
-        skipped = [(s, c) for s, c in zip(jobs, checks) if c["errors"]]
+        skipped = [(s, c) for s, c in zip(jobs, checks, strict=False) if c["errors"]]
         if not runnable:
             return
         try:
