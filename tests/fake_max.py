@@ -72,7 +72,7 @@ class Runtime(object):
         self.created = []  # every object made by calling a class
         self.called = []  # every 3ds Max function called by name
         self.calls = []  # every omgr_ function called: (name, arguments...)
-        self.returns = {}  # what an omgr_ function gives back: {name: value}
+        self.returns = {}  # what an omgr_ function gives back: {name: value, or a function of its arguments}
         self.bad_classes = []  # what omgr_core.ms would have in omgr_badClasses
         self.nodes = {}  # handle -> object
         self._kinds = {}
@@ -88,6 +88,8 @@ class Runtime(object):
         self._globals["resetMaxFile"] = MaxFunction(self, "resetMaxFile")  # a function
         self._globals["someText"] = 'Box(); messageBox "x"'  # a variable that holds text
         self._globals["nothingYet"] = None  # a variable with no value
+        self._globals.update(renderWidth=1920, renderHeight=1080, rendSaveFile=False, rendOutputFilename="",
+                             omgr_oldDat="PuzlesSM_Dat", omgr_cancel=False)
         renderer = MaxClass(self, "CoronaRenderer", self.kind("RendererClass"))
         self.renderers = Holder(current=MaxObject(renderer, {"colorMap_pipeline": None}))
         self.maxOps = Holder(getNodeByHandle=lambda h: self.nodes.get(h))
@@ -126,7 +128,8 @@ class Runtime(object):
         if name.startswith("omgr_"):
             def recorder(*args, **kwargs):
                 self.calls.append((name,) + args)
-                return self.returns.get(name)
+                value = self.returns.get(name)
+                return value(*args, **kwargs) if callable(value) else value
             return recorder
         raise AttributeError(name)  # an unknown name
 

@@ -313,7 +313,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self._scene_raw = None
         self._synced = 0.0
 
-        self.apply_timer = self._timer(120, self._apply)
+        self.apply_timer = self._timer(120, self._apply_edit)
         self.save_timer = self._timer(700, self.save_setups)
         self.list_timer = self._timer(0, self.refresh_rows)
         self.scene_timer = self._timer(350, self.reload_scene)
@@ -926,8 +926,23 @@ class SceneManager(QtWidgets.QDockWidget):
         return dialogs.ScriptReviewDialog(self, rows).exec() == QtWidgets.QDialog.Accepted
 
     def tell_refused(self):
+        """After a setup was applied: says what was left out of it. Scripts that aren't trusted, and class names
+        that are not classes (tell_rejected)."""
+        first = None
         if self._refused:
-            self.toast("%d script(s) of this setup were not run: they came with the file and aren't trusted" % len(self._refused))
+            first = "%d script(s) of this setup were not run: they came with the file and aren't trusted" % len(self._refused)
+        if not self.tell_rejected(first) and first:
+            self.toast(first)
+
+    def tell_rejected(self, first=None):
+        """Says how many class names stored in the file were left out since the last time: text that is no class
+        name, or no class of the kind expected (maxlink.take_rejected; a class name is never run as code). The
+        names themselves are in the MAXScript Listener. `first`: a line shown above it. Returns how many."""
+        n = len(maxlink.take_rejected())
+        if n:
+            text = "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)" % n
+            self.toast_label.show_text("%s\n%s" % (first, text) if first else text, 8000)
+        return n
 
     def run_actions(self, acts, redraw=True):
         """Applies changes; events 3ds Max fires because of them (a render preset load looks like a file
@@ -960,6 +975,11 @@ class SceneManager(QtWidgets.QDockWidget):
         if restart:
             maxlink.interactive_start()
 
+    def _apply_edit(self):
+        """The active setup again, a moment after one of its cards changed."""
+        self._apply()
+        self.tell_rejected()
+
     def base_restore(self, acts):
         """Before applying `acts`: the changes that put back what the setup applied before changed and this one
         doesn't control, and the values this one is about to replace are kept (model.base_step)."""
@@ -988,6 +1008,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self.refresh_rows()
         self.refresh_cards()
         self.toast("The scene is back as it was before the setups (%d setting(s))" % len(restore))
+        self.tell_rejected()
 
     def activate(self, sid, keep_redo=False):
         s = next((x for x in self.setups if x["id"] == sid), None)
@@ -1068,6 +1089,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self.refresh_rows()
         self.refresh_cards()
         self.toast("Undone: %s" % rec["label"])
+        self.tell_rejected()
 
     def redo(self):
         if self.rendering or not self.redo_stack:
@@ -1169,6 +1191,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 self.applying -= 1
             self.reload_scene()
         self.toast("Environment: %s" % os.path.basename(path))
+        self.tell_rejected()
 
     # ------------------------------------------------------------ top bar modes
     def set_preview_mode(self, on):
@@ -1702,6 +1725,7 @@ class SceneManager(QtWidgets.QDockWidget):
             self.changed(apply=False)
             self.set_card_visible(31, True)
             self.toast("Viewport pictures taken for %d setup(s)" % n)
+        self.tell_rejected()
 
     def bake_setups(self):
         if not self.setups:
@@ -1753,6 +1777,7 @@ class SceneManager(QtWidgets.QDockWidget):
             code = dlg.code.toPlainText()
             n = self._run_over_setups(chosen, "Bake Setups", "Running your script", lambda s, i: maxlink.run_code(code))
             self.toast("Script run on %d setup(s)" % n)
+        self.tell_rejected()
 
     # ------------------------------------------------------------ batch render
     def start_render(self, chosen):
@@ -1844,6 +1869,7 @@ class SceneManager(QtWidgets.QDockWidget):
             acts = self.actions_for(s, True)
             refused = len(self._refused)
             self.run_actions(self.base_restore(acts) + acts)
+            left_out = len(maxlink.take_rejected())
             target = maxlink.render_output()
             if not target:
                 # never render a frame that isn't saved
@@ -1865,6 +1891,8 @@ class SceneManager(QtWidgets.QDockWidget):
                 details = [str(result)]
             if refused:
                 details.append("%d script(s) not run: they came with the file and aren't trusted" % refused)
+            if left_out:
+                details.append("%d class name(s) not used: they are not operator or map classes" % left_out)
         except Exception as ex:
             traceback.print_exc()
             details = [str(ex)]

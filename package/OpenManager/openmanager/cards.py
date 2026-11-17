@@ -778,6 +778,7 @@ class EnvironmentCard(Card):
         e = self._entry(s) if s else None
         if e and e.get("cls"):
             maxlink.show_in_medit(e["cls"], e["name"])
+            self.sm.tell_rejected()
 
     def _chosen(self, i):
         s = self.setup()
