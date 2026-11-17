@@ -275,6 +275,14 @@ fn omgr_mapClass cls =
 	(
 		local want = toLower cls
 		for c in textureMap.classes do (if (found == undefined and (toLower (c as string)) == want) do found = c)
+		if (found == undefined) do
+		(
+			-- an older name of a class (VRayHDRI for VRayBitmap): what 3ds Max keeps under that name is read as it
+			-- is, nothing is run, and it counts when it is the class of a texture map
+			local g = undefined
+			try (if (globalVars.isGlobal (cls as name)) do g = globalVars.get (cls as name)) catch()
+			if (g != undefined and (try ((classOf g) == textureMap) catch false)) do found = g
+		)
 	)
 	if (found == undefined) do omgr_badClass cls
 	found
