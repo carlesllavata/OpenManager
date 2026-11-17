@@ -230,6 +230,56 @@ fn omgr_envMaps =
 	#(found, offer)
 )
 
+-- Class names come with the setups, and the setups travel inside the .max file: a file from someone else could put
+-- MAXScript where the name of a class belongs. So a class name is never run as code: it is only compared with the
+-- names of the texture map classes 3ds Max has. A name that is not one of them is left out, written to the Listener
+-- and kept in omgr_badClasses for the window to tell (omgr_takeBadClasses).
+global omgr_badClasses = #()
+
+-- ASCII letters, digits and "_" only: what the name of a class looks like
+fn omgr_isClassName s =
+(
+	local ok = (isKindOf s String) and (s.count > 0)
+	if ok do
+	(
+		for i = 1 to s.count while ok do
+		(
+			local c = bit.charAsInt (s[i])
+			ok = (c >= 48 and c <= 57) or (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or (c == 95)
+		)
+	)
+	ok
+)
+
+fn omgr_badClass cls =
+(
+	local s = cls as string
+	if (s.count > 80) do s = (substring s 1 80) + "..."
+	if ((findItem omgr_badClasses s) == 0 and omgr_badClasses.count < 20) do append omgr_badClasses s
+	format "OpenManager: left out \"%\": it is not a texture map class (class names stored in a file are never run as code)\n" s
+	undefined
+)
+
+fn omgr_takeBadClasses =
+(
+	local out = omgr_badClasses
+	omgr_badClasses = #()
+	out
+)
+
+-- the texture map class with this name, or undefined (and the name is reported) when 3ds Max has no such class
+fn omgr_mapClass cls =
+(
+	local found = undefined
+	if (omgr_isClassName cls) do
+	(
+		local want = toLower cls
+		for c in textureMap.classes while (found == undefined) do (if ((toLower (c as string)) == want) do found = c)
+	)
+	if (found == undefined) do omgr_badClass cls
+	found
+)
+
 -- a map by class and name. Maps are looked up many times while setups are applied, so they are kept in a dictionary
 -- (filled from omgr_allMaps, emptied when another file is opened) and checked before use.
 global omgr_mapCache = undefined
@@ -259,9 +309,9 @@ fn omgr_findMap cls nm =
 	)
 	if (m == undefined) do
 	(
-		-- a map nothing points to (not even OpenManager): the slow way, once
-		local c = undefined
-		try (c = execute cls) catch()
+		-- a map nothing points to (not even OpenManager): the slow way, once. Its class is found by name among the
+		-- texture map classes (omgr_mapClass); the name itself is never run
+		local c = if (cls == "") then undefined else (omgr_mapClass cls)
 		if (c != undefined) do try (for x in (getClassInstances c) do (if (m == undefined and x.name == nm) do m = x)) catch()
 		if (m != undefined) do PutDictValue omgr_mapCache key m
 	)
