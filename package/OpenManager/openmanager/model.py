@@ -1203,7 +1203,7 @@ def preview_cache_name(raw, size=0, mtime=0.0):
 
     key = "%s|%d|%d" % (os.path.normcase(os.path.abspath(raw)), int(size), int(mtime))
     stem = re.sub(r"[^A-Za-z0-9_-]+", "_", os.path.splitext(os.path.basename(raw))[0])[:40]
-    return "%s_%s.jpg" % (stem, hashlib.md5(key.encode("utf-8")).hexdigest()[:10])
+    return "%s_%s.jpg" % (stem, hashlib.md5(key.encode("utf-8"), usedforsecurity=False).hexdigest()[:10])
 
 
 # ---------------------------------------------------------------- setups saved by Pulze Scene Manager
