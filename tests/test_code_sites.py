@@ -100,6 +100,22 @@ class CoreMs(unittest.TestCase):
         self.assertIn("textureMap.classes", finder)
         self.assertIn("omgr_badClass cls", finder)
 
+    def test_a_property_named_by_a_change_is_checked_where_it_is_used(self):
+        # a property is set by a name that is not fixed text in omgr_setPath only (omgr_setIf gets fixed names) ...
+        self.assertEqual(sorted(set(fn for fn, _ in calls(self.src, "setProperty"))), ["omgr_setIf", "omgr_setPath"])
+        code = code_of(self.src)
+        # ... which, like omgr_getPath, is only reached through the three functions that check the name first
+        for name, end in (("omgr_set", "fn omgr_get "), ("omgr_get", "fn omgr_node "), ("omgr_getRaw", "fn omgr_getRawNode ")):
+            body = code[code.index("fn %s obj prop" % name):code.index(end)]
+            self.assertIn("omgr_propOk prop", body, name)
+            self.assertLess(body.index("omgr_propOk prop"), body.index("omgr_getPath obj"), name)
+        bodies = re.findall(r"^fn[ \t]+(\w+)[^\n]*\n((?:(?!fn[ \t]|global[ \t]).*\n)*)", code, re.M)
+        users = set(name for name, body in bodies if re.search(r"\bomgr_(?:set|get)Path\b", body))
+        self.assertEqual(users, {"omgr_setPath", "omgr_getPath", "omgr_set", "omgr_get", "omgr_getRaw"})
+        check = self.src[self.src.index("fn omgr_propOk"):self.src.index("global omgr_setPath")]
+        for piece in ("omgr_isClassName part", 'pattern:"script*"', 'pattern:"*script"', '"oslcode"', "append omgr_badProps"):
+            self.assertIn(piece, check)
+
 
 class OtherMs(unittest.TestCase):
     def test_start_up_scripts_run_no_text_from_a_scene(self):

@@ -431,6 +431,42 @@ fn omgr_scene handles:#() =
 
 -- ---------------------------------------------------------------- reading and writing properties
 
+-- The name of a property comes with the setups and the base state too, so a file from someone else could name any
+-- property, or a path through other objects to one. The window only lets through what its cards set (model.py,
+-- "settings that come with a file"). Here, where a property is read or written, a path is only walked when every
+-- part of it is a plain name, and a property that holds a script is never touched. What is refused is written to
+-- the Listener and kept in omgr_badProps for the window to tell (omgr_takeBadProps).
+global omgr_badProps = #()
+
+fn omgr_takeBadProps =
+(
+	local out = omgr_badProps
+	omgr_badProps = #()
+	out
+)
+
+fn omgr_propOk prop =
+(
+	local ok = (isKindOf prop String)
+	if ok do
+	(
+		local parts = filterString prop "."
+		ok = (parts.count > 0)
+		for part in parts do
+		(
+			if ok do ok = (omgr_isClassName part) and (not (matchPattern part pattern:"script*")) and (not (matchPattern part pattern:"*script")) and ((toLower part) != "oslcode")
+		)
+	)
+	if (not ok) do
+	(
+		local s = prop as string
+		if (s.count > 80) do s = (substring s 1 80) + "..."
+		if ((findItem omgr_badProps s) == 0 and omgr_badProps.count < 20) do append omgr_badProps s
+		format "OpenManager: left out the setting \"%\": it is not the name of a property or it holds code (settings stored in a file are checked before they are applied)\n" s
+	)
+	ok
+)
+
 global omgr_setPath
 fn omgr_setPath obj parts idx val =
 (
@@ -462,6 +498,7 @@ global omgr_set
 fn omgr_set obj prop val =
 (
 	if (obj == undefined) do return false
+	if (not (omgr_propOk prop)) do return false
 	-- 3ds Max takes a Daylight for a group head: its settings are its own
 	if (isValidNode obj and isGroupHead obj and ((classof obj) as string) != "DaylightAssemblyHead") then
 	(
@@ -481,6 +518,7 @@ fn omgr_set obj prop val =
 fn omgr_get obj prop =
 (
 	if (obj == undefined) do return "<none>"
+	if (not (omgr_propOk prop)) do return "<none>"
 	try
 	(
 		local v = omgr_getPath obj (filterString (omgr_cleanProp prop) ".") 1
@@ -1369,6 +1407,7 @@ fn omgr_layerUids =
 fn omgr_getRaw obj prop =
 (
 	if (obj == undefined) then undefined
+	else if (not (omgr_propOk prop)) then undefined
 	else (try (omgr_getPath obj (filterString (omgr_cleanProp prop) ".") 1) catch undefined)
 )
 fn omgr_getRawNode h prop = omgr_getRaw (omgr_node h) prop
