@@ -22,7 +22,8 @@ OPERATOR = {
 
 
 class Kind(object):
-    """What classOf gives for a class (its superclass: GeometryClass, textureMap...) or for a plain value (Integer...)."""
+    """What classOf gives for a class (its superclass: GeometryClass, textureMap...) or for a plain value
+    (Integer...)."""
 
     def __init__(self, name):
         self.name = name

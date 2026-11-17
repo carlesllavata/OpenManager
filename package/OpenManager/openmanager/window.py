@@ -289,7 +289,8 @@ QDockWidget { color: %(text)s; }
 QDockWidget::title { background: %(head)s; padding: 4px; }
 QWidget#omRoot, QWidget#omBoard, QDialog, QMessageBox, QColorDialog, QInputDialog { background: %(bg)s; }
 QDialog QWidget { background: %(bg)s; }
-QDialog QLineEdit, QDialog QComboBox, QDialog QSpinBox, QDialog QPlainTextEdit, QDialog QListWidget { background: %(base)s; }
+QDialog QLineEdit, QDialog QComboBox, QDialog QSpinBox, QDialog QPlainTextEdit, QDialog QListWidget {
+    background: %(base)s; }
 QDialog QAbstractButton { background: transparent; }
 QDialog QPushButton { background: %(button)s; }
 QDialog QPushButton:hover { background: %(sel)s; }
@@ -305,26 +306,33 @@ QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QPlainTextEdit, QListWidget, QTr
     background: %(base)s; color: %(text)s; border: 1px solid %(border)s; border-radius: 2px;
     selection-background-color: %(primary)s; selection-color: #ffffff; }
 QComboBox QAbstractItemView { background: %(base)s; color: %(text)s; selection-background-color: %(primary)s; }
-QHeaderView::section { background: %(head)s; color: %(text)s; border: none; border-right: 1px solid %(border)s; padding: 2px 5px; }
-QTreeWidget::item:selected, QTableWidget::item:selected, QListWidget::item:selected { background: %(sel)s; color: %(text)s; }
-QPushButton { background: %(button)s; color: %(text)s; border: 1px solid %(border)s; border-radius: 3px; padding: 3px 10px; }
+QHeaderView::section {
+    background: %(head)s; color: %(text)s; border: none; border-right: 1px solid %(border)s; padding: 2px 5px; }
+QTreeWidget::item:selected, QTableWidget::item:selected, QListWidget::item:selected {
+    background: %(sel)s; color: %(text)s; }
+QPushButton {
+    background: %(button)s; color: %(text)s; border: 1px solid %(border)s; border-radius: 3px; padding: 3px 10px; }
 QPushButton:hover, QToolButton:hover { background: %(sel)s; }
 QToolButton { color: %(text)s; background: transparent; border: none; }
 QTabBar::tab { background: %(button)s; color: %(text)s; padding: 4px 12px; border: 1px solid %(border)s; }
 QTabBar::tab:selected { background: %(base)s; }
 QTabWidget::pane { border: 1px solid %(border)s; }
 QScrollArea { background: transparent; border: none; }
-QScrollBar:vertical { background: %(bg)s; width: 10px; } QScrollBar::handle:vertical { background: %(border)s; min-height: 20px; border-radius: 4px; }
-QScrollBar:horizontal { background: %(bg)s; height: 10px; } QScrollBar::handle:horizontal { background: %(border)s; min-width: 20px; border-radius: 4px; }
+QScrollBar:vertical { background: %(bg)s; width: 10px; }
+QScrollBar::handle:vertical { background: %(border)s; min-height: 20px; border-radius: 4px; }
+QScrollBar:horizontal { background: %(bg)s; height: 10px; }
+QScrollBar::handle:horizontal { background: %(border)s; min-width: 20px; border-radius: 4px; }
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; }
-QMenu { background: %(base)s; color: %(text)s; border: 1px solid %(border)s; } QMenu::item:selected { background: %(sel)s; }
+QMenu { background: %(base)s; color: %(text)s; border: 1px solid %(border)s; }
+QMenu::item:selected { background: %(sel)s; }
 QProgressBar { background: %(base)s; border: 1px solid %(border)s; text-align: center; color: %(text)s; }
 QProgressBar::chunk { background: %(primary)s; }
 QToolTip { color: %(text)s; background: %(base)s; border: 1px solid %(border)s; }
 QCheckBox::indicator, QRadioButton::indicator, QTableWidget::indicator, QListWidget::indicator {
     width: 13px; height: 13px; border: 1px solid %(dis)s; background: %(base)s; }
 QRadioButton::indicator { border-radius: 7px; }
-QCheckBox::indicator:checked, QTableWidget::indicator:checked, QListWidget::indicator:checked { background: %(primary)s; border-color: %(primary)s; }
+QCheckBox::indicator:checked, QTableWidget::indicator:checked, QListWidget::indicator:checked {
+    background: %(primary)s; border-color: %(primary)s; }
 QRadioButton::indicator:checked { background: %(primary)s; border: 3px solid %(base)s; outline: 1px solid %(primary)s; }
 """
         % t
@@ -677,7 +685,8 @@ class SceneManager(QtWidgets.QDockWidget):
         self.last_saved = self.encoded()
         if source == "pulze":
             self.toast("Read %d setup(s) saved by Pulze Scene Manager in this file" % len(self.setups))
-            # written with the file next time it is saved: from then on these are the setups (Pulze's are not asked about again)
+            # written with the file next time it is saved: from then on these are the setups (Pulze's are not asked
+            # about again)
             self.last_saved = None
         elif source == "legacy":
             self.last_saved = None  # saved again under the new name with the file
@@ -1063,13 +1072,13 @@ class SceneManager(QtWidgets.QDockWidget):
         lines = [first] if first else []
         if classes:
             lines.append(
-                "%d class name(s) of this file were not used: they are not operator or map classes (see the MAXScript Listener)"
-                % classes
+                "%d class name(s) of this file were not used: they are not operator or map classes "
+                "(see the MAXScript Listener)" % classes
             )
         if settings:
             lines.append(
-                "%d setting(s) of this file were not applied: OpenManager's cards don't set them (see the MAXScript Listener)"
-                % settings
+                "%d setting(s) of this file were not applied: OpenManager's cards don't set them "
+                "(see the MAXScript Listener)" % settings
             )
         if classes or settings:
             self.toast_label.show_text("\n".join(lines), 8000)

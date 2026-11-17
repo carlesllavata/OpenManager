@@ -605,7 +605,8 @@ class PostSection(QtWidgets.QFrame):
 
 class PostCard(Card):
     """Corona post-production of the VFB by category, like the VFB shows it: tone mapping (each operator that is on,
-    with its values), LightMix, bloom and glare... An eyedropper takes a category; its values can then be edited here."""
+    with its values), LightMix, bloom and glare... An eyedropper takes a category; its values can then be edited
+    here."""
 
     CARD_ID = 29
 

@@ -599,7 +599,8 @@ class LightPickCard(Card):
         with Blocker(self.combo):
             self.combo.clear()
             self.combo.addItem(self.NONE_TEXT if self.tab == 0 else "(choose one)", None)
-            # every sun / Daylight of the scene is always listed; one another tab already uses is shown but can't be taken twice
+            # every sun / Daylight of the scene is always listed; one another tab already uses is shown but can't be
+            # taken twice
             used = {}
             for i, e in enumerate(model.entries(s[self.KIND])):
                 if e is not c and e.get("handle") is not None:

@@ -909,7 +909,8 @@ class RenderPresetOfAFile(Base):
         self.assertEqual(title, "Scripts and render presets in this file")
         self.assertIn("so only run scripts you trust. They also load a render preset that came with the file.", message)
         self.assertIn(
-            "so only load presets you trust. OpenManager leaves the scripts of Render Setup as they are. OpenManager remembers",
+            "so only load presets you trust. OpenManager leaves the scripts of Render Setup as they are. "
+            "OpenManager remembers",
             message,
         )
         self.assertTrue(
@@ -919,7 +920,8 @@ class RenderPresetOfAFile(Base):
         )
         self.assertEqual(
             listed,
-            '-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Render preset\nrenderPresets.LoadAll 0 @"D:/project/presets/final.rps"',
+            "-- #1 Cam · Pre-Setup script\nprint 1\n\n-- #1 Cam · Render preset\n"
+            'renderPresets.LoadAll 0 @"D:/project/presets/final.rps"',
         )
         self.assertEqual((yes, no), ("Run and load them", "Don't run or load them"))
 

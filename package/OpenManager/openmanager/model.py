@@ -312,7 +312,8 @@ def new_env_entry():
 
 
 def env_mixing(block, engine):
-    """Several environment tabs are added together in the environment slot (like a LightMix): Corona, two tabs or more."""
+    """Several environment tabs are added together in the environment slot (like a LightMix): Corona, two tabs or
+    more."""
     return engine == "corona" and len(entries(block)) > 1 and bool(block.get("mix", True))
 
 
