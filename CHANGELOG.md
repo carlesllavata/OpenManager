@@ -39,6 +39,10 @@ What each version of OpenManager adds, newest first.
   presets says so. The scripts of the setup's own Script cards are another thing and run as before.
 - **Clean-up.** The code now follows the common OPEN3D format and checks (ruff for Python, spaces instead of tabs
   in MAXScript). OpenManager works exactly as before.
+- **Enter no longer approves scripts or presets that came with a file.** In the question OpenManager asks before
+  it runs a script or loads a render preset that came with a file, Enter was meant to press the button that says
+  no, but it pressed the one that approves. Now Enter refuses wherever the focus is, on the approving button too;
+  approving takes a click, or Space on that button. Escape and the X of the window refuse, as before.
 
 ## 0.3.0 — 11 November 2026
 

@@ -205,10 +205,16 @@ class ScriptReviewDialog(Dialog):
         bb = QtWidgets.QDialogButtonBox()
         run = bb.addButton(yes, QtWidgets.QDialogButtonBox.AcceptRole)
         skip = bb.addButton(no, QtWidgets.QDialogButtonBox.RejectRole)
-        skip.setDefault(True)
         run.clicked.connect(self.accept)
         skip.clicked.connect(self.reject)
         v.addWidget(bb)
+        # Enter must refuse, whatever has the focus. A button is only the default of a dialog when it is told so
+        # once it is inside the dialog: told before, Qt keeps the mark on the button alone and, when the dialog is
+        # shown, gives the default to the first button that takes it, which is the accepting one. And a button
+        # that takes the default (auto-default) gets it when the focus reaches it, so the accepting one doesn't:
+        # it is pressed with a click or with Space.
+        run.setAutoDefault(False)
+        skip.setDefault(True)
 
 
 class BatchCheckDialog(Dialog):
