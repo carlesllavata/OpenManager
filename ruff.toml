@@ -2,6 +2,8 @@
 required-version = "==0.17.5"
 target-version = "py311"
 line-length = 120
+# Python files only: ruff would also reformat the Python examples inside Markdown files.
+extend-exclude = ["*.md"]
 
 [lint]
 select = ["E", "F", "I", "B", "BLE", "S"]

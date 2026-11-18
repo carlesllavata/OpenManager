@@ -18,6 +18,10 @@ end_of_line = crlf
 end_of_line = crlf
 charset = utf-8-bom
 
+# 3ds Max does not read a script without a BOM as UTF-8 either.
+[*.{ms,mcr}]
+charset = utf-8-bom
+
 # Two trailing spaces are a line break in Markdown.
 [*.md]
 trim_trailing_whitespace = false
