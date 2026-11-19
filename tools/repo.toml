@@ -1,0 +1,33 @@
+# What the common OPEN3D tools need to know about this repository. tools/repo.py reads it:
+# tools/check.ps1 runs the checks, and "python -I tools/repo.py version set X.Y.Z" writes a new version.
+
+# Where the version lives (`source`) and the other places that repeat it. Each one is a file and a
+# pattern whose one group is the version; "^" is the start of a line. The bundle's PackageContents.xml
+# is not a place: tools/build.py writes it from the source.
+[version]
+source = { file = "package/OpenManager/openmanager/window.py", pattern = '^VERSION = "([^"]+)"' }
+places = [
+    { file = "README.md", pattern = '^> Status: [^(\n]*\(v([^)\n]+)\)' },
+]
+
+# The checks, in the order they run. `full = true` marks one that only tools/check.ps1 -Full runs.
+[[check]]
+name = "ruff format"
+run = ["ruff", "format", "--check", "."]
+
+# Fails today, on the 58 broad `except Exception` blocks of the package (77 findings). They are put right
+# in a task of their own, and nothing is silenced meanwhile.
+[[check]]
+name = "ruff check"
+run = ["ruff", "check", "."]
+
+# With a Python that has no PySide6, the tests of the window and of the dialogs are skipped.
+[[check]]
+name = "tests"
+run = ["python", "tests/run.py"]
+
+# The same tests with the Python of 3ds Max, which has PySide6: none is skipped. 3ds Max is not started.
+[[check]]
+name = "tests with the Python of 3ds Max"
+run = ["3dsmax-python", "tests/run.py"]
+full = true

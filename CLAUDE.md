@@ -19,17 +19,21 @@ as a change that makes it old.
 ## Build and check
 
 - Build: `python -I tools/build.py` writes `dist/OpenManager.bundle` and `dist/OpenManager.mzp`.
-- Checks:
-  - `python -I tests/run.py` (207 tests; `tests/fake_max.py` stands in for 3ds Max). Without PySide6, which
-    the Python of 3ds Max has, the tests of `test_window.py` and `test_dialogs.py` are skipped.
-  - `ruff format --check .` and `ruff check .`
-- `ruff check .` fails today, on the 58 broad `except Exception` blocks of the package (77 findings).
-- `.editorconfig`, `.gitattributes` and `ruff.toml` are the same in every Open3D repo. Do not change them.
+- Checks: `tools\check.ps1` runs them all; it needs Python 3.11 or newer and the ruff `ruff.toml` names.
+  First the steps built into `tools/repo.py`: the version agrees in `window.py` and the README, every
+  source has its licence line, no file holds a path of somebody's computer. Then those of `tools/repo.toml`:
+  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (207 tests; `tests/fake_max.py`
+  stands in for 3ds Max). Without PySide6 the tests of `test_window.py` and `test_dialogs.py` are skipped.
+- `tools\check.ps1 -Full` also runs the tests with the Python of 3ds Max, which has PySide6: none is skipped.
+- Only `ruff check .` fails today: 77 findings on the 58 broad `except Exception` blocks of the package.
+- `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1` and `tools/repo.py` are the
+  same in every Open3D repo. Do not change them here.
 
 ## Version and release
 
 - The version is `VERSION` in `openmanager/window.py` and nowhere else by hand, except the `(vX.Y.Z)`
-  status line of the README and the CHANGELOG. The build refuses to go on if the README disagrees.
+  status line of the README and the CHANGELOG. `python -I tools/repo.py version set X.Y.Z` writes it
+  into `window.py` and the README; the build refuses to go on if the README disagrees.
 - Changes a user can notice go into `CHANGELOG.md` under `## In development`, in the same commit.
 - The build writes the bundle's `PackageContents.xml`. `PRODUCT_CODE` and `UPGRADE_CODE` never change.
 - The Open3D launcher installs `OpenManager.bundle`; the `.mzp` is the install by hand. `install.ms`
