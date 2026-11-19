@@ -51,8 +51,6 @@ as a change that makes it old.
   once they are done, it makes the GitHub release as a draft, with the zip and `SHA256SUMS.txt`. It never
   pushes. `--dry-run` tries it all and writes only to `dist/`. It runs the quick checks with no way to
   skip them, so it stops there while `ruff check .` fails.
-- The Open3D launcher's publishing script still makes this repo's zip its own way, from the latest
-  `vX.Y.Z` tag.
 - The Open3D launcher installs `OpenManager.bundle`; the `.mzp` is the install by hand. `install.ms`
   refuses to install over the bundle, and the bundle removes an `.mzp` install when it starts.
 
