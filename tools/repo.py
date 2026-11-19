@@ -1,10 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""The common OPEN3D tool of a repository: its checks and its version.
+"""The common OPEN3D tool of a repository: its checks, its version, its package and its release.
 
     python -I tools/repo.py check               the quick checks (what tools/check.ps1 starts)
     python -I tools/repo.py check --full        also the slow ones (tools/check.ps1 -Full)
     python -I tools/repo.py version             print the version
     python -I tools/repo.py version set X.Y.Z   write a new version into every place that holds it
+    python -I tools/repo.py package             the release package in dist/ (tools/repo_package.py);
+                                                --checked when the quick checks were just run
+    python -I tools/repo.py release X.Y.Z       the commit "Release X.Y.Z", the package and the tag, then
+                                                the pushes to approve; run again, the draft of the GitHub
+                                                release (tools/repo_release.py); --dry-run to try it
 
 What is specific to the repository is in tools/repo.toml:
 
@@ -21,6 +26,18 @@ What is specific to the repository is in tools/repo.toml:
       exclude           folders whose sources need no licence line
     [private_data]
       allow             a list of { pattern, reason }: what may stay, and why
+    [package]           only where the repository makes a release package
+      name              the app's name: the release is "<name> X.Y.Z" and the zip is named after it
+                        in lower case, <name>-X.Y.Z-windows-x64.zip
+      bundle            for a 3ds Max plugin, its folder in the zip, "<Name>.bundle": the zip ends in
+                        -3dsmax.zip, LICENSE goes inside it and its PackageContents.xml must say the version
+      build             commands that make what goes in, in order
+      files             what goes in: a file, a folder or names with wildcards ("LICENSES/*.txt") of
+                        the repository, each in its own place in the zip, or { from, to } to give it
+                        another; "{cargo_target}" stands for cargo's target folder
+      third_party       "cargo": THIRD-PARTY-LICENSES.txt, from the libraries cargo links in
+      exe               for a program, its exe in the zip: its file version must be the version
+      version_answer    what "<exe> --version" must answer; "{version}" stands for the version
 
 A pattern is a regular expression; "^" and "$" are the start and the end of a line, and a pattern
 of the version has one group. The first word of a command names its program: "python" (the one
@@ -28,8 +45,10 @@ that runs this file, with -I), "3dsmax-python" (the one of 3ds Max, with -I), "3
 "ruff", "clang-format", or any other that is on PATH or in cargo's folder.
 
 The checks built into this file look at every file that Git tracks or would track: a new file that
-is not ignored counts too. This file is the same in every OPEN3D repository. Only the standard
-library is used; it needs Python 3.11 or newer.
+is not ignored counts too. Every command starts through call(), which never pushes, never moves or
+deletes a tag, and on GitHub only reads, makes drafts and adds files to them. This file and the
+other tools/repo_*.py are the same in every OPEN3D repository. Only the standard library is used;
+it needs Python 3.11 or newer.
 """
 
 import fnmatch
@@ -51,6 +70,7 @@ TABLES = {
     "check": {"name", "run", "full", "files"},
     "licence_header": {"exclude"},
     "private_data": {"allow"},
+    "package": {"name", "bundle", "build", "files", "third_party", "exe", "version_answer"},
 }
 # The numbers of a version, by the name a place gives to the one it holds.
 PARTS = ("major", "minor", "patch")
@@ -86,6 +106,69 @@ def say(text=""):
 
 def counted(number, word):
     return f"{number} {word}" + ("" if number == 1 else "s")
+
+
+# -------------------------------------------------------------------------------- starting commands
+
+
+def refuse_unsafe(args):
+    """Stops what the common tool never runs, whoever asks for it: a push, a deleted or moved tag, a crate
+    sent to crates.io, and on GitHub anything but reading, a draft release of a tag it has, and files added."""
+    words = [str(word) for word in args]
+    program = Path(words[0]).stem.lower() if words else ""
+    rest = words[1:]
+    if program == "git":
+        unsafe = "push" in rest or ("tag" in rest and not {"-d", "--delete", "-f", "--force"}.isdisjoint(rest))
+    elif program == "cargo":
+        unsafe = "publish" in rest
+    elif program == "gh":
+        unsafe = not github_reads_or_drafts(rest)
+    else:
+        unsafe = False
+    if unsafe:
+        raise Failure("refused, the common tool never runs it: " + " ".join(words))
+
+
+def github_reads_or_drafts(rest):
+    """Whether a gh command only reads, makes a draft release of a tag GitHub already has, or adds files."""
+    if any(word.startswith("--latest") or word.startswith("--draft=") for word in rest):
+        return False
+    if rest[:1] == ["api"]:
+        # `gh api <path>` reads; every option but --jq could make it write.
+        return all(not word.startswith("-") or word == "--jq" for word in rest[1:])
+    if rest[:2] in (["release", "view"], ["release", "upload"]):
+        return True
+    return rest[:2] == ["release", "create"] and "--draft" in rest and "--verify-tag" in rest
+
+
+def call(args, **options):
+    """Starts a command and waits for it to end. Every command of the common tool starts here, past the guard."""
+    refuse_unsafe(args)
+    return subprocess.run(args, **options)  # noqa: S603 - the guard above; the commands are this tool's or tools/repo.toml's
+
+
+def part(name):
+    """Another file of the common tool beside this one, such as repo_package, loaded once.
+
+    python -I keeps this folder off sys.path, so the file is loaded by its place, and Python is told
+    not to leave a tools/__pycache__ behind in the repository. It finds this file as
+    sys.modules["open3d_repo"].
+    """
+    sys.modules.setdefault("open3d_repo", sys.modules[__name__])
+    key = "open3d_" + name
+    if key not in sys.modules:
+        path = Path(__file__).absolute().with_name(name + ".py")
+        if not path.is_file():
+            raise Failure(f"tools/{path.name} was not found: it comes with tools/repo.py")
+        spec = importlib.util.spec_from_file_location(key, path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[key] = module
+        writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.dont_write_bytecode = writes
+    return sys.modules[key]
 
 
 # ---------------------------------------------------------------------------------------- settings
@@ -150,7 +233,7 @@ def repo_files(repo):
     if not git:
         raise Failure("git was not found")
     listing = [git, "ls-files", "-z", "--cached", "--others", "--exclude-standard"]
-    done = subprocess.run(listing, cwd=repo, capture_output=True)  # noqa: S603 - git with fixed arguments
+    done = call(listing, cwd=repo, capture_output=True)
     if done.returncode != 0:
         raise Failure("git ls-files failed: " + done.stderr.decode("utf-8", errors="replace").strip())
     names = sorted(set(done.stdout.decode("utf-8").split("\0")) - {""})
@@ -224,7 +307,7 @@ def set_version(repo, settings, version):
         say(f"  wrote {path.relative_to(repo).as_posix()}")
     for args in settings["version"].get("after_set", []):
         say("  > " + " ".join(args))
-        if subprocess.run(command(args), cwd=repo).returncode != 0:  # noqa: S603 - a command of tools/repo.toml
+        if call(command(args), cwd=repo).returncode != 0:
             raise Failure(f"{args[0]} failed")
     problems, places = version_step(repo, settings, None)
     if problems:
@@ -371,7 +454,7 @@ def visual_studio_clang_format():
     if not vswhere.is_file():
         return None
     asked = [str(vswhere), "-utf8", "-products", "*", "-property", "installationPath"]
-    done = subprocess.run(asked, capture_output=True)  # noqa: S603 - vswhere with fixed arguments
+    done = call(asked, capture_output=True)
     for folder in done.stdout.decode("utf-8", errors="replace").splitlines():
         for inside in ("VC/Tools/Llvm/x64/bin", "VC/Tools/Llvm/bin"):
             program = Path(folder.strip()) / inside / "clang-format.exe"
@@ -395,7 +478,10 @@ def run_step(repo, step, files):
         real = command(args)
     except Failure as failure:
         return [str(failure)], ""
-    done = subprocess.run(real, cwd=repo, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)  # noqa: S603 - a command of tools/repo.toml
+    try:
+        done = call(real, cwd=repo, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    except Failure as failure:
+        return [str(failure)], note
     if done.returncode == 0:
         return [], note
     return done.stdout.decode("utf-8", errors="replace").splitlines() or [f"exit code {done.returncode}"], note
@@ -444,6 +530,14 @@ def check(repo, settings, full):
     return 0
 
 
+def package_settings(repo):
+    """The settings of a repository that makes a release package; it is said plainly when it makes none."""
+    settings = load_settings(repo)
+    if "package" not in settings:
+        raise Failure(f"this repository makes no release package: {SETTINGS} has no [package]")
+    return settings
+
+
 def main(arguments):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
@@ -455,6 +549,13 @@ def main(arguments):
             return 0
         if len(arguments) == 3 and arguments[:2] == ["version", "set"]:
             return set_version(REPO, load_settings(REPO), arguments[2])
+        if arguments in (["package"], ["package", "--checked"]):
+            settings = package_settings(REPO)
+            return part("repo_package").main(REPO, settings, checked=len(arguments) == 2)
+        versions = [argument for argument in arguments[1:] if argument != "--dry-run"]
+        if arguments[:1] == ["release"] and len(versions) == 1 and len(arguments) <= 3 and versions[0][:1] != "-":
+            settings = package_settings(REPO)
+            return part("repo_release").main(REPO, settings, versions[0], dry_run="--dry-run" in arguments)
     except (Failure, OSError) as failure:
         say(f"repo.py: {failure}")
         return 2
