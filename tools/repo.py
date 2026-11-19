@@ -3,6 +3,9 @@
 
     python -I tools/repo.py check               the quick checks (what tools/check.ps1 starts)
     python -I tools/repo.py check --full        also the slow ones (tools/check.ps1 -Full)
+    python -I tools/repo.py check --skip NAME   leaves the check NAME out and says so, one --skip for each
+                                                (tools/check.ps1 -Skip NAME); a name no check has is an
+                                                error, so a wrong one cannot leave nothing out
     python -I tools/repo.py version             print the version
     python -I tools/repo.py version set X.Y.Z   write a new version into every place that holds it
     python -I tools/repo.py package             the release package in dist/ (tools/repo_package.py);
@@ -487,8 +490,12 @@ def run_step(repo, step, files):
     return done.stdout.decode("utf-8", errors="replace").splitlines() or [f"exit code {done.returncode}"], note
 
 
-def check(repo, settings, full):
-    """Runs every step, the built-in ones first, and says how each went. Returns 0 when all passed."""
+def check(repo, settings, full, skip=()):
+    """Runs every step, the built-in ones first, and says how each went. Returns 0 when all passed.
+
+    The steps named in `skip` are left out, each with a line that says so; a name that no step has is
+    a Failure, raised before any step runs.
+    """
     files = repo_files(repo)
     built_in = [("version", version_step)] if "version" in settings else []
     built_in.append(("licence header", licence_step))
@@ -498,10 +505,19 @@ def check(repo, settings, full):
     steps = [(name, False, lambda step=step: step(repo, settings, files)) for name, step in built_in]
     for listed in settings.get("check", []):
         steps.append((listed["name"], listed.get("full", False), lambda listed=listed: run_step(repo, listed, files)))
+    names = [name for name, _, _ in steps]
+    unknown = [name for name in dict.fromkeys(skip) if name not in names]
+    if unknown:
+        asked = ", ".join(f'"{name}"' for name in unknown)
+        raise Failure(f"-Skip names no check of this repository: {asked}. The checks are: {', '.join(names)}")
 
     say(f"Checking {repo.name}" + (" (with -Full)" if full else ""))
-    failed, skipped = [], 0
+    failed, skipped, left_out = [], 0, []
     for name, slow, step in steps:
+        if name in skip:
+            say(f"  skip  {name} (asked for with -Skip)")
+            left_out.append(name)
+            continue
         if slow and not full:
             say(f"  skip  {name} (only with -Full)")
             skipped += 1
@@ -521,8 +537,9 @@ def check(repo, settings, full):
         if problems:
             failed.append(name)
 
-    ran = len(steps) - skipped
-    left = f" {skipped} more only with -Full." if skipped else ""
+    ran = len(steps) - skipped - len(left_out)
+    left = f" {len(left_out)} left out as asked: {', '.join(left_out)}." if left_out else ""
+    left += f" {skipped} more only with -Full." if skipped else ""
     if failed:
         say(f"\n{len(failed)} of {ran} checks FAILED: {', '.join(failed)}.{left}")
         return 1
@@ -538,12 +555,28 @@ def package_settings(repo):
     return settings
 
 
+def check_arguments(arguments):
+    """What follows "check": (full, the names to skip), or None when it is not --full and --skip NAME."""
+    full, skip, rest = False, [], list(arguments)
+    while rest:
+        word = rest.pop(0)
+        if word == "--full" and not full:
+            full = True
+        elif word == "--skip" and rest:
+            skip.append(rest.pop(0))
+        else:
+            return None
+    return full, skip
+
+
 def main(arguments):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
     try:
-        if arguments in (["check"], ["check", "--full"]):
-            return check(REPO, load_settings(REPO), full=len(arguments) == 2)
+        asked = check_arguments(arguments[1:]) if arguments[:1] == ["check"] else None
+        if asked:
+            full, skip = asked
+            return check(REPO, load_settings(REPO), full=full, skip=skip)
         if arguments == ["version"]:
             say(read_version(REPO, load_settings(REPO)))
             return 0

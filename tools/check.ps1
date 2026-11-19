@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Runs every check of this repository: format, lints, build and tests.
 #
-#   tools\check.ps1          the quick checks
-#   tools\check.ps1 -Full    also the ones that need 3ds Max, the network or a long time
+#   tools\check.ps1                      the quick checks
+#   tools\check.ps1 -Full                also the ones that need 3ds Max, the network or a long time
+#   tools\check.ps1 -Skip "ruff check"   leaves out the check named, and says so; several names are
+#                                        separated by commas. A name that no check has is an error.
 #
 # Where Windows does not let scripts run:  powershell -ExecutionPolicy Bypass -File tools\check.ps1
 #
 # The checks are listed in tools\repo.toml and run by tools\repo.py. This script only finds a Python
 # from 3.11 on, starts it and passes its exit code on. It is the same in every OPEN3D repository.
-param([switch]$Full)
+param([switch]$Full, [string[]]$Skip = @())
 
 $ErrorActionPreference = 'Continue'
 $tool = Join-Path $PSScriptRoot 'repo.py'
@@ -60,5 +62,8 @@ $program = $python[0]
 $first = @($python | Select-Object -Skip 1)
 $arguments = @('check')
 if ($Full) { $arguments += '--full' }
+foreach ($name in @($Skip | ForEach-Object { $_ -split ',' })) {
+    if ($name.Trim()) { $arguments += @('--skip', $name.Trim()) }
+}
 & $program @first -I $tool @arguments
 exit $LASTEXITCODE
