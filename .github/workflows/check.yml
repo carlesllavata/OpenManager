@@ -1,0 +1,55 @@
+# The checks of this repository on every push and pull request to main: tools\check.ps1, the same
+# command as on a computer (format, lints and tests). What needs 3ds Max, the network or a long time
+# only runs with -Full, which is not run here.
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer run of the same branch or pull request cancels the one still going.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: windows-latest
+    # Nothing is built: the check takes seconds, and setting Python and ruff up takes longer.
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # The plugin runs on the Python of 3ds Max: 3.11 in 3ds Max 2025, the oldest supported, and 3.13
+        # in 3ds Max 2027.
+        python: ["3.11", "3.13"]
+    env:
+      # tools\check.ps1 asks the py launcher first, and "py -3" would take the newest Python of the
+      # runner instead of the one set up below. PY_PYTHON3 makes it take that one.
+      PY_PYTHON3: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+
+      # The ruff that ruff.toml pins in required-version, read from there so that the two cannot drift.
+      - name: Install ruff
+        run: |
+          $pin = python -I -c "import tomllib; print(tomllib.load(open('ruff.toml', 'rb'))['required-version'])"
+          if ($LASTEXITCODE -ne 0 -or -not $pin) { throw 'ruff.toml has no required-version' }
+          python -I -m pip install --disable-pip-version-check "ruff$pin"
+
+      # Without "ruff check", which fails on purpose on the broad except blocks until their own task is
+      # done (D-128). When it is done, -Skip goes and the step comes back.
+      - name: Check
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\check.ps1 -Skip "ruff check"

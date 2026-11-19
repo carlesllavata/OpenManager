@@ -26,6 +26,9 @@ as a change that makes it old.
   stands in for 3ds Max). Without PySide6 the tests of `test_window.py` and `test_dialogs.py` are skipped.
 - `tools\check.ps1 -Full` also runs the tests with the Python of 3ds Max, which has PySide6: none is skipped.
 - Only `ruff check .` fails today: 77 findings on the 58 broad `except Exception` blocks of the package.
+- CI: `.github/workflows/check.yml` runs `tools\check.ps1 -Skip "ruff check"`, without `-Full`, on every
+  push and pull request to `main`, on GitHub's Windows runner, once with Python 3.11 and once with 3.13.
+  It leaves out `ruff check` because of those blocks; the `-Skip` goes once they are put right.
 - `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1`, `tools/repo.py`,
   `tools/repo_package.py` and `tools/repo_release.py` are the same in every Open3D repo. Do not change them
   here.
