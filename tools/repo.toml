@@ -1,5 +1,6 @@
 # What the common OPEN3D tools need to know about this repository. tools/repo.py reads it:
-# tools/check.ps1 runs the checks, and "python -I tools/repo.py version set X.Y.Z" writes a new version.
+# tools/check.ps1 runs the checks, "python -I tools/repo.py version set X.Y.Z" writes a new version,
+# "python -I tools/repo.py package" makes the release package and "release X.Y.Z" the release.
 
 # Where the version lives (`source`) and the other places that repeat it. Each one is a file and a
 # pattern whose one group is the version; "^" is the start of a line. The bundle's PackageContents.xml
@@ -31,3 +32,12 @@ run = ["python", "tests/run.py"]
 name = "tests with the Python of 3ds Max"
 run = ["3dsmax-python", "tests/run.py"]
 full = true
+
+# The release package: dist/openmanager-<version>-windows-x64-3dsmax.zip, with OpenManager.bundle at its
+# root and LICENSE inside it, and dist/SHA256SUMS.txt. The launcher installs it from there. tools/build.py
+# makes the bundle in dist/; the dist/OpenManager.mzp it also makes is not in the zip.
+[package]
+name = "OpenManager"
+bundle = "OpenManager.bundle"
+build = [["python", "tools/build.py"]]
+files = [{ from = "dist/OpenManager.bundle", to = "OpenManager.bundle" }]

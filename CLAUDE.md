@@ -26,8 +26,9 @@ as a change that makes it old.
   stands in for 3ds Max). Without PySide6 the tests of `test_window.py` and `test_dialogs.py` are skipped.
 - `tools\check.ps1 -Full` also runs the tests with the Python of 3ds Max, which has PySide6: none is skipped.
 - Only `ruff check .` fails today: 77 findings on the 58 broad `except Exception` blocks of the package.
-- `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1` and `tools/repo.py` are the
-  same in every Open3D repo. Do not change them here.
+- `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1`, `tools/repo.py`,
+  `tools/repo_package.py` and `tools/repo_release.py` are the same in every Open3D repo. Do not change them
+  here.
 
 ## Version and release
 
@@ -36,6 +37,19 @@ as a change that makes it old.
   into `window.py` and the README; the build refuses to go on if the README disagrees.
 - Changes a user can notice go into `CHANGELOG.md` under `## In development`, in the same commit.
 - The build writes the bundle's `PackageContents.xml`. `PRODUCT_CODE` and `UPGRADE_CODE` never change.
+- `python -I tools/repo.py package` makes the release package as the `[package]` table of
+  `tools/repo.toml` says: it needs the version's `## X.Y.Z` section in `CHANGELOG.md`, runs the quick
+  checks and `tools/build.py`, and writes `dist/openmanager-<version>-windows-x64-3dsmax.zip`, with
+  `dist/OpenManager.bundle` at its root (never `__pycache__`) and `LICENSE` inside the bundle, and
+  `dist/SHA256SUMS.txt`. It refuses a bundle whose `AppVersion` is not the version. The `.mzp` is not in
+  the zip. While `ruff check .` fails it stops at the checks; `--checked` skips them.
+- `python -I tools/repo.py release X.Y.Z` turns `## In development` into `## X.Y.Z — <date>`, sets the
+  version, commits `Release X.Y.Z`, packages, tags `vX.Y.Z` and prints the pushes to approve; run again
+  once they are done, it makes the GitHub release as a draft, with the zip and `SHA256SUMS.txt`. It never
+  pushes. `--dry-run` tries it all and writes only to `dist/`. It runs the quick checks with no way to
+  skip them, so it stops there while `ruff check .` fails.
+- The Open3D launcher's publishing script still makes this repo's zip its own way, from the latest
+  `vX.Y.Z` tag.
 - The Open3D launcher installs `OpenManager.bundle`; the `.mzp` is the install by hand. `install.ms`
   refuses to install over the bundle, and the bundle removes an `.mzp` install when it starts.
 
