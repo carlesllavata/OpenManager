@@ -511,7 +511,8 @@ def check(repo, settings, full, skip=()):
         asked = ", ".join(f'"{name}"' for name in unknown)
         raise Failure(f"-Skip names no check of this repository: {asked}. The checks are: {', '.join(names)}")
 
-    say(f"Checking {repo.name}" + (" (with -Full)" if full else ""))
+    # Which Python runs the checks: on GitHub several are installed, and the tests must run on the one asked for.
+    say(f"Checking {repo.name}" + (" (with -Full)" if full else "") + f", with Python {sys.version.split()[0]}")
     failed, skipped, left_out = [], 0, []
     for name, slow, step in steps:
         if name in skip:
