@@ -33,10 +33,23 @@ WiX 5 makes it from a source this file writes: `wix` on PATH, or the .NET global
    its file version; the icon is the icon.
 4. Its tables and its summary name no folder of this computer.
 
-Each build has a new ProductCode and package code, so two builds are never the same bytes.
+Each build has a new ProductCode and package code, so two builds are never the same bytes. All the files
+go into one cabinet of up to 2000 MB, the most a cabinet holds.
+
+A repository that makes its zip with a script of its own, not with tools/repo.py, makes the MSI of the
+folder the zip is made from, with tools/repo.py and tools/repo_package.py beside this file:
+
+    python -I tools/repo_msi.py FOLDER --out FILE.msi --name NAME --version X.Y.Z --exe PATH_IN_FOLDER
+        --upgrade-code GUID --shortcut NAME --icon FILE.ico [--repo REPOSITORY]
+
+The keys are those of [package.msi], and the icon is a file of the repository (the current folder unless
+--repo names it). It makes and checks the MSI as above, from every file in FOLDER, and writes FILE.msi;
+nothing else, not SHA256SUMS.txt.
 """
 
+import argparse
 import ctypes
+import importlib.util
 import re
 import shutil
 import sys
@@ -44,9 +57,27 @@ import tempfile
 from pathlib import Path, PurePosixPath
 from xml.sax.saxutils import escape, quoteattr
 
-repo = sys.modules["open3d_repo"]  # tools/repo.py, which loads tools/repo_package.py and this file
+
+def common_tool():
+    """tools/repo.py, which loads tools/repo_package.py and this file; loaded from beside this file when this
+    file runs on its own, as repo.py loads its parts."""
+    if "open3d_repo" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("open3d_repo", Path(__file__).absolute().with_name("repo.py"))
+        module = importlib.util.module_from_spec(spec)
+        sys.modules["open3d_repo"] = module
+        writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.dont_write_bytecode = writes
+    return sys.modules["open3d_repo"]
+
+
+repo = common_tool()
 
 MANUFACTURER = "Open3D"
+# The most a cabinet holds, uncompressed, in megabytes; WiX would make a new one every 200.
+CABINET_MB = 2000
 KEYS = {"upgrade_code", "shortcut", "icon"}
 GUID = re.compile(r"[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}")
 # What Windows refuses in the name of a file, and so of a shortcut.
@@ -161,7 +192,7 @@ def source(name, version, msi, exe, files, icon):
         f"  <Package Name={quoteattr(name)} Manufacturer={quoteattr(MANUFACTURER)} Version={quoteattr(version)}",
         f'      UpgradeCode={quoteattr(msi["upgrade_code"].upper())} Scope="perMachine" Language="1033">',
         f'    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage={quoteattr(downgrade)} />',
-        '    <MediaTemplate EmbedCab="yes" />',
+        f'    <MediaTemplate EmbedCab="yes" MaximumUncompressedMediaSize="{CABINET_MB}" />',
         f"    <Icon Id={quoteattr(ICON)} SourceFile={quoteattr(str(icon))} />",
         f'    <Property Id="ARPPRODUCTICON" Value={quoteattr(ICON)} />',
         "    <!-- It has no dialogs, so Installed apps offers nothing to modify. -->",
@@ -441,6 +472,9 @@ def make_msi(folder, settings, version, contents, out, folders):
     icon = folder / msi["icon"]
     if not icon.is_file():
         fail(f"{msi['icon']}, the icon of [package.msi], was not found")
+    size = sum(len(data) for data in contents.values())
+    if size > CABINET_MB * 2**20:
+        fail(f"the files come to {size / 2**20:.0f} MB, and the one cabinet of an MSI holds at most {CABINET_MB} MB")
     said = wix(["--version"], "wix --version", show=False)
     repo.say(f"  the MSI, made with WiX {said[0].split('+')[0] if said else '(of no known version)'}:")
     with tempfile.TemporaryDirectory(prefix="open3d-msi-") as work:
@@ -483,3 +517,58 @@ def make_msi(folder, settings, version, contents, out, folders):
         )
         packager.write_whole(out, lambda new: shutil.copyfile(built, new))
     return out
+
+
+# ----------------------------------------------------------------------------- on its own
+
+
+def arguments_of(arguments):
+    """What the command line asks for, or a Failure that says what is wrong with it."""
+
+    class Parser(argparse.ArgumentParser):
+        def error(self, message):
+            fail(f"{message}\n{self.format_usage().strip()}")
+
+    parser = Parser(prog="repo_msi.py", description="The MSI of the files in FOLDER, the same as the zip's.")
+    parser.add_argument("folder", metavar="FOLDER", help="the folder that holds what the zip holds")
+    for option in ("out", "name", "version", "exe", "upgrade-code", "shortcut", "icon"):
+        parser.add_argument("--" + option, required=True)
+    parser.add_argument("--repo", default=".", help="the repository the icon is in")
+    return parser.parse_args(arguments)
+
+
+def main(arguments):
+    """Makes the MSI of a folder, for a repository that makes its zip on its own (see the heading)."""
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
+    try:
+        asked = arguments_of(arguments)
+        folder, repository, out = Path(asked.folder).absolute(), Path(asked.repo).absolute(), Path(asked.out).absolute()
+        package = {
+            "name": asked.name,
+            "exe": asked.exe,
+            "msi": {"upgrade_code": asked.upgrade_code, "shortcut": asked.shortcut, "icon": asked.icon},
+        }
+        msi_table(package)
+        if not re.fullmatch(r"\d+\.\d+\.\d+", asked.version):
+            fail(f"'{asked.version}' is not a version: it is three numbers, like 1.2.3")
+        if not folder.is_dir():
+            fail(f"{folder} is not a folder")
+        files = sorted(path for path in folder.rglob("*") if path.is_file())
+        contents = {path.relative_to(folder).as_posix(): path.read_bytes() for path in files}
+        if asked.exe not in contents:
+            fail(f"{folder} has no {asked.exe}")
+        if not out.parent.is_dir():
+            fail(f"{out.parent}, where the MSI goes, is not a folder")
+        repo.say(f"The MSI of {asked.name} {asked.version}, from {repo.counted(len(contents), 'file')} in {folder}")
+        folders = repo.part("repo_package").this_computer(repository, None, also=(folder, out.parent))
+        make_msi(repository, {"package": package}, asked.version, contents, out, folders)
+        repo.say(f"Wrote {out} ({out.stat().st_size / 1e6:.1f} MB)")
+        return 0
+    except (repo.Failure, OSError) as failure:
+        repo.say(f"repo_msi.py: {failure}")
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
