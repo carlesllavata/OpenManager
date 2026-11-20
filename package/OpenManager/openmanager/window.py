@@ -9,7 +9,7 @@ import traceback
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import cards, cards2, dialogs, icons, maxlink, model, widgets
+from . import cards, cards2, dialogs, folders, icons, maxlink, model, widgets
 from .widgets import PRIMARY, TINTS, Blocker, Card, GridBoard, blend, icon, menu_tool, pal, text_color, tool
 
 VERSION = "0.3.0"
@@ -32,12 +32,13 @@ OPTIONAL_COLUMNS = [
 
 
 def cfg_dir():
-    try:
-        from pymxs import runtime as rt
+    """The folder of the person's settings this session: %APPDATA%\\Open3D\\OpenManager (folders.py)."""
+    return str(folders.session().settings)
 
-        return str(rt.getDir(rt.Name("plugcfg")))
-    except Exception:
-        return os.path.expanduser("~")
+
+def data_dir():
+    """The folder of what else OpenManager writes this session: %LOCALAPPDATA%\\Open3D\\OpenManager (folders.py)."""
+    return str(folders.session().data)
 
 
 def settings_path():
@@ -349,6 +350,8 @@ class SceneManager(QtWidgets.QDockWidget):
             | QtWidgets.QDockWidget.DockWidgetFloatable
             | QtWidgets.QDockWidget.DockWidgetClosable
         )
+        # the old settings are copied to the Open3D folder, if this is the first start, before they are read
+        self.folders = folders.session()
         self.settings = self.load_settings()
         self.apply_theme_palette()
         self._icon_color = text_color()
@@ -394,6 +397,16 @@ class SceneManager(QtWidgets.QDockWidget):
         maxlink.load_core()
         self.reload_all()
         maxlink.watch(self._on_max_event)
+        if folders.trouble(self.folders):
+            # once the window is in its place, where the message can be seen
+            self.folders_timer = self._timer(800, self.tell_folders)
+            self.folders_timer.start()
+
+    def tell_folders(self):
+        """Says when the old files could not all be copied to the Open3D folders (folders.py)."""
+        text = folders.trouble(self.folders)
+        if text:
+            self.toast(text)
 
     def _timer(self, ms, slot):
         t = QtCore.QTimer(self)
@@ -544,6 +557,7 @@ class SceneManager(QtWidgets.QDockWidget):
         except Exception:
             pass
         try:
+            os.makedirs(cfg_dir(), exist_ok=True)
             with open(settings_path(), "w", encoding="utf-8") as f:
                 json.dump(st, f, indent=1)
             with open(notify_flag_path(), "w") as f:
@@ -599,6 +613,7 @@ class SceneManager(QtWidgets.QDockWidget):
         else:
             self.settings.update(dlg.values())
             if dlg.action == "save_default":
+                os.makedirs(cfg_dir(), exist_ok=True)
                 with open(default_settings_path(), "w", encoding="utf-8") as f:
                     json.dump(self.settings, f, indent=1)
                 self.toast("Saved as your default settings")
@@ -1863,7 +1878,7 @@ class SceneManager(QtWidgets.QDockWidget):
 
     # ------------------------------------------------------------ thumbnails, previews, bake
     def thumb_path(self, s):
-        folder = self.scene.folder or os.path.join(cfg_dir(), "OpenManager_thumbs")
+        folder = self.scene.folder or data_dir()
         stem = os.path.splitext(self.scene.file or "untitled")[0]
         return os.path.join(folder, "OpenManager_thumbs", "%s_%03d.png" % (stem, s["id"])).replace("\\", "/")
 
@@ -1941,7 +1956,7 @@ class SceneManager(QtWidgets.QDockWidget):
         for _i, s in enumerate(self.setups):
             cam = self.scene.camera(s["camera"]["handle"])
             s["_label"] = s["scenename"] or (cam["name"] if cam else "")
-        folder = os.path.join(self.scene.folder or cfg_dir(), "OpenManager_export").replace("\\", "/")
+        folder = os.path.join(self.scene.folder or data_dir(), "OpenManager_export").replace("\\", "/")
         dlg = dialogs.BakeDialog(self, self.setups, folder)
         for s in self.setups:
             s.pop("_label", None)
@@ -1970,7 +1985,7 @@ class SceneManager(QtWidgets.QDockWidget):
                     return
                 path, valid = self.final_path(s)
                 preset = os.path.join(
-                    self.scene.folder or cfg_dir(), "OpenManager_presets", "%s_%s.rps" % (stem, label(s, i))
+                    self.scene.folder or data_dir(), "OpenManager_presets", "%s_%s.rps" % (stem, label(s, i))
                 ).replace("\\", "/")
                 maxlink.save_preset(preset)
                 maxlink.batch_view(

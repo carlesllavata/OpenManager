@@ -10,8 +10,12 @@ tone-mapping operators, and the omgr_ functions of omgr_core.ms as recorders (rt
 anything: it keeps the text it was given in rt.executed, where a test can see that nothing got there.
 """
 
+import atexit
 import contextlib
+import os
+import shutil
 import sys
+import tempfile
 import types
 
 OPERATOR = {
@@ -207,8 +211,26 @@ class Runtime(object):
         return True
 
 
+FOLDERS = []  # the temporary folder of the test run that stands for the person's (own_folders)
+
+
+def own_folders():
+    """Points the Open3D folders and the 3ds Max folders of before (openmanager/folders.py) at a temporary folder
+    of the test run, removed when it ends, so that no test reads or writes the person's own."""
+    if not FOLDERS:
+        FOLDERS.append(tempfile.mkdtemp(prefix="omgr_tests_"))
+        atexit.register(shutil.rmtree, FOLDERS[0], True)
+    os.environ.update(
+        OPEN3D_SETTINGS_DIR=os.path.join(FOLDERS[0], "Roaming", "Open3D"),
+        OPEN3D_DATA_DIR=os.path.join(FOLDERS[0], "Local", "Open3D"),
+        OPENMANAGER_TEST_OLD_FOLDERS=os.path.join(FOLDERS[0], "Local", "Autodesk", "3dsMax"),
+    )
+
+
 def install():
-    """Puts the fake in place of pymxs (once) and returns its runtime."""
+    """Puts the fake in place of pymxs (once) and returns its runtime. The folders of the person are left alone
+    (own_folders)."""
+    own_folders()
     mod = sys.modules.get("pymxs")
     if mod is None or not isinstance(getattr(mod, "runtime", None), Runtime):
         mod = types.ModuleType("pymxs")

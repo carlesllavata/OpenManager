@@ -1,15 +1,22 @@
 ﻿-- SPDX-License-Identifier: GPL-3.0-or-later
 -- OpenManager: when a file with setups of Pulze Scene Manager is opened and the window is closed, offer to open it.
 -- (Settings > Notification turns this off.)
+global omgr_home
 global omgr_isOpen
+global omgr_settingsDir
 global omgr_startupCheck
+-- First the folders (openmanager/folders.py): the settings are in %APPDATA%\Open3D\OpenManager. At the first start
+-- the ones of the plugcfg folder of the newest 3ds Max are copied there, before anything reads them, and
+-- omgr_settingsDir says where they are. The package is in the bundle (omgr_home) or in the user's scripts (.mzp).
+try (python.Execute "import os, sys\nfrom pymxs import runtime as rt\nd = rt.omgr_home if isinstance(rt.omgr_home, str) and os.path.isdir(rt.omgr_home) else os.path.join(rt.getDir(rt.Name('userScripts')), 'OpenManager')\nif d not in sys.path: sys.path.insert(0, d)\nfrom openmanager import folders\nfolders.session()")
+catch (format "OpenManager: the Open3D folders could not be set up: %\n" (getCurrentException()))
 fn omgr_startupCheck =
 (
     try
     (
-        local flag = (getDir #plugcfg) + "\\OpenManager_notify.txt"
+        local flag = if (isKindOf omgr_settingsDir String) then (omgr_settingsDir + "\\OpenManager_notify.txt") else ""
         local wanted = true
-        if (doesFileExist flag) do
+        if (flag != "" and doesFileExist flag) do
         (
             local f = openFile flag
             if (f != undefined) do (wanted = ((readLine f) != "0"); close f)

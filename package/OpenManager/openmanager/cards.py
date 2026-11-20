@@ -7,7 +7,7 @@ import os
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import model
+from . import folders, model
 from .widgets import (
     Blocker,
     Card,
@@ -1661,13 +1661,8 @@ class HdriCard(Card):
 
     @staticmethod
     def cache_dir():
-        try:
-            from pymxs import runtime as rt
-
-            base = str(rt.getDir(rt.Name("plugcfg")))
-        except Exception:
-            base = os.path.expanduser("~")
-        return os.path.join(base, "OpenManager_hdri")
+        """OpenManager_hdri in %LOCALAPPDATA%\\Open3D\\OpenManager (folders.py)."""
+        return str(folders.session().hdri)
 
     def cache_file(self, raw):
         try:

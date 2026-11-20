@@ -170,7 +170,8 @@ class OtherMs(unittest.TestCase):
             src = read(name)
             self.assertEqual(calls(src, "execute"), [], name)
             self.assertEqual(calls(src, "fileIn"), [], name)
-            # python.Execute: only fixed text that closes the window of the version before OpenManager
+            # python.Execute: only fixed text, that closes the window of the version before OpenManager or sets up
+            # the folders (openmanager/folders.py)
             self.assertTrue(all(text is not None for _, text in calls(src, "python.Execute")), name)
 
 

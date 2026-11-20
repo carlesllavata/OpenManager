@@ -53,6 +53,8 @@ class Bundle(unittest.TestCase):
             "omgr_setup.ms",
             "OpenManager_startup.ms",
             os.path.join("openmanager", "__init__.py"),
+            os.path.join("openmanager", "folders.py"),
+            os.path.join("openmanager", "open3d_settings.py"),
             os.path.join("openmanager", "props.json"),
         ):
             self.assertTrue(os.path.isfile(os.path.join(home, f)), f)

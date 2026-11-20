@@ -4,6 +4,15 @@ What each version of OpenManager adds, newest first.
 
 ## In development
 
+- **Your settings move to the Open3D folders, one set for every 3ds Max,** with the other Open3D apps: the settings
+  (the window, your default settings, the scripts you trust, the Pulze notification) to `%APPDATA%\Open3D\OpenManager`,
+  the HDRI previews to `%LOCALAPPDATA%\Open3D\OpenManager`. Until now each 3ds Max version kept its own in its
+  `plugcfg` folder. The first time 3ds Max starts with this version, whichever version it is, OpenManager copies the
+  settings of the newest 3ds Max that has some, and its HDRI previews, so nothing has to be set up again; the old
+  files are left as they were, and those of the other versions stay where they are. If the copy fails, OpenManager
+  says so and uses the old ones for that session, and tries again the next time. The thumbnails, exports and render
+  presets of a scene that is not saved yet go there too, instead of `plugcfg`. `uninstall.ms` now leaves your
+  settings.
 - **Class names that come with a file are never run.** A setup names some things by their 3ds Max class: the
   tone-mapping operators of the Post-Production / VFB card and of a Corona camera, and the maps its settings use.
   Setups travel inside the `.max`, and those names were run as MAXScript when a setup was applied, so a file from

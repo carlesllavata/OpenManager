@@ -19,10 +19,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "package", "OpenManager")
 import fake_max  # noqa: E402
 
 rt = fake_max.install()
-from openmanager import maxlink, model  # noqa: E402
+from openmanager import folders, maxlink, model, open3d_settings  # noqa: E402
 
 try:
-    from openmanager import window
+    from openmanager import cards, window
 except ImportError as ex:  # PySide6 comes with the Python of 3ds Max
     raise unittest.SkipTest("the window needs PySide6 (%s)" % ex) from ex
 
@@ -246,7 +246,7 @@ def bake(w, method, ids, code=""):
     with (
         mock.patch.object(window.dialogs, "BakeDialog", bake_dialog(method, ids, code)),
         mock.patch.object(window.dialogs, "BatchDialog", Dialog),
-        mock.patch.object(window, "cfg_dir", tempfile.gettempdir),
+        mock.patch.object(window, "data_dir", tempfile.gettempdir),
     ):
         quiet(w.bake_setups)
 
@@ -254,7 +254,7 @@ def bake(w, method, ids, code=""):
 def viewport_preview(w):
     with (
         mock.patch.object(window.dialogs, "BatchDialog", Dialog),
-        mock.patch.object(window, "cfg_dir", tempfile.gettempdir),
+        mock.patch.object(window, "data_dir", tempfile.gettempdir),
     ):
         quiet(w.viewport_preview)
 
@@ -1091,6 +1091,58 @@ class RenderSetupScriptsOfAPreset(Base):
         batch_render(w)
         self.assertEqual(called("omgr_setRenderScripts"), [("", "", "print 3", "")])
         self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
+
+
+class OpenFolders(Base):
+    """The settings, the HDRI previews and what a scene not saved yet makes are in the Open3D folders (folders.py),
+    one set for every 3ds Max, not in its plugcfg folder."""
+
+    def setUp(self):
+        super().setUp()
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.settings = os.path.join(folder.name, "Roaming", "Open3D", "OpenManager")
+        self.data = os.path.join(folder.name, "Local", "Open3D", "OpenManager")
+        environ = {
+            "OPEN3D_SETTINGS_DIR": os.path.dirname(self.settings),
+            "OPEN3D_DATA_DIR": os.path.dirname(self.data),
+            folders.TEST_OLD_FOLDERS: os.path.join(folder.name, "3dsMax"),
+        }
+        patcher = mock.patch.dict(os.environ, environ)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        folders._session = None
+        self.addCleanup(setattr, folders, "_session", None)
+
+    def test_where_each_file_goes(self):
+        self.assertEqual(window.settings_path(), os.path.join(self.settings, "OpenManager.json"))
+        self.assertEqual(window.default_settings_path(), os.path.join(self.settings, "OpenManager_default.json"))
+        self.assertEqual(window.notify_flag_path(), os.path.join(self.settings, "OpenManager_notify.txt"))
+        self.assertEqual(cards.HdriCard.cache_dir(), os.path.join(self.data, "OpenManager_hdri"))
+        w = opened(stored([setup(1)]))
+        thumbs = os.path.join(self.data, "OpenManager_thumbs").replace("\\", "/")
+        self.assertEqual(w.thumb_path(w.setups[0]), thumbs + "/scene_001.png")
+        w.scene.folder = "D:/work"
+        self.assertEqual(w.thumb_path(w.setups[0]), "D:/work/OpenManager_thumbs/scene_001.png")
+
+    def test_saving_makes_the_settings_folder(self):
+        w = opened("", settings={"notify": False, "theme": {"main": "dark"}})
+        quiet(window.SceneManager.save_settings, w)
+        with open(window.settings_path(), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["theme"], {"main": "dark"})
+        with open(window.notify_flag_path(), encoding="utf-8") as f:
+            self.assertEqual(f.read(), "0")
+
+    def test_a_copy_that_failed_is_told(self):
+        w = opened("")
+        w.folders = folders.Folders(
+            "old", "data", "hdri", (("old", "new", open3d_settings.CarryOver(open3d_settings.FAILED, reason="no")),)
+        )
+        window.SceneManager.tell_folders(w)
+        self.assertEqual(w.toasts, [folders.trouble(w.folders)])
+        w.toasts, w.folders = [], folders.Folders("new", "data", "hdri")
+        window.SceneManager.tell_folders(w)
+        self.assertEqual(w.toasts, [])
 
 
 if __name__ == "__main__":

@@ -7,7 +7,9 @@ global omgr_migrateLegacy
 global omgr_removeMzpInstall
 
 -- The version installed before the tool was called OpenManager ("Puzles"): closed and removed, its settings carried
--- over. Setups saved inside .max files by that version are read and converted by the tool itself.
+-- over. Setups saved inside .max files by that version are read and converted by the tool itself. Its settings get
+-- OpenManager's names in plugcfg, where OpenManager kept them before the Open3D folders; this runs before
+-- OpenManager_startup.ms, which copies them from there (openmanager/folders.py).
 fn omgr_migrateLegacy =
 (
     try (python.Execute "import sys\nm = sys.modules.get('puzles_sm')\nif m:\n    m.close()") catch()
@@ -39,7 +41,7 @@ fn omgr_migrateLegacy =
 )
 
 -- The per-user install made by OpenManager.mzp (scripts, startup script, macro, icons), removed when OpenManager runs
--- from the bundle. Settings in plugcfg stay. Never touches the folder OpenManager is running from. True = removed something.
+-- from the bundle. Settings stay. Never touches the folder OpenManager is running from. True = removed something.
 fn omgr_removeMzpInstall =
 (
     local removed = false

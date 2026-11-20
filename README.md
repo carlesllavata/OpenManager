@@ -32,7 +32,7 @@ By hand, each [release](https://github.com/carlesllavata/OpenManager/releases/la
   2025 on. If OpenManager was installed with the `.mzp` before, the bundle removes that copy the first time it starts
   (your settings stay). To remove the bundle, delete its folder with Max closed.
 - **`OpenManager.mzp`**, for a manual install: drag it onto a 3ds Max viewport. To remove it: *Scripting > Run
-  Script…* > `uninstall.ms`, then restart Max. It won't install over the bundle.
+  Script…* > `uninstall.ms`, then restart Max (your settings stay). It won't install over the bundle.
 
 Then *Customize > Customize User Interface > Toolbars*, **Group: Main UI**, **Category: OpenManager**: drag the
 **OpenManager** action to a toolbar or a menu. Setups saved inside `.max` files are never touched by installing or
@@ -41,7 +41,10 @@ removing.
 - Setups are saved **inside the .max file** (the `OpenManager_Dat` attribute of `rootNode`).
 - Setups made with **Pulze Scene Manager** and with the previous version of this tool (*Puzles · Scene Manager*)
   are read and converted. Both installs also remove that previous version if they find it, keeping its settings.
-- Window settings: `plugcfg\OpenManager.json`.
+- Settings: `%APPDATA%\Open3D\OpenManager`, one set for every 3ds Max. The HDRI previews it makes, and the
+  thumbnails, exports and presets of a scene not saved yet, go to `%LOCALAPPDATA%\Open3D\OpenManager`. Version
+  0.3.0 and earlier kept the settings in the `plugcfg` folder of each 3ds Max: the first start of a newer version
+  copies those of the newest 3ds Max that has some, and its HDRI previews, and leaves the old ones as they were.
 
 ## Modules
 
@@ -59,7 +62,7 @@ Render Elements, Post-Production / VFB (Corona), Script File / Editor, Thumbnail
 | `package/OpenManager/omgr_setup.ms` | clean-up of older installs, shared by the bundle and the .mzp |
 | `package/OpenManager/omgr_core.ms` | MAXScript functions (prefix `omgr_`) that read and change the scene |
 | `package/OpenManager/OpenManager_startup.ms` | offers to open the window when a `.max` with Pulze setups is opened |
-| `package/OpenManager/openmanager/` | the window (Python): `window.py`, cards in `cards.py` / `cards2.py`, `maxlink.py` (setup → changes in Max), `model.py` (data, no Max or Qt) |
+| `package/OpenManager/openmanager/` | the window (Python): `window.py`, cards in `cards.py` / `cards2.py`, `maxlink.py` (setup → changes in Max), `model.py` (data, no Max or Qt), `folders.py` (where its files go) |
 | `tools/` | `build.py` (builds the bundle, the .mzp and the icons) and `make_props.py` (the Property Selector table) |
 
 ## If something goes wrong

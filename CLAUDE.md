@@ -10,7 +10,9 @@ as a change that makes it old.
 
 - `package/OpenManager/openmanager/`: the Python package. `window.py`: the window. `cards.py`, `cards2.py`:
   the cards. `maxlink.py`: the link to 3ds Max. `model.py`: the setups and the checks on what a file
-  brings. `grid.py`: the card grid. `model.py` and `grid.py` import neither 3ds Max nor Qt.
+  brings. `grid.py`: the card grid. `folders.py`: where OpenManager keeps its files, and the copy of the old
+  ones. `open3d_settings.py`: what every Open3D app shares (the language and the folders), a copy of a common
+  file. `model.py`, `grid.py`, `folders.py` and `open3d_settings.py` import neither 3ds Max nor Qt when they load.
 - `package/OpenManager/omgr_core.ms`: the MAXScript functions that read and change the scene.
 - `bundle/OpenManager_bundle.ms`: what the bundle runs when 3ds Max starts. `package/OpenManager.mcr`: the
   action that opens the window. `package/install.ms` and `uninstall.ms`: the `.mzp` install and its removal.
@@ -22,16 +24,17 @@ as a change that makes it old.
 - Checks: `tools\check.ps1` runs them all; it needs Python 3.11 or newer and the ruff `ruff.toml` names.
   First the steps built into `tools/repo.py`: the version agrees in `window.py` and the README, every
   source has its licence line, no file holds a path of somebody's computer. Then those of `tools/repo.toml`:
-  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (207 tests; `tests/fake_max.py`
-  stands in for 3ds Max). Without PySide6 the tests of `test_window.py` and `test_dialogs.py` are skipped.
+  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (227 tests; `tests/fake_max.py`
+  stands in for 3ds Max and points the folders at a temporary one). Without PySide6 the tests of
+  `test_window.py` and `test_dialogs.py` are skipped.
 - `tools\check.ps1 -Full` also runs the tests with the Python of 3ds Max, which has PySide6: none is skipped.
-- Only `ruff check .` fails today: 77 findings on the 58 broad `except Exception` blocks of the package.
+- Only `ruff check .` fails today: 75 findings on the 56 broad `except Exception` blocks of the package.
 - CI: `.github/workflows/check.yml` runs `tools\check.ps1 -Skip "ruff check"`, without `-Full`, on every
   push and pull request to `main`, on GitHub's Windows runner, once with Python 3.11 and once with 3.13.
   It leaves out `ruff check` because of those blocks; the `-Skip` goes once they are put right.
 - `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1`, `tools/repo.py`,
-  `tools/repo_package.py` and `tools/repo_release.py` are the same in every Open3D repo. Do not change them
-  here.
+  `tools/repo_package.py` and `tools/repo_release.py` are the same in every Open3D repo, and
+  `openmanager/open3d_settings.py` in every repo that has it. Do not change them here.
 
 ## Version and release
 
@@ -61,7 +64,14 @@ as a change that makes it old.
 - The `.ms` and `.mcr` files start with a UTF-8 BOM and are indented with 4 spaces.
 - Setups are stored inside the `.max` file: JSON in the `OpenManager_Dat` attribute of `rootNode`, whose id
   never changes. The old keys (`PuzlesSM_Dat`, `PuzlesSM_Maps`, Pulze's `SceneManager_Dat`) are still read.
-- The settings of the person, the trusted scripts among them, are in 3ds Max's `plugcfg` folder.
+- Its files (`folders.py`): the settings, the trusted scripts among them, in `%APPDATA%\Open3D\OpenManager`
+  (`OpenManager.json`, `OpenManager_default.json`, `OpenManager_notify.txt`), one set for every 3ds Max; the
+  HDRI previews (`OpenManager_hdri`) and what a scene not saved yet makes in `%LOCALAPPDATA%\Open3D\OpenManager`.
+  `OPEN3D_SETTINGS_DIR` and `OPEN3D_DATA_DIR` move them. `folders.session()`, run by `OpenManager_startup.ms`
+  when 3ds Max starts and by the window, copies into a missing new folder the settings and HDRI previews of
+  the newest 3ds Max with OpenManager settings in a `plugcfg` under `%LOCALAPPDATA%\Autodesk\3dsMax` (or the
+  running one's), and leaves the old folders as they were; a failed copy leaves that session on the old
+  folder. MAXScript finds the settings in `omgr_settingsDir`. `OPENMANAGER_TEST_OLD_FOLDERS` is for tests.
 - A change is a tuple that starts with its kind: `maxlink._run_one` applies it, `model.action_key` says
   what it controls and `maxlink.capture` reads the value to put back. A new kind needs its part in each.
 - 3ds Max's undo is off while changes are applied (`maxlink.run`); the window keeps its own undo records.
