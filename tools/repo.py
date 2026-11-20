@@ -41,17 +41,23 @@ What is specific to the repository is in tools/repo.toml:
       third_party       "cargo": THIRD-PARTY-LICENSES.txt, from the libraries cargo links in
       exe               for a program, its exe in the zip: its file version must be the version
       version_answer    what "<exe> --version" must answer; "{version}" stands for the version
+    [package.msi]       only for a program that has a Windows Installer package as well, made with
+                        WiX 5 beside the zip as <name>-X.Y.Z-windows-x64.msi (tools/repo_msi.py)
+      upgrade_code      the GUID made once for the program, never changed
+      shortcut          the name of its shortcut in the Start menu
+      icon              the .ico file the exe carries, for Installed apps
 
 A pattern is a regular expression; "^" and "$" are the start and the end of a line, and a pattern
 of the version has one group. The first word of a command names its program: "python" (the one
 that runs this file, with -I), "3dsmax-python" (the one of 3ds Max, with -I), "3dsmaxbatch",
-"ruff", "clang-format", or any other that is on PATH or in cargo's folder.
+"ruff", "clang-format", "wix" (also found among the .NET global tools), or any other that is on
+PATH or in cargo's folder.
 
 The checks built into this file look at every file that Git tracks or would track: a new file that
 is not ignored counts too. Every command starts through call(), which never pushes, never moves or
-deletes a tag, and on GitHub only reads, makes drafts and adds files to them. This file and the
-other tools/repo_*.py are the same in every OPEN3D repository. Only the standard library is used;
-it needs Python 3.11 or newer.
+deletes a tag, never installs anything with msiexec, and on GitHub only reads, makes drafts and adds
+files to them. This file and the other tools/repo_*.py are the same in every OPEN3D repository. Only
+the standard library is used; it needs Python 3.11 or newer.
 """
 
 import fnmatch
@@ -73,7 +79,7 @@ TABLES = {
     "check": {"name", "run", "full", "files"},
     "licence_header": {"exclude"},
     "private_data": {"allow"},
-    "package": {"name", "bundle", "build", "files", "third_party", "exe", "version_answer"},
+    "package": {"name", "bundle", "build", "files", "third_party", "exe", "version_answer", "msi"},
 }
 # The numbers of a version, by the name a place gives to the one it holds.
 PARTS = ("major", "minor", "patch")
@@ -116,7 +122,8 @@ def counted(number, word):
 
 def refuse_unsafe(args):
     """Stops what the common tool never runs, whoever asks for it: a push, a deleted or moved tag, a crate
-    sent to crates.io, and on GitHub anything but reading, a draft release of a tag it has, and files added."""
+    sent to crates.io, anything msiexec does (it installs and removes), and on GitHub anything but reading,
+    a draft release of a tag it has, and files added."""
     words = [str(word) for word in args]
     program = Path(words[0]).stem.lower() if words else ""
     rest = words[1:]
@@ -127,7 +134,7 @@ def refuse_unsafe(args):
     elif program == "gh":
         unsafe = not github_reads_or_drafts(rest)
     else:
-        unsafe = False
+        unsafe = program == "msiexec"  # whatever it is asked, it is Windows Installer at work
     if unsafe:
         raise Failure("refused, the common tool never runs it: " + " ".join(words))
 
@@ -432,8 +439,21 @@ def command(args):
         return [sys.executable, "-I", "-m", "ruff", *rest]
     if name == "clang-format" and (found := visual_studio_clang_format()):
         return [found, *rest]
-    elsewhere = {"ruff": " and not in this Python", "clang-format": " and Visual Studio has none"}
+    if name == "wix" and (found := dotnet_tool("wix")):
+        return [found, *rest]
+    elsewhere = {
+        "ruff": " and not in this Python",
+        "clang-format": " and Visual Studio has none",
+        "wix": " nor among the .NET global tools (dotnet tool install --global wix --version 5.0.2)",
+    }
     raise Failure(f"{name} was not found: it is not on PATH" + elsewhere.get(name, ""))
+
+
+def dotnet_tool(name):
+    """A .NET global tool, where `dotnet tool install --global` puts it; None without one."""
+    home = Path(os.environ.get("DOTNET_CLI_HOME") or Path.home())
+    program = home / ".dotnet" / "tools" / (name + ".exe")
+    return str(program) if program.is_file() else None
 
 
 def max_program(name):

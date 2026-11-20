@@ -15,8 +15,8 @@ origin has the commit and the tag, it goes on from there:
 5. It prints the pushes to approve, `git push origin main` and `git push origin vX.Y.Z`, and stops.
 6. Run again with both on origin: the package again, from the tagged commit, and a draft of the
    release vX.Y.Z of origin's GitHub repository, titled "<name> X.Y.Z", with that version's section of
-   CHANGELOG.md as its notes and the zip and SHA256SUMS.txt as its files. A draft that is already there
-   gets the files again; a published release stops it, untouched.
+   CHANGELOG.md as its notes and the zip, the MSI of a program that has one, and SHA256SUMS.txt as its
+   files. A draft that is already there gets the files again; a published release stops it, untouched.
 
 --dry-run writes nothing outside dist/ and runs nothing that writes to Git or GitHub. What the commit
 would change is made in a copy of the repository inside dist/, and the package of that copy is left in
@@ -350,7 +350,7 @@ def release(folder, settings, version, dry_run=False, today=None):
     # 6. The draft of the GitHub release, from the tagged commit.
     github = github_repo(folder)
     archive = packager.make_package(folder, settings)
-    files = [archive, archive.parent / packager.SUMS]
+    files = packager.release_files(packager.table(settings), version, archive.parent)
     gh = gh_program()
     state = release_state(gh, github, tag)
     step = release_step(github, tag, state)

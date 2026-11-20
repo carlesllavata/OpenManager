@@ -7,7 +7,8 @@ what goes in (the heading of tools/repo.py lists its keys). In order:
 1. The version: every place that holds it agrees, and CHANGELOG.md has its "## X.Y.Z" section.
 2. The quick checks of tools/check.ps1, unless --checked says they were just run.
 3. The commands of `build`. Cargo gets the options that keep this computer's folders out of what it
-   builds.
+   builds, added to the rustflags of [target.x86_64-pc-windows-msvc] in the repository's Cargo
+   settings (RUSTFLAGS, when it is set, takes the place of those, as it always does for cargo).
 4. With third_party = "cargo", the licence of every library linked into the program is checked, and
    their texts are gathered in THIRD-PARTY-LICENSES.txt.
 5. The files the table names, under the names it gives; never __pycache__, .pyc or .pyo. LICENSE is
@@ -15,9 +16,12 @@ what goes in (the heading of tools/repo.py lists its keys). In order:
 6. No file in it may hold a folder of this computer, the folder of a Windows user or a word of the
    private list. A plugin's PackageContents.xml must say the version, and so must a program's file
    version and, where the table asks, its answer to --version.
-7. dist/<name>-<version>-windows-x64.zip (-3dsmax.zip for a plugin) and dist/SHA256SUMS.txt. Every file
-   in the zip has the same date and they follow the order of their names, so the same files always
-   give the same zip, byte for byte, with the same Python.
+7. With a [package.msi] table, dist/<name>-<version>-windows-x64.msi, which installs the same files
+   into Program Files and is checked before it is written (tools/repo_msi.py).
+8. dist/<name>-<version>-windows-x64.zip (-3dsmax.zip for a plugin) and dist/SHA256SUMS.txt, with a
+   line for each file made, in the order of their names. Every file in the zip has the same date and
+   they follow the order of their names, so the same files always give the same zip, byte for byte,
+   with the same Python.
 
 A folder in `files` holds the files Git tracks in it, and the new ones it would track; a folder that
 Git knows nothing of, because a build makes it, is taken whole.
@@ -110,6 +114,8 @@ def table(settings):
         fail(f'{repo.SETTINGS}: a bundle is the folder of a 3ds Max plugin, such as "OpenTools.bundle"')
     if "version_answer" in package and "exe" not in package:
         fail(f"{repo.SETTINGS}: version_answer is what the program, the exe, answers to --version")
+    if "msi" in package:
+        repo.part("repo_msi").msi_table(package)
     return package
 
 
@@ -117,6 +123,17 @@ def zip_name(package, version):
     """The name the Open3D launcher looks for in a release."""
     plugin = "-3dsmax" if "bundle" in package else ""
     return f"{package['name'].lower()}-{version}-windows-x64{plugin}.zip"
+
+
+def msi_name(package, version):
+    """The name of a program's Windows Installer package, as the Open3D launcher looks for it."""
+    return f"{package['name'].lower()}-{version}-windows-x64.msi"
+
+
+def release_files(package, version, dist):
+    """What a release carries, all in dist/: the zip, the MSI of a program that has one, and SHA256SUMS.txt."""
+    names = [zip_name(package, version)] + ([msi_name(package, version)] if "msi" in package else [])
+    return [dist / name for name in [*names, SUMS]]
 
 
 # ---------------------------------------------------------------------------------- the version
@@ -176,29 +193,38 @@ def short_path(path):
     return buffer.value if 0 < got < len(buffer) else str(path)
 
 
-def cargo_environment(target):
-    """What cargo builds with, so that the program says nothing of the computer it was built on.
+def cargo_command(args, target):
+    """A cargo command of `build` and what it runs with, so that the program says nothing of the computer
+    it was built on. Returns (the command, its environment).
 
     rustc writes the full path of every source file that can panic into the program, and for the
     libraries that is cargo's home, inside the user's folder. Those paths are cut down to "cargo\\..."
-    and "target\\..."; the flags go in CARGO_ENCODED_RUSTFLAGS because a folder may have spaces. A
-    library that compiles C code writes its paths too (__FILE__), and rustc's flags do not reach the C
-    compiler: MSVC is told to trim the same folders, in both spellings Windows has for them, quoted
-    for the cc crate (CC_SHELL_ESCAPED_FLAGS).
+    and "target\\...". The flags are added with --config to the rustflags of the target in the
+    repository's Cargo settings, which cargo joins with them: in an environment variable they would
+    take the place of those (such as the Visual C++ runtime linked in, D-151). Where RUSTFLAGS or
+    CARGO_ENCODED_RUSTFLAGS is set, cargo reads no rustflags from its settings, so the flags join those
+    instead. A library that compiles C code writes its paths too (__FILE__), and rustc's flags do not
+    reach the C compiler: MSVC is told to trim the same folders, in both spellings Windows has for
+    them, quoted for the cc crate (CC_SHELL_ESCAPED_FLAGS).
     """
     home = cargo_home()
     flags = [f"--remap-path-prefix={home}=cargo", f"--remap-path-prefix={target}=target"]
     env = dict(os.environ)
+    for variable in ("CARGO_ENCODED_RUSTFLAGS", "RUSTFLAGS"):
+        if variable in env and not env[variable]:
+            del env[variable]  # set but empty, it would still take the place of the settings
     if env.get("CARGO_ENCODED_RUSTFLAGS"):
-        flags = env["CARGO_ENCODED_RUSTFLAGS"].split("\x1f") + flags
+        env["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join(env["CARGO_ENCODED_RUSTFLAGS"].split("\x1f") + flags)
     elif env.get("RUSTFLAGS"):
-        flags = env.pop("RUSTFLAGS").split() + flags
-    env["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join(flags)
+        env["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join(env.pop("RUSTFLAGS").split() + flags)
+    else:
+        # A TOML array of strings; JSON writes one, with the backslashes of the folders escaped.
+        args = [args[0], "--config", f"target.{TARGET}.rustflags={json.dumps(flags)}", *args[1:]]
     trims = " ".join("'/d1trimfile:%s\\'" % folder for folder in dict.fromkeys([home, short_path(home), str(target)]))
     env["CFLAGS"] = (env.get("CFLAGS", "") + " " + trims).strip()
     env["CC_SHELL_ESCAPED_FLAGS"] = "1"
     env["CARGO_TARGET_DIR"] = str(target)
-    return env
+    return args, env
 
 
 def licence_terms(expression):
@@ -448,8 +474,8 @@ def make_package(folder, settings, checked=False, files=None, out=None, also=(),
 
     for args in package.get("build", []):
         repo.say("  > " + " ".join(args))
-        env = cargo_environment(target()) if args[0] == "cargo" else None
-        if repo.call(repo.command(args), cwd=folder, env=env).returncode != 0:
+        run, env = cargo_command(args, target()) if args[0] == "cargo" else (args, None)
+        if repo.call(repo.command(run), cwd=folder, env=env).returncode != 0:
             fail(" ".join(args) + " failed")
     notices = third_party(folder, package["name"], version) if "third_party" in package else None
 
@@ -458,7 +484,8 @@ def make_package(folder, settings, checked=False, files=None, out=None, also=(),
     if notices is not None:
         where = f"{package['bundle']}/{THIRD_PARTY}" if "bundle" in package else THIRD_PARTY
         contents[where] = notices.encode("utf-8")
-    problems = private_in(contents, folder, settings, this_computer(folder, found[0] if found else None, also))
+    folders = this_computer(folder, found[0] if found else None, also)
+    problems = private_in(contents, folder, settings, folders)
     if problems:
         fail("the package would name this computer:\n  " + "\n  ".join(problems))
     repo.say(f"  {repo.counted(len(contents), 'file')}, none naming this computer")
@@ -466,13 +493,20 @@ def make_package(folder, settings, checked=False, files=None, out=None, also=(),
 
     dist = Path(out) if out else folder / DIST
     dist.mkdir(exist_ok=True)
-    name = zip_name(package, version)
-    archive = dist / name
+    made = []
+    if "msi" in package:
+        # Made and checked first: if it fails, nothing in dist/ has changed.
+        msi = dist / msi_name(package, version)
+        made.append(repo.part("repo_msi").make_msi(folder, settings, version, contents, msi, folders))
+    archive = dist / zip_name(package, version)
     write_whole(archive, lambda path: write_zip(path, contents))
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    write_whole(dist / SUMS, lambda path: path.write_bytes(f"{digest}  {name}\n".encode()))
-    size = archive.stat().st_size / 1e6
-    repo.say(f"Wrote {dist.name}/{name} ({size:.1f} MB) and {dist.name}/{SUMS}\n  sha256 {digest}")
+    made.append(archive)
+    digests = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in made}
+    sums = "".join(f"{digests[name]}  {name}\n" for name in sorted(digests))
+    write_whole(dist / SUMS, lambda path: path.write_bytes(sums.encode()))
+    for path in sorted(made):
+        repo.say(f"Wrote {dist.name}/{path.name} ({path.stat().st_size / 1e6:.1f} MB), sha256 {digests[path.name]}")
+    repo.say(f"  and {dist.name}/{SUMS}")
     return archive
 
 

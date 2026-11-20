@@ -33,8 +33,8 @@ as a change that makes it old.
   push and pull request to `main`, on GitHub's Windows runner, once with Python 3.11 and once with 3.13.
   It leaves out `ruff check` because of those blocks; the `-Skip` goes once they are put right.
 - `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1`, `tools/repo.py`,
-  `tools/repo_package.py` and `tools/repo_release.py` are the same in every Open3D repo, and
-  `openmanager/open3d_settings.py` in every repo that has it. Do not change them here.
+  `tools/repo_package.py`, `tools/repo_release.py` and `tools/repo_msi.py` are the same in every Open3D
+  repo, and `openmanager/open3d_settings.py` in every repo that has it. Do not change them here.
 
 ## Version and release
 
