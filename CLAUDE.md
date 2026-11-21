@@ -15,12 +15,12 @@ as a change that makes it old.
   file. `model.py`, `grid.py`, `folders.py` and `open3d_settings.py` import neither 3ds Max nor Qt when they load.
 - `package/OpenManager/omgr_core.ms`: the MAXScript functions that read and change the scene.
 - `bundle/OpenManager_bundle.ms`: what the bundle runs when 3ds Max starts. `package/OpenManager.mcr`: the
-  action that opens the window. `package/install.ms` and `uninstall.ms`: the `.mzp` install and its removal.
+  action that opens the window. The `.mzp` is retired (D-046): `omgr_setup.ms` removes a copy it left.
 - `tools/build.py`: the build. `tools/make_props.py` writes `props.json`, the properties the cards set.
 
 ## Build and check
 
-- Build: `python -I tools/build.py` writes `dist/OpenManager.bundle` and `dist/OpenManager.mzp`.
+- Build: `python -I tools/build.py` writes `dist/OpenManager.bundle`.
 - Checks: `tools\check.ps1` runs them all; it needs Python 3.11 or newer and the ruff `ruff.toml` names.
   First the steps built into `tools/repo.py`: the version agrees in `window.py` and the README, every
   source has its licence line, no file holds a path of somebody's computer. Then those of `tools/repo.toml`:
@@ -47,15 +47,15 @@ as a change that makes it old.
   `tools/repo.toml` says: it needs the version's `## X.Y.Z` section in `CHANGELOG.md`, runs the quick
   checks and `tools/build.py`, and writes `dist/openmanager-<version>-windows-x64-3dsmax.zip`, with
   `dist/OpenManager.bundle` at its root (never `__pycache__`) and `LICENSE` inside the bundle, and
-  `dist/SHA256SUMS.txt`. It refuses a bundle whose `AppVersion` is not the version. The `.mzp` is not in
-  the zip. While `ruff check .` fails it stops at the checks; `--checked` skips them.
+  `dist/SHA256SUMS.txt`. It refuses a bundle whose `AppVersion` is not the version. While `ruff check .`
+  fails it stops at the checks; `--checked` skips them.
 - `python -I tools/repo.py release X.Y.Z` turns `## In development` into `## X.Y.Z — <date>`, sets the
   version, commits `Release X.Y.Z`, packages, tags `vX.Y.Z` and prints the pushes to approve; run again
   once they are done, it makes the GitHub release as a draft, with the zip and `SHA256SUMS.txt`. It never
   pushes. `--dry-run` tries it all and writes only to `dist/`. It runs the quick checks with no way to
   skip them, so it stops there while `ruff check .` fails.
-- The Open3D launcher installs `OpenManager.bundle`; the `.mzp` is the install by hand. `install.ms`
-  refuses to install over the bundle, and the bundle removes an `.mzp` install when it starts.
+- The Open3D launcher installs `OpenManager.bundle`; by hand it is copied into ApplicationPlugins. The bundle
+  removes an install of the retired `.mzp` when it starts.
 
 ## Rules of this code
 
@@ -86,7 +86,6 @@ as a change that makes it old.
 
 ## Traps
 
-- A `version` line in `mzp.run` must be a plain number: otherwise 3ds Max refuses the `.mzp` without a word.
 - 3ds Max 2027 ignores a bundle without `SeriesMax`; the build writes 2099.
 - 3ds Max forgets a map nothing points to, so the setups' environment maps are kept in `OpenManager_Maps`.
 - Qt makes a button the default of a dialog only if told so once it is inside it (`ScriptReviewDialog`).

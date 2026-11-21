@@ -1,5 +1,0 @@
-name "OpenManager"
-description "Open-source scene states and batch render manager for 3ds Max"
-run "install.ms"
-drop "install.ms"
-clear temp on MAX exit

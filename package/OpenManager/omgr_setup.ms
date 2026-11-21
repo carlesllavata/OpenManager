@@ -1,6 +1,6 @@
 ﻿-- SPDX-License-Identifier: GPL-3.0-or-later
--- OpenManager install housekeeping, shared by the .mzp installer (install.ms) and the start of OpenManager.bundle
--- (OpenManager_bundle.ms). Each step only acts on what it finds, so running it again does nothing.
+-- OpenManager install housekeeping, run by the start of OpenManager.bundle (OpenManager_bundle.ms). Each step only acts
+-- on what it finds, so running it again does nothing.
 
 global omgr_home
 global omgr_migrateLegacy
@@ -40,8 +40,9 @@ fn omgr_migrateLegacy =
     ok
 )
 
--- The per-user install made by OpenManager.mzp (scripts, startup script, macro, icons), removed when OpenManager runs
--- from the bundle. Settings stay. Never touches the folder OpenManager is running from. True = removed something.
+-- The per-user install made by OpenManager.mzp, retired since (scripts, startup script, macro, icons), removed when
+-- OpenManager runs from the bundle. Settings stay. Never touches the folder OpenManager is running from. True = removed
+-- something.
 fn omgr_removeMzpInstall =
 (
     local removed = false

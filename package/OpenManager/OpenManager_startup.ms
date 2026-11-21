@@ -7,7 +7,8 @@ global omgr_settingsDir
 global omgr_startupCheck
 -- First the folders (openmanager/folders.py): the settings are in %APPDATA%\Open3D\OpenManager. At the first start
 -- the ones of the plugcfg folder of the newest 3ds Max are copied there, before anything reads them, and
--- omgr_settingsDir says where they are. The package is in the bundle (omgr_home) or in the user's scripts (.mzp).
+-- omgr_settingsDir says where they are. The package is in the bundle (omgr_home), or in the user's scripts where the
+-- retired .mzp put it.
 try (python.Execute "import os, sys\nfrom pymxs import runtime as rt\nd = rt.omgr_home if isinstance(rt.omgr_home, str) and os.path.isdir(rt.omgr_home) else os.path.join(rt.getDir(rt.Name('userScripts')), 'OpenManager')\nif d not in sys.path: sys.path.insert(0, d)\nfrom openmanager import folders\nfolders.session()")
 catch (format "OpenManager: the Open3D folders could not be set up: %\n" (getCurrentException()))
 fn omgr_startupCheck =

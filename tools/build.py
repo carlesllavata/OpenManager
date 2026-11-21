@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Builds the two release outputs: draws the icons, then writes
-
-- dist/OpenManager.mzp     the package dropped onto 3ds Max (install.ms copies it into the user's profile)
-- dist/OpenManager.bundle  the Autodesk ApplicationPlugins bundle the Open3D launcher installs
+"""Builds the release output: draws the icons, then writes dist/OpenManager.bundle, the Autodesk
+ApplicationPlugins bundle that the Open3D launcher installs (or that is copied there by hand). The .mzp of
+earlier versions is retired (D-046).
 
     python -I tools/build.py
 
@@ -14,7 +13,6 @@ import re
 import shutil
 import struct
 import xml.etree.ElementTree as ET
-import zipfile
 import zlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -131,40 +129,6 @@ def build_icons():
     return out
 
 
-# ---------------------------------------------------------------- package
-
-
-def check_mzp_run():
-    """3ds Max refuses the whole package, without a word to the user, when mzp.run doesn't compile. A "version" line
-    must be a plain number (0.2, never 0.2.0); the app's version lives in openmanager/window.py instead."""
-    for n, line in enumerate(open(os.path.join(PKG, "mzp.run"), encoding="utf-8-sig"), 1):
-        parts = line.split(None, 1)
-        if parts and parts[0].lower() == "version":
-            try:
-                float(parts[1])
-            except (IndexError, ValueError):
-                raise SystemExit(
-                    "mzp.run line %d: 'version' must be a plain number, got: %s" % (n, line.strip())
-                ) from None
-
-
-def build_mzp():
-    check_mzp_run()
-    os.makedirs(DIST, exist_ok=True)
-    target = os.path.join(DIST, "OpenManager.mzp")
-    if os.path.exists(target):
-        os.remove(target)
-    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:
-        for base, dirs, files in os.walk(PKG):
-            dirs[:] = [d for d in dirs if d != "__pycache__"]
-            for f in files:
-                if f.endswith((".pyc", ".pyo")):
-                    continue
-                full = os.path.join(base, f)
-                z.write(full, os.path.relpath(full, PKG).replace(os.sep, "/"))
-    return target
-
-
 # ---------------------------------------------------------------- bundle
 
 
@@ -269,6 +233,5 @@ def build_bundle(version, dist=DIST, icons=None):
 if __name__ == "__main__":
     v = read_version()
     build_icons()
-    t = build_mzp()
-    print("built %s (%d KB)" % (t, os.path.getsize(t) // 1024))
+    os.makedirs(DIST, exist_ok=True)
     print("built %s (%s)" % (build_bundle(v), v))

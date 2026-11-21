@@ -11,8 +11,10 @@ What each version of OpenManager adds, newest first.
   settings of the newest 3ds Max that has some, and its HDRI previews, so nothing has to be set up again; the old
   files are left as they were, and those of the other versions stay where they are. If the copy fails, OpenManager
   says so and uses the old ones for that session, and tries again the next time. The thumbnails, exports and render
-  presets of a scene that is not saved yet go there too, instead of `plugcfg`. `uninstall.ms` now leaves your
-  settings.
+  presets of a scene that is not saved yet go there too, instead of `plugcfg`.
+- **No more `.mzp`.** OpenManager is installed only as a plug-in bundle: with the Open3D launcher, or by copying
+  `OpenManager.bundle` into `%APPDATA%\Autodesk\ApplicationPlugins` with 3ds Max closed. If you installed the `.mzp`
+  before, the bundle still removes that copy the first time it starts, and your settings stay.
 - **Class names that come with a file are never run.** A setup names some things by their 3ds Max class: the
   tone-mapping operators of the Post-Production / VFB card and of a Corona camera, and the maps its settings use.
   Setups travel inside the `.max`, and those names were run as MAXScript when a setup was applied, so a file from
