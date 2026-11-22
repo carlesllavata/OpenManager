@@ -81,7 +81,7 @@ OpenManager joins the Open3D Launcher: install and update it from there, as a 3d
 - **OpenManager is free software under the GNU GPL v3 or later.** You can use it, share it and change it
   freely; if you share a changed version, it has to stay under the same license with its source. The full text
   is in `LICENSE`.
-- **Install and update OpenManager with the [Open3D Launcher](https://github.com/Open3D-Suite/Open3D/releases/latest).**
+- **Install and update OpenManager with the [Open3D Launcher](https://github.com/Open3D-Suite/Open3D-Launcher/releases/latest).**
   It installs OpenManager as a 3ds Max plug-in bundle: one folder in `ApplicationPlugins`, nothing copied into your 3ds Max profile, and it works in every 3ds Max
   from 2025 on at once. The OpenManager action, its icons and the offer to open Pulze setups work exactly as before.
 - **Switching from the .mzp is automatic.** The first time the bundle starts, it removes the copy the `.mzp`
