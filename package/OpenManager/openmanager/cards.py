@@ -1830,7 +1830,7 @@ class HdriCard(Card):
         ok = False
         try:
             ok = maxlink.hdri_preview(raw, cached)
-        except Exception as ex:
+        except (OSError, RuntimeError) as ex:  # the folder of the previews can't be made; a MAXScript error
             print("OpenManager: preview of %s -> %s" % (raw, ex))
         if ok:
             try:

@@ -107,7 +107,10 @@ class Window(object):
         "_next_job",
         "_cancel_render",
         "_end_render",
+        "targets",
+        "_start_dir",
     )
+    column_keys = ()  # the columns of the setup list (it has none)
 
     def __init__(self, stored="", settings=None, answer=False, pulze=""):
         """stored: the text of rootNode.OpenManager_Dat (pulze: of Pulze's SceneManager_Dat); answer: what the person
@@ -145,6 +148,15 @@ class Window(object):
 
     def widget(self):
         return Holder(setEnabled=self.nothing)
+
+    def isFloating(self):
+        return True
+
+    def geometry(self):
+        return Holder(x=lambda: 10, y=lambda: 20, width=lambda: 900, height=lambda: 1000)
+
+    def parent(self):
+        return None
 
 
 for _name in Window.REAL:
@@ -1143,6 +1155,288 @@ class OpenFolders(Base):
         w.toasts, w.folders = [], folders.Folders("new", "data", "hdri")
         window.SceneManager.tell_folders(w)
         self.assertEqual(w.toasts, [])
+
+
+# ---------------------------------------------------------------- what the window catches and what it lets through
+
+
+class Unexpected(Exception):
+    """An error nobody expects: it must reach the caller, not be swallowed."""
+
+
+def fails(ex):
+    def fn(*args, **kwargs):
+        raise ex
+
+    return fn
+
+
+MAX_ERROR = 'MAXScript exception raised.\n-- Unknown property: "x" in undefined'  # what pymxs gives
+DELETED = "Internal C++ object (SceneManager) already deleted."  # what Qt gives for a part it deleted
+
+
+class SettingsFiles(Base):
+    """load_settings, save_settings, export_setups and import_output_preset: files, and JSON in them."""
+
+    def setUp(self):
+        super().setUp()
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.folder = folder.name
+        self.paths = {
+            "settings_path": os.path.join(folder.name, "OpenManager.json"),
+            "default_settings_path": os.path.join(folder.name, "OpenManager_default.json"),
+            "notify_flag_path": os.path.join(folder.name, "OpenManager_notify.txt"),
+        }
+        for name, path in self.paths.items():
+            patcher = mock.patch.object(window, name, lambda path=path: path)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        patcher = mock.patch.object(window, "cfg_dir", lambda: folder.name)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def write(self, name, text):
+        with open(self.paths[name], "w", encoding="utf-8") as f:
+            f.write(text)
+
+    def test_settings_that_can_not_be_read(self):
+        w = opened("")
+        self.assertEqual(window.SceneManager.load_settings(w), {})  # neither file is there
+        self.write("default_settings_path", '{"notify": false}')
+        self.assertEqual(window.SceneManager.load_settings(w), {"notify": False})
+        self.write("settings_path", "{not json")
+        self.assertEqual(window.SceneManager.load_settings(w), {"notify": False})
+        with open(self.paths["default_settings_path"], "wb") as f:
+            f.write(b"\xff\xfe")  # not UTF-8 either
+        self.assertEqual(window.SceneManager.load_settings(w), {})
+
+    def test_an_unexpected_error_while_reading_the_settings(self):
+        self.write("settings_path", "{}")
+        w = opened("")
+        with mock.patch.object(window.json, "load", fails(Unexpected())), self.assertRaises(Unexpected):
+            window.SceneManager.load_settings(w)
+
+    def test_settings_are_saved_when_qt_has_deleted_part_of_the_window(self):
+        w = opened("", settings={"notify": False})
+        w.isFloating = fails(RuntimeError(DELETED))
+        quiet(window.SceneManager.save_settings, w)
+        with open(self.paths["settings_path"], encoding="utf-8") as f:
+            self.assertEqual(json.load(f), {"notify": False})
+
+    def test_where_the_window_is_goes_into_the_settings(self):
+        w = opened("")
+        quiet(window.SceneManager.save_settings, w)
+        with open(self.paths["settings_path"], encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["geometry"], [10, 20, 900, 1000])
+
+    def test_settings_that_can_not_be_written_are_told(self):
+        w = opened("")
+        os.makedirs(self.paths["settings_path"])  # a folder where the file goes
+        listener = quiet(window.SceneManager.save_settings, w)
+        self.assertIn("OpenManager: could not save settings: ", listener)
+
+    def test_an_unexpected_error_while_saving_the_settings(self):
+        w = opened("")
+        w.isFloating = fails(Unexpected())
+        with self.assertRaises(Unexpected):
+            quiet(window.SceneManager.save_settings, w)
+        w = opened("")
+        with mock.patch.object(window.json, "dump", fails(Unexpected())), self.assertRaises(Unexpected):
+            quiet(window.SceneManager.save_settings, w)
+
+    def save_dialog(self, path):
+        return mock.patch.object(window.QtWidgets.QFileDialog, "getSaveFileName", lambda *a, **k: (path, ""))
+
+    def open_dialog(self, path):
+        return mock.patch.object(window.QtWidgets.QFileDialog, "getOpenFileName", lambda *a, **k: (path, ""))
+
+    def test_a_preset_that_can_not_be_written_is_told(self):
+        w = opened(stored([setup(1)]))
+        with self.save_dialog(self.folder):  # a folder: it can't be written as a file
+            window.SceneManager.export_setups(w)
+        self.assertEqual(len(w.toasts), 1)
+        self.assertTrue(w.toasts[0].startswith("Could not save the preset: "), w.toasts)
+        path = os.path.join(self.folder, "setups.smp")
+        with self.save_dialog(path):
+            window.SceneManager.export_setups(w)
+        self.assertEqual(w.toasts[-1], "Exported 1 setup(s)")
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(len(json.load(f)["setups"]), 1)
+
+    def test_an_unexpected_error_while_writing_a_preset(self):
+        w = opened(stored([setup(1)]))
+        with self.save_dialog(os.path.join(self.folder, "setups.smp")):
+            with mock.patch.object(window.json, "dump", fails(Unexpected())), self.assertRaises(Unexpected):
+                window.SceneManager.export_setups(w)
+
+    def output_preset(self, text):
+        path = os.path.join(self.folder, "output.smp")
+        if text is not None:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+        w = opened(stored([setup(1)]))
+        w.active_id = 1
+        before = json.dumps(w.setups[0]["output"], sort_keys=True)
+        with self.open_dialog(path):
+            window.SceneManager.import_output_preset(w)
+        return w, before
+
+    def test_an_output_preset_that_is_not_one(self):
+        for text in (
+            None,
+            "{not json",
+            "[]",
+            '{"output": 5}',
+            '{"output": {"preset": 5}}',
+            '{"output": {"preset": [1]}}',
+        ):
+            w, before = self.output_preset(text)
+            self.assertEqual(w.toasts, ["Invalid preset"], text)
+            self.assertEqual(json.dumps(w.setups[0]["output"], sort_keys=True), before, text)
+
+    def test_an_output_preset(self):
+        token = {"kind": "text", "value": "day"}
+        w, _ = self.output_preset(json.dumps({"output": {"enabled": True, "preset": [token]}}))
+        self.assertEqual(w.toasts, [])
+        self.assertEqual(w.setups[0]["output"], {"enabled": True, "preset": [token]})
+
+    def test_an_unexpected_error_while_reading_an_output_preset(self):
+        with mock.patch.object(window.json, "load", fails(Unexpected())), self.assertRaises(Unexpected):
+            self.output_preset('{"output": {}}')
+
+
+class SceneReads(Base):
+    """reload_all, reload_scene and sync_scene: the scene as omgr_scene gives it, in JSON."""
+
+    def test_a_scene_that_can_not_be_read_leaves_the_one_read_before(self):
+        w = opened(stored([setup(1)]))
+        scene = w.scene
+        for value in (fails(RuntimeError(MAX_ERROR)), lambda **kw: "{not json"):
+            rt.returns["omgr_scene"] = value
+            for read in (w.reload_all, lambda: window.SceneManager.reload_scene(w)):
+                listener = quiet(read)
+                self.assertIs(w.scene, scene)
+                self.assertIn("Traceback", listener)
+        w.scene_timer = Timer()
+        rt.returns["omgr_scene"] = fails(RuntimeError(MAX_ERROR))
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertFalse(window.SceneManager.sync_scene(w, True))
+        self.assertIs(w.scene, scene)
+
+    def test_an_unexpected_error_while_reading_the_scene(self):
+        w = opened(stored([setup(1)]))
+        w.scene_timer = Timer()
+        rt.returns["omgr_scene"] = fails(Unexpected())
+        for read in (w.reload_all, lambda: window.SceneManager.reload_scene(w)):
+            with self.assertRaises(Unexpected):
+                quiet(read)
+        with self.assertRaises(Unexpected):
+            window.SceneManager.sync_scene(w, True)
+
+
+class SavingSetups(Base):
+    """save_setups: what the autosave and the save before the file run."""
+
+    def setUp(self):
+        super().setUp()
+        rt.returns["omgr_stampNodes"] = lambda hs: ["uid-%d" % h for h in hs]
+        rt.returns["omgr_stampLayers"] = lambda names: ["" for _ in names]
+
+    def save(self, w):
+        return quiet(window.SceneManager.save_setups, w)
+
+    def test_a_save_maxscript_refuses_is_told_and_tried_again(self):
+        w = opened(stored([setup(1)]))
+        w.stamp_uids = lambda: window.SceneManager.stamp_uids(w)
+        w.setups[0]["notes"] = "changed"
+        rt.returns["omgr_saveSetups"] = fails(RuntimeError(MAX_ERROR))
+        self.assertIn("Traceback", self.save(w))
+        rt.returns["omgr_saveSetups"] = None
+        self.save(w)
+        self.assertEqual(w.last_saved, w.encoded())
+        self.assertIn('"notes":"changed"', called("omgr_saveSetups")[-1][0])
+
+    def test_the_setups_are_saved_even_when_their_nodes_can_not_get_an_id(self):
+        # the boundary of the autosave: whatever giving IDs raises, the setups are saved
+        w = opened(stored([setup(1)]))
+        w.stamp_uids = fails(Unexpected("no IDs"))
+        w.setups[0]["notes"] = "changed"
+        listener = self.save(w)
+        self.assertIn("no IDs", listener)
+        self.assertEqual(w.last_saved, w.encoded())
+
+    def test_an_unexpected_error_while_saving(self):
+        w = opened(stored([setup(1)]))
+        w.stamp_uids = lambda: None
+        w.setups[0]["notes"] = "changed"
+        rt.returns["omgr_saveSetups"] = fails(Unexpected())
+        with self.assertRaises(Unexpected):
+            self.save(w)
+
+
+class EndOfABatch(Base):
+    """_cancel_render and _end_render: stopping a batch and closing its progress window."""
+
+    def batch(self, close):
+        w = opened("")
+        w.batch = Holder(close=close, deleteLater=lambda: None)
+        w.render_results, w.render_order, w.render_cancel = {}, [], False
+        return w
+
+    def test_a_stop_maxscript_refuses(self):
+        w = opened("")
+        rt.returns["omgr_stop"] = fails(RuntimeError(MAX_ERROR))
+        window.SceneManager._cancel_render(w)
+        self.assertTrue(w.render_cancel)
+        rt.returns["omgr_stop"] = fails(Unexpected())
+        with self.assertRaises(Unexpected):
+            window.SceneManager._cancel_render(w)
+
+    def test_a_progress_window_qt_has_deleted(self):
+        w = self.batch(fails(RuntimeError(DELETED)))
+        quiet(window.SceneManager._end_render, w)
+        self.assertFalse(w.rendering)
+        self.assertEqual(w.toasts, ["Batch Render finished: 0 saved, 0 failed, 0 skipped"])
+        w = self.batch(fails(Unexpected()))
+        with self.assertRaises(Unexpected):
+            quiet(window.SceneManager._end_render, w)
+
+
+class HdriPreviews(Base):
+    """HdriCard._make_next: a preview of an HDRI made by 3ds Max."""
+
+    def card(self):
+        made = []
+        card = Holder(
+            sm=Holder(rendering=False),
+            _missing=[("item", "c:/hdri/sky.hdr")],
+            _auto=False,
+            AUTO_MB=cards.HdriCard.AUTO_MB,
+            _size_mb=lambda raw: 1.0,
+            cache_file=lambda raw: ("c:/cache/sky.jpg", 1),
+            _set_picture=lambda it, path: made.append(path),
+            _update_make=lambda: None,
+            _stop_making=lambda: None,
+        )
+        return card, made
+
+    def test_a_preview_that_can_not_be_made_is_told(self):
+        for ex in (RuntimeError(MAX_ERROR), OSError("no folder")):
+            card, made = self.card()
+            with mock.patch.object(maxlink, "hdri_preview", fails(ex)):
+                listener = quiet(cards.HdriCard._make_next, card)
+            self.assertIn("OpenManager: preview of c:/hdri/sky.hdr -> ", listener)
+            self.assertEqual((made, card._missing), ([], []))
+        card, made = self.card()
+        with mock.patch.object(maxlink, "hdri_preview", lambda raw, dst: True):
+            cards.HdriCard._make_next(card)
+        self.assertEqual(made, ["c:/cache/sky.jpg"])
+
+    def test_an_unexpected_error_while_making_one(self):
+        card, _ = self.card()
+        with mock.patch.object(maxlink, "hdri_preview", fails(Unexpected())), self.assertRaises(Unexpected):
+            cards.HdriCard._make_next(card)
 
 
 if __name__ == "__main__":

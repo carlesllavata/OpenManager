@@ -10,6 +10,9 @@ What each version of OpenManager adds, newest first.
   batch render, the autosave, each change a setup makes), OpenManager still goes on, and writes the error there.
   A value 3ds Max refuses in the tone-mapping chain of a camera is now told in the Listener too, as it already was
   for the Post-Production / VFB card.
+- **Load Output Preset leaves the Output card as it was when the file isn't a preset.** A file whose Output
+  tokens were not what OpenManager writes said "Invalid preset", but the active setup had already taken what the
+  file held, and its Output card was left broken. Now the file is checked first.
 - **Your settings move to the Open3D folders, one set for every 3ds Max,** with the other Open3D apps: the settings
   (the window, your default settings, the scripts you trust, the Pulze notification) to `%APPDATA%\Open3D\OpenManager`,
   the HDRI previews to `%LOCALAPPDATA%\Open3D\OpenManager`. Until now each 3ds Max version kept its own in its

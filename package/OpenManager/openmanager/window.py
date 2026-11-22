@@ -538,8 +538,8 @@ class SceneManager(QtWidgets.QDockWidget):
                         if "layouts" in d and not isinstance(d["layouts"], dict):
                             d["layouts"] = {}
                         return d
-            except Exception:
-                pass
+            except (OSError, ValueError):
+                pass  # missing, or not JSON (an edit by hand): the next file is read, then the defaults
         return {}
 
     def save_settings(self):
@@ -554,15 +554,15 @@ class SceneManager(QtWidgets.QDockWidget):
                 area = par.dockWidgetArea(self)
                 st["area"] = int(area.value) if hasattr(area, "value") else int(area)
             st["column_widths"] = {k: self.tree.header().sectionSize(i) for i, k in enumerate(self.column_keys)}
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # Qt has already deleted part of the window (3ds Max is closing): what was read before is kept
         try:
             os.makedirs(cfg_dir(), exist_ok=True)
             with open(settings_path(), "w", encoding="utf-8") as f:
                 json.dump(st, f, indent=1)
             with open(notify_flag_path(), "w") as f:
                 f.write("1" if st.get("notify", True) else "0")
-        except Exception as ex:
+        except OSError as ex:
             print("OpenManager: could not save settings: %s" % ex)
 
     def opts(self):
@@ -607,7 +607,7 @@ class SceneManager(QtWidgets.QDockWidget):
             try:
                 with open(default_settings_path(), "r", encoding="utf-8") as f:
                     self.settings = json.load(f)
-            except Exception:
+            except (OSError, ValueError):  # none saved, or not JSON
                 self.toast("You have no default settings saved yet")
                 return
         else:
@@ -689,7 +689,7 @@ class SceneManager(QtWidgets.QDockWidget):
             raw = maxlink.read_scene_raw(self.object_handles(data["setups"]))
             self.scene = maxlink.Scene(maxlink.parse_scene(raw))
             self._scene_raw = raw
-        except Exception:
+        except (RuntimeError, ValueError):  # a MAXScript error (see maxlink.py), or text that isn't JSON
             traceback.print_exc()
         self.setups = data["setups"]
         self.todo = data["todo"]
@@ -741,7 +741,9 @@ class SceneManager(QtWidgets.QDockWidget):
                     if uid and uid in names and names[uid] != name:
                         model.layer_ref_set(ref, name=names[uid])
                         changed = True
-        except Exception:
+        # it walks every setup the file stores, and anyone could have written them: what it can't follow is told, and
+        # the file opens all the same
+        except Exception:  # noqa: BLE001 - every setup of a file, on opening it, applying one or a scene change
             traceback.print_exc()
         if changed:
             self.save_timer.start()
@@ -755,7 +757,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 raw = maxlink.read_scene_raw(self.object_handles())
                 self.scene = maxlink.Scene(maxlink.parse_scene(raw))
                 self._scene_raw = raw
-            except Exception:
+            except (RuntimeError, ValueError):  # a MAXScript error, or text that isn't JSON
                 traceback.print_exc()
 
     def stamp_uids(self):
@@ -789,7 +791,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 raw = maxlink.read_scene_raw(self.object_handles())
             self.scene = maxlink.Scene(maxlink.parse_scene(raw))
             self._scene_raw = raw
-        except Exception:
+        except (RuntimeError, ValueError):  # a MAXScript error, or text that isn't JSON: the scene read before stays
             traceback.print_exc()
             return
         self._texmaps = None
@@ -810,7 +812,7 @@ class SceneManager(QtWidgets.QDockWidget):
         self._synced = now
         try:
             raw = maxlink.read_scene_raw(self.object_handles())
-        except Exception:
+        except RuntimeError:  # a MAXScript error
             traceback.print_exc()
             return False
         if raw == self._scene_raw:
@@ -854,7 +856,7 @@ class SceneManager(QtWidgets.QDockWidget):
                     self._camera_sync_tick()
             elif not self.rendering:
                 self.scene_timer.start()
-        except Exception:
+        except Exception:  # noqa: BLE001 - a callback of 3ds Max: an error is told here and never reaches 3ds Max
             traceback.print_exc()
 
     def update_status(self):
@@ -1699,7 +1701,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 continue
             try:
                 c.refresh()
-            except Exception:
+            except Exception:  # noqa: BLE001 - a refresh of every card: one that fails must not stop the others
                 traceback.print_exc()
 
     def clipboard_has(self, cid):
@@ -1812,7 +1814,7 @@ class SceneManager(QtWidgets.QDockWidget):
             with open(f, "w", encoding="utf-8") as fh:
                 json.dump({"format": "openmanager_preset", "setups": chosen}, fh, indent=1)
             self.toast("Exported %d setup(s)" % len(chosen))
-        except Exception as ex:
+        except OSError as ex:  # the file can't be written
             self.toast("Could not save the preset: %s" % ex)
 
     def import_setups(self):
@@ -1836,7 +1838,9 @@ class SceneManager(QtWidgets.QDockWidget):
             self.rebuild_rows()
             self.changed(apply=False)
             self.toast("Imported %d setup(s)" % len(lst))
-        except Exception:
+        # a preset file anyone could have written, whose setups are only filled in (model.normalize): whatever it
+        # holds, the error is told and the window goes on
+        except Exception:  # noqa: BLE001 - what Load Preset runs
             traceback.print_exc()
             self.toast("There was error while loading the preset...")
 
@@ -1867,14 +1871,18 @@ class SceneManager(QtWidgets.QDockWidget):
         try:
             with open(f, "r", encoding="utf-8") as fh:
                 d = json.load(fh)
-            out = d["output"]
-            for t in self.targets():
-                t["output"] = dict(out)
-                t["output"]["preset"] = [dict(x) for x in out.get("preset", [])]
-            self.changed()
-            self.refresh_cards([9])
-        except Exception:
+        except (OSError, ValueError):  # it can't be read, or it isn't JSON
+            d = None
+        out = d.get("output") if isinstance(d, dict) else None
+        tokens = out.get("preset", []) if isinstance(out, dict) else None
+        if not isinstance(tokens, list) or not all(isinstance(x, dict) for x in tokens):
             self.toast("Invalid preset")
+            return
+        for t in self.targets():
+            t["output"] = dict(out)
+            t["output"]["preset"] = [dict(x) for x in tokens]
+        self.changed()
+        self.refresh_cards([9])
 
     # ------------------------------------------------------------ thumbnails, previews, bake
     def thumb_path(self, s):
@@ -1922,7 +1930,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 step(s, self.index_of(s))
                 done += 1
                 dlg.set_job("", done, len(setups))
-        except Exception:
+        except Exception:  # noqa: BLE001 - a batch over setups: it stops, tells, and the window is put back
             traceback.print_exc()
             self.toast("Stopped by an error (see the MAXScript Listener)")
         finally:
@@ -2050,7 +2058,7 @@ class SceneManager(QtWidgets.QDockWidget):
             return
         try:
             self._begin_render(runnable, skipped)
-        except Exception:
+        except Exception:  # noqa: BLE001 - what the Render button runs: the window must not stay locked
             traceback.print_exc()
             self.rendering = False
             self.widget().setEnabled(True)
@@ -2154,7 +2162,7 @@ class SceneManager(QtWidgets.QDockWidget):
                 details.append("%d class name(s) not used: they are not operator or map classes" % left_out)
             if not_set:
                 details.append("%d setting(s) not applied: OpenManager's cards don't set them" % not_set)
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001 - the batch render loop: a setup that fails must not stop the rest
             traceback.print_exc()
             details = [str(ex)]
         self.render_results[id(s)] = (label, status, details)
@@ -2167,16 +2175,16 @@ class SceneManager(QtWidgets.QDockWidget):
         self.render_cancel = True
         try:
             maxlink.stop_render()
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # a MAXScript error: the batch still stops before its next setup
 
     def _end_render(self):
         self.rendering = False
         try:
             self.batch.close()
             self.batch.deleteLater()
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # the progress window is gone already (Qt deleted it)
         self.widget().setEnabled(True)
         self.refresh_cards()
         rows = [
@@ -2213,7 +2221,7 @@ class SceneManager(QtWidgets.QDockWidget):
             return  # another file is being opened; its own setups will be read
         try:
             self.stamp_uids()
-        except Exception:
+        except Exception:  # noqa: BLE001 - the autosave: the setups are saved even when their nodes can't get an ID
             traceback.print_exc()
         text = self.encoded()
         if text == self.last_saved:
@@ -2221,7 +2229,7 @@ class SceneManager(QtWidgets.QDockWidget):
         try:
             maxlink.save_setups(text)
             self.last_saved = text
-        except Exception:
+        except RuntimeError:  # a MAXScript error: they are saved at the next change
             traceback.print_exc()
 
     # ------------------------------------------------------------ closing
@@ -2233,7 +2241,7 @@ class SceneManager(QtWidgets.QDockWidget):
             self.sync_timer.stop()
             self.save_settings()
             maxlink.watch(None)
-        except Exception:
+        except Exception:  # noqa: BLE001 - closing the window: it closes even after an error
             traceback.print_exc()
         widgets.PALETTE_OVERRIDE = None
         from . import _closed
