@@ -1,8 +1,8 @@
 # OpenManager
 
-An open-source scene setups and batch render manager that lives inside **3ds Max 2025 and later**
-(the Python + PySide6 that ships with Max, plus a MAXScript library). No separate program, no browser and
-**no account or login**: install it and start using it.
+An open-source scene setups and batch render manager that lives inside **3ds Max** (the Python + PySide6 that
+ships with Max, plus a MAXScript library). No separate program, no browser and **no account or login**: install
+it and start using it.
 
 OpenManager is part of [Open3D](https://github.com/carlesllavata/Open3D), a suite of open-source tools for
 3D work.
@@ -13,6 +13,9 @@ OpenManager is part of [Open3D](https://github.com/carlesllavata/Open3D), a suit
 A **setup** stores, for one `.max` file: camera, resolution, frames, sun, dome, environment, layers, objects,
 lights, XRefs, output path, render settings, Corona VFB post-production and more. Click a setup and it is applied
 to the scene; **Batch Render** renders every ticked setup, one after the other.
+
+**3ds Max:** tested on 3ds Max 2026.3 and 2027, with Corona 14 and 16. 3ds Max 2025 should work, but is not
+tested.
 
 **Renderers:** Corona and V-Ray. FStorm works too, with less testing.
 
@@ -27,8 +30,8 @@ By hand, each [release](https://github.com/carlesllavata/OpenManager/releases/la
 build it from source: `python tools/build.py` (plain Python 3, no dependencies) writes it to `dist/`.
 
 - **`OpenManager.bundle`** is the Autodesk plug-in bundle that the Open3D launcher installs. By hand: with 3ds Max
-  closed, copy the folder into `%APPDATA%\Autodesk\ApplicationPlugins\` and start Max. It works in every Max from
-  2025 on. To remove it, delete its folder with Max closed.
+  closed, copy the folder into `%APPDATA%\Autodesk\ApplicationPlugins\` and start Max. Every Max from 2025 on loads
+  it. To remove it, delete its folder with Max closed.
 - **The `.mzp` is retired:** versions up to 0.3.0 also came as `OpenManager.mzp`. If OpenManager was installed with
   it, the bundle removes that copy the first time it starts (your settings stay).
 
@@ -82,7 +85,6 @@ Copy what appears in the **MAXScript Listener** (F11): errors are prefixed with 
 
 - Post-Production / VFB works with Corona only.
 - The Script File card runs MAXScript (`.ms`) files only; it also offers `.py` files, but those don't run yet.
-- Tested on 3ds Max 2026.3 and 2027, with Corona 14 and 16.
 
 ## License
 
