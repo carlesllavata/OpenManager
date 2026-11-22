@@ -2,7 +2,7 @@
 
 What each version of OpenManager adds, newest first.
 
-## In development
+## 0.4.0 — 22 November 2026
 
 - **Errors are no longer hidden.** In many places OpenManager caught any error and went on without a word. Now
   each place catches only what can be expected there, from 3ds Max, from a file or from the JSON in it, and

@@ -7,7 +7,7 @@ An open-source scene setups and batch render manager that lives inside **3ds Max
 OpenManager is part of [Open3D](https://github.com/carlesllavata/Open3D), a suite of open-source tools for
 3D work.
 
-> Status: early (v0.3.0).
+> Status: early (v0.4.0).
 > What each version adds: [CHANGELOG.md](CHANGELOG.md).
 
 A **setup** stores, for one `.max` file: camera, resolution, frames, sun, dome, environment, layers, objects,
