@@ -57,6 +57,8 @@ as a change that makes it old.
 
 ## Rules of this code
 
+- A bug that is fixed comes with a test that fails without the fix, and new logic comes with its tests. The
+  interface is tried by hand in 3ds Max before a release.
 - Every MAXScript global starts with `omgr_`. A script that uses globals from another file declares them
   `global` before its `( )` block, where an unknown name would become a local.
 - The `.ms` and `.mcr` files start with a UTF-8 BOM and are indented with 4 spaces.
