@@ -50,6 +50,18 @@ Scene Name, Camera, Resolution, Time Output, Sun, Lights, HDRI Quick Browser, En
 Atmosphere, Layers, Objects, XRef, Variants, Render Output, Render Settings (Custom, Override, Preset),
 Render Elements, Post-Production / VFB (Corona), Script File / Editor, Thumbnail, Todo and Notes.
 
+## How setups behave
+
+A setup changes only what its cards set. When you click another setup, OpenManager puts back what the previous one
+changed and the new one doesn't set (a setting in Settings, on by default). Two things work in their own way:
+
+- **A render preset is not put back.** The Render Settings - Preset card loads a `.rps` file, and a preset replaces
+  all the render settings of the scene. OpenManager puts back only what its cards set. So when you then click a
+  setup without a preset, the render settings stay as the preset left them. If that setup needs other render
+  settings, give it a preset of its own.
+- **A variant wins over the Layers card.** When the Layers card and a variant (Variants card) turn the same layer on
+  or off, the layer is as the variant says. The Layers card still sets the other settings of that layer.
+
 ## Layout
 
 | path | what it is |
