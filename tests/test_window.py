@@ -1105,6 +1105,49 @@ class RenderSetupScriptsOfAPreset(Base):
         self.assertEqual(rt.render_setup_scripts, [False, "", False, ""])
 
 
+class LayersAndVariants(Base):
+    """When the Layers card and a variant turn the same layer on or off, the variant wins: when the setup is clicked,
+    and after an edit of either card, when only the changes that are new are sent (window._apply)."""
+
+    def clicked(self, visible, pick):
+        """The window after a click on a setup whose Layers card turns layers A, B and C on (visible) or off, and
+        whose variant of A and B shows the one in place `pick`."""
+        s = setup(1)
+        s["layers"].update(enabled=True, set=[model.layer_entry(n, visible=visible) for n in ("A", "B", "C")])
+        s["variants"].update(enabled=True, set=[{"name": "Floors", "value": pick, "layers": ["A", "B"]}])
+        w = opened(stored([s]))
+        quiet(w.activate, 1)
+        return w
+
+    def on(self):
+        """Whether each layer is on, as the last change of it left it."""
+        return {name: value for name, prop, value in called("omgr_setLayer") if prop == "on"}
+
+    def test_clicking_the_setup(self):
+        self.clicked(False, 1)
+        self.assertEqual(self.on(), {"A": True, "B": False, "C": False})
+
+    def test_after_an_edit_of_the_layers_card(self):
+        w = self.clicked(True, 1)
+        w.active()["layers"]["set"][0]["visible"] = False
+        quiet(w._apply_edit)
+        self.assertEqual(self.on(), {"A": True, "B": False, "C": True})
+
+    def test_after_an_edit_of_the_variant(self):
+        w = self.clicked(False, 1)
+        w.active()["variants"]["set"][0]["value"] = 2
+        quiet(w._apply_edit)
+        self.assertEqual(self.on(), {"A": False, "B": True, "C": False})
+
+    def test_the_layers_card_still_sets_the_rest(self):
+        w = self.clicked(True, 1)
+        w.active()["layers"]["set"][0]["freeze"] = True
+        w.active()["layers"]["set"][2]["visible"] = False
+        quiet(w._apply_edit)
+        self.assertEqual(self.on(), {"A": True, "B": False, "C": False})
+        self.assertIn(("A", "isfrozen", True), called("omgr_setLayer"))
+
+
 class OpenFolders(Base):
     """The settings, the HDRI previews and what a scene not saved yet makes are in the Open3D folders (folders.py),
     one set for every 3ds Max, not in its plugcfg folder."""

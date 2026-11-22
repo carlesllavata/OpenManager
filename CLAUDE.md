@@ -24,7 +24,7 @@ as a change that makes it old.
 - Checks: `tools\check.ps1` runs them all; it needs Python 3.11 or newer and the ruff `ruff.toml` names.
   First the steps built into `tools/repo.py`: the version agrees in `window.py` and the README, every
   source has its licence line, no file holds a path of somebody's computer. Then those of `tools/repo.toml`:
-  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (294 tests; `tests/fake_max.py`
+  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (301 tests; `tests/fake_max.py`
   stands in for 3ds Max and points the folders at a temporary one). Without PySide6 the tests of
   `test_window.py` and `test_dialogs.py` are skipped.
 - `tools\check.ps1 -Full` also runs the tests with the Python of 3ds Max, which has PySide6: none is skipped.

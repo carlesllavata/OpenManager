@@ -619,6 +619,10 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
         if output_path and rendering:
             out.append(("mkdir", output_path))
         out.append(("output", output_path))
+    va = s.get("variants", {})
+    # a variant decides the on/off of its layers, so the Layers card's is left out: with two changes of one layer,
+    # an edit of the Layers card alone would be sent alone (the window sends only the changes that are new) and win
+    by_variant = {name for vs in va.get("set", []) for name in vs.get("layers", [])} if va.get("enabled") else set()
     if s["layers"]["enabled"]:
         for layer in s["layers"]["set"]:
             for _, p in enabled(14):
@@ -626,6 +630,8 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
                     continue
                 n = p["name"]
                 if n == "on":
+                    if layer["name"] in by_variant:
+                        continue
                     v = layer["visible"]
                 elif n == "isfrozen":
                     v = layer["freeze"]
@@ -666,7 +672,6 @@ def actions(s, scene, enabled, output_path, rendering, opts=None, rs_default=Non
     if at.get("enabled"):
         for a in at.get("set", []):
             out.append(("atmos", a["name"], bool(a.get("active", True))))
-    va = s.get("variants", {})
     if va.get("enabled"):
         for vs in va.get("set", []):
             pick = int(vs.get("value", 1))

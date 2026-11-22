@@ -2,6 +2,14 @@
 
 What each version of OpenManager adds, newest first.
 
+## In development
+
+- **A variant wins over the Layers card, also after an edit.** When the Layers card and a variant turn the same
+  layer on or off, the variant wins, and it did when a setup was clicked. But an edit of the active setup's Layers
+  card could turn a layer of a variant on or off against the variant, and a change of the variant could leave the
+  layer it showed before still on, until the setup was clicked again. Now the variant decides the on/off of its
+  layers in every case. The Layers card still sets their other settings (frozen, renderable...).
+
 ## 0.4.0 — 22 November 2026
 
 - **Errors are no longer hidden.** In many places OpenManager caught any error and went on without a word. Now
