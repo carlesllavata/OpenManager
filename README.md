@@ -4,7 +4,7 @@ An open-source scene setups and batch render manager that lives inside **3ds Max
 ships with Max, plus a MAXScript library). No separate program, no browser and **no account or login**: install
 it and start using it.
 
-OpenManager is part of [Open3D](https://github.com/carlesllavata/Open3D), a suite of open-source tools for
+OpenManager is part of [Open3D](https://github.com/Open3D-Suite/Open3D), a suite of open-source tools for
 3D work.
 
 > Status: early (v0.4.0).
@@ -21,12 +21,12 @@ tested.
 
 ## Install
 
-The easy way: install the [Open3D Launcher](https://github.com/carlesllavata/Open3D/releases/latest) and click
+The easy way: install the [Open3D Launcher](https://github.com/Open3D-Suite/Open3D/releases/latest) and click
 **Install** next to OpenManager, with 3ds Max closed. It puts OpenManager in `%APPDATA%\Autodesk\ApplicationPlugins`
 as a plug-in bundle (every 3ds Max from 2025 on loads it), tells you when a new version is out and updates it. To
 uninstall, choose **Uninstall…** in OpenManager's menu in the launcher.
 
-By hand, each [release](https://github.com/carlesllavata/OpenManager/releases/latest) has the bundle as a zip. To
+By hand, each [release](https://github.com/Open3D-Suite/OpenManager/releases/latest) has the bundle as a zip. To
 build it from source: `python tools/build.py` (plain Python 3, no dependencies) writes it to `dist/`.
 
 - **`OpenManager.bundle`** is the Autodesk plug-in bundle that the Open3D launcher installs. By hand: with 3ds Max
