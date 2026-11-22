@@ -70,7 +70,7 @@ Copy what appears in the **MAXScript Listener** (F11): errors are prefixed with 
 
 - Post-Production / VFB works with Corona only.
 - The Script File card runs MAXScript (`.ms`) files only; it also offers `.py` files, but those don't run yet.
-- Tested on 3ds Max 2026.3 and 2027 with Corona 14.
+- Tested on 3ds Max 2026.3 and 2027, with Corona 14 and 16.
 
 ## License
 
