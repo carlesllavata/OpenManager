@@ -31,8 +31,8 @@ class Dialog(QtWidgets.QDialog):
                 if msg.message == WM_CLOSE or (msg.message == WM_SYSCOMMAND and (msg.wParam & 0xFFF0) == SC_CLOSE):
                     QtCore.QTimer.singleShot(0, self.close_from_title_bar)
                     return True, 0
-        except Exception:
-            pass
+        except (TypeError, ValueError):
+            pass  # a message in a form this can't read: it goes on to Qt as it is
         return super(Dialog, self).nativeEvent(event_type, message)
 
     def close_from_title_bar(self):

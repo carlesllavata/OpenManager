@@ -16,8 +16,8 @@ def _set_open_flag(on):
 
         rt.omgr_isOpen = bool(on)
         rt.updateToolbarButtons()
-    except Exception:
-        pass
+    except (ImportError, RuntimeError):
+        pass  # outside 3ds Max, or a MAXScript error: only the look of the toolbar button depends on it
 
 
 def _closed(w):
@@ -82,15 +82,15 @@ def show():
         _win = window.SceneManager(main)
         _place(_win, main)
         _set_open_flag(True)
-    except Exception:
+    except Exception:  # noqa: BLE001 - what the OpenManager macro runs: the error is told and 3ds Max goes on
         traceback.print_exc()
         _win = None
         try:
             from pymxs import runtime as rt
 
             rt.messageBox("OpenManager could not start.\nSee the MAXScript Listener for details.", title="OpenManager")
-        except Exception:
-            pass
+        except (ImportError, RuntimeError):
+            pass  # outside 3ds Max, or the message can't be shown: the error is in the Listener already
     return _win
 
 

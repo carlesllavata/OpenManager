@@ -49,7 +49,5 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or -not $pin) { throw 'ruff.toml has no required-version' }
           python -I -m pip install --disable-pip-version-check "ruff$pin"
 
-      # Without "ruff check", which fails on purpose on the broad except blocks until their own task is
-      # done (D-128). When it is done, -Skip goes and the step comes back.
       - name: Check
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\check.ps1 -Skip "ruff check"
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\check.ps1

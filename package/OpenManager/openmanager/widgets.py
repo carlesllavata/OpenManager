@@ -117,7 +117,7 @@ class Combo(QtWidgets.QComboBox):
         if self.before_popup is not None:
             try:
                 self.before_popup()
-            except Exception:
+            except Exception:  # noqa: BLE001 - a click on a drop-down: its list opens even when filling it fails
                 import traceback
 
                 traceback.print_exc()

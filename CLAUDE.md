@@ -24,14 +24,12 @@ as a change that makes it old.
 - Checks: `tools\check.ps1` runs them all; it needs Python 3.11 or newer and the ruff `ruff.toml` names.
   First the steps built into `tools/repo.py`: the version agrees in `window.py` and the README, every
   source has its licence line, no file holds a path of somebody's computer. Then those of `tools/repo.toml`:
-  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (291 tests; `tests/fake_max.py`
+  `ruff format --check .`, `ruff check .` and `python -I tests/run.py` (294 tests; `tests/fake_max.py`
   stands in for 3ds Max and points the folders at a temporary one). Without PySide6 the tests of
   `test_window.py` and `test_dialogs.py` are skipped.
 - `tools\check.ps1 -Full` also runs the tests with the Python of 3ds Max, which has PySide6: none is skipped.
-- Only `ruff check .` fails today: 8 findings on the 5 broad `except Exception` blocks of the package.
-- CI: `.github/workflows/check.yml` runs `tools\check.ps1 -Skip "ruff check"`, without `-Full`, on every
-  push and pull request to `main`, on GitHub's Windows runner, once with Python 3.11 and once with 3.13.
-  It leaves out `ruff check` because of those blocks; the `-Skip` goes once they are put right.
+- CI: `.github/workflows/check.yml` runs `tools\check.ps1`, without `-Full`, on every push and pull request
+  to `main`, on GitHub's Windows runner, once with Python 3.11 and once with 3.13.
 - `.editorconfig`, `.gitattributes`, `ruff.toml`, `LICENSE`, `tools/check.ps1`, `tools/repo.py`,
   `tools/repo_package.py`, `tools/repo_release.py` and `tools/repo_msi.py` are the same in every Open3D
   repo, and `openmanager/open3d_settings.py` in every repo that has it. Do not change them here.
@@ -47,13 +45,13 @@ as a change that makes it old.
   `tools/repo.toml` says: it needs the version's `## X.Y.Z` section in `CHANGELOG.md`, runs the quick
   checks and `tools/build.py`, and writes `dist/openmanager-<version>-windows-x64-3dsmax.zip`, with
   `dist/OpenManager.bundle` at its root (never `__pycache__`) and `LICENSE` inside the bundle, and
-  `dist/SHA256SUMS.txt`. It refuses a bundle whose `AppVersion` is not the version. While `ruff check .`
-  fails it stops at the checks; `--checked` skips them.
+  `dist/SHA256SUMS.txt`. It refuses a bundle whose `AppVersion` is not the version. `--checked` skips the
+  checks when they were just run.
 - `python -I tools/repo.py release X.Y.Z` turns `## In development` into `## X.Y.Z — <date>`, sets the
   version, commits `Release X.Y.Z`, packages, tags `vX.Y.Z` and prints the pushes to approve; run again
   once they are done, it makes the GitHub release as a draft, with the zip and `SHA256SUMS.txt`. It never
   pushes. `--dry-run` tries it all and writes only to `dist/`. It runs the quick checks with no way to
-  skip them, so it stops there while `ruff check .` fails.
+  skip them.
 - The Open3D launcher installs `OpenManager.bundle`; by hand it is copied into ApplicationPlugins. The bundle
   removes an install of the retired `.mzp` when it starts.
 
@@ -82,6 +80,13 @@ as a change that makes it old.
   after a yes to the review question, where Enter refuses, or when the setting says always.
 - `maxlink.load_preset` is the one place that loads a preset; it leaves Render Setup's scripts as they were.
 - `tests/test_code_sites.py` lists every place where text becomes code; a new one fails it.
+- A block that guards a call catches only what that call raises: `OSError` for a file, `ValueError` for JSON
+  and base64, and for 3ds Max what the top of `maxlink.py` says pymxs raises. A broad `except Exception`
+  stays only where an error must not stop the rest: what a button, a menu, a drop-down or the macro runs, a
+  callback of 3ds Max, closing the window, the batch loops, the autosave, a refresh of every card, the search
+  for the nodes of every setup (`resolve_all`) and each change of `maxlink.run`. Each one writes the error to
+  the MAXScript Listener and carries `# noqa: BLE001` with its reason. `tests/test_max_errors.py` and the last
+  classes of `test_window.py` check both sides.
 - The interface is in English only.
 
 ## Traps

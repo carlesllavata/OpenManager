@@ -257,5 +257,43 @@ class EnterTrustsNothing(Base):
         self.assertEqual(tw.called("omgr_loadPreset"), [(self.PRESET_PATH,)])
 
 
+class TitleBarClose(Base):
+    """Dialog.nativeEvent: the X of the title bar, read from the message of Windows."""
+
+    GENERIC = b"windows_generic_MSG"
+
+    def setUp(self):
+        super().setUp()
+        self.d = dialogs.Dialog()
+        self.open.append(self.d)
+        patcher = mock.patch.object(QtWidgets.QDialog, "nativeEvent", return_value=(False, 0))
+        self.qt = patcher.start()  # what Qt does with a message the dialog doesn't take
+        self.addCleanup(patcher.stop)
+
+    def test_the_x_does_what_cancel_does(self):
+        import ctypes.wintypes
+
+        msg = ctypes.wintypes.MSG()
+        msg.message = dialogs.WM_CLOSE
+        self.assertEqual(self.d.nativeEvent(self.GENERIC, ctypes.addressof(msg)), (True, 0))
+        self.qt.assert_not_called()
+
+    def test_a_message_it_can_not_read_goes_on_to_qt(self):
+        for event_type, message in ((self.GENERIC, "not an address"), ("windows_generic_MSG", 0), (self.GENERIC, None)):
+            self.assertEqual(self.d.nativeEvent(event_type, message), (False, 0), repr((event_type, message)))
+        self.assertEqual(self.qt.call_count, 3)
+
+    def test_an_unexpected_error_is_not_swallowed(self):
+        class Unexpected(Exception):
+            pass
+
+        class Address(object):
+            def __int__(self):
+                raise Unexpected()
+
+        with self.assertRaises(Unexpected):
+            self.d.nativeEvent(self.GENERIC, Address())
+
+
 if __name__ == "__main__":
     unittest.main()
