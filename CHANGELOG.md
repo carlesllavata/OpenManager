@@ -4,6 +4,12 @@ What each version of OpenManager adds, newest first.
 
 ## In development
 
+- **Errors are no longer hidden.** In many places OpenManager caught any error and went on without a word. Now
+  each place catches only what can be expected there, from 3ds Max, from a file or from the JSON in it, and
+  anything else reaches the MAXScript Listener. Where one error must not stop the rest (what a button runs, a
+  batch render, the autosave, each change a setup makes), OpenManager still goes on, and writes the error there.
+  A value 3ds Max refuses in the tone-mapping chain of a camera is now told in the Listener too, as it already was
+  for the Post-Production / VFB card.
 - **Your settings move to the Open3D folders, one set for every 3ds Max,** with the other Open3D apps: the settings
   (the window, your default settings, the scripts you trust, the Pulze notification) to `%APPDATA%\Open3D\OpenManager`,
   the HDRI previews to `%LOCALAPPDATA%\Open3D\OpenManager`. Until now each 3ds Max version kept its own in its

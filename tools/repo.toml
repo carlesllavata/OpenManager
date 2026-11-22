@@ -16,7 +16,7 @@ places = [
 name = "ruff format"
 run = ["ruff", "format", "--check", "."]
 
-# Fails today, on the 56 broad `except Exception` blocks of the package (75 findings). They are put right
+# Fails today, on the 28 broad `except Exception` blocks of the package (35 findings). They are put right
 # in a task of their own, and nothing is silenced meanwhile.
 [[check]]
 name = "ruff check"

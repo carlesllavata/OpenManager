@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Everything that talks to 3ds Max: reading the scene, applying a setup, storing setups, rendering."""
+"""Everything that talks to 3ds Max: reading the scene, applying a setup, storing setups, rendering.
+
+What pymxs raises, as probed in 3dsmaxbatch (3ds Max 2027): RuntimeError ("MAXScript exception raised") for every
+MAXScript error, in a call made from here or inside a function of omgr_core.ms: a property the object doesn't have,
+a node that was deleted, a value it can't convert, a class it can't create, a renderer without that setting.
+AttributeError for a name 3ds Max doesn't know (rt.CoronaRenderer without Corona) and for a property read as a
+Python attribute that isn't there (value.name, camera.inode), also on a deleted node. getNodeByHandle gives None
+for a handle that is gone. A block that guards a call into 3ds Max catches only those."""
 
 import json
 import os
@@ -211,8 +218,8 @@ def take_rejected():
     del _rejected[:]
     try:
         names += [n for n in (str(x) for x in rt.omgr_takeBadClasses()) if n not in names]
-    except Exception:
-        pass
+    except RuntimeError:
+        pass  # MAXScript could not give its list: the names left out here are still told
     return names
 
 
@@ -258,8 +265,8 @@ def take_refused():
     del _refused[:]
     try:
         names += [n for n in (str(x) for x in rt.omgr_takeBadProps()) if n not in names]
-    except Exception:
-        pass
+    except RuntimeError:
+        pass  # MAXScript could not give its list: the settings left out here are still told
     return names
 
 
@@ -270,7 +277,7 @@ def _global(name):
         return None  # those are Python's own attributes of the runtime, not names of 3ds Max
     try:
         return getattr(rt, name)
-    except Exception:
+    except AttributeError:  # a name 3ds Max doesn't know
         return None
 
 
@@ -279,7 +286,7 @@ def _kind(cls):
     try:
         k = rt.classOf(cls)
         return None if k is None else str(k)
-    except Exception:
+    except RuntimeError:  # MAXScript can't tell what it is
         return None
 
 
@@ -314,7 +321,7 @@ def new_operator(name):
         # every operator links to the next one: a class of the same kind without that link is not an operator
         rt.getProperty(op, "colorMappingOperator_nextOperator")
         return op
-    except Exception:
+    except RuntimeError:  # a class 3ds Max can't create, or one without that link
         _reject(name, "a tone-mapping operator class")
         return None
 
@@ -327,7 +334,7 @@ def read_pipeline(obj, prop):
     out = []
     try:
         op = rt.getProperty(obj, prop)
-    except Exception:
+    except RuntimeError:  # the object has no such property, or it was deleted
         return out
     guard = 0
     while op is not None and guard < 64:
@@ -338,7 +345,7 @@ def read_pipeline(obj, prop):
             n = str(n)
             try:
                 v = rt.getProperty(op, n)
-            except Exception:
+            except RuntimeError:  # a property 3ds Max lists but can't give: it stays out of the stored chain
                 continue
             if n.endswith("_nextOperator"):
                 nxt = v
@@ -366,13 +373,13 @@ def write_pipeline(obj, prop, chain):
                 if isinstance(v, dict) and "$color" in v:
                     v = rt.Color(*v["$color"])
                 rt.setProperty(op, n, v)
-            except Exception:
-                pass
+            except (RuntimeError, TypeError) as ex:  # 3ds Max refuses the value; a stored colour that isn't a list
+                print("OpenManager: %s.%s -> %s" % (item.get("class"), n, ex))
         if prev is not None:
             try:
                 rt.setProperty(prev, "colorMappingOperator_nextOperator", op)
-            except Exception:
-                pass
+            except RuntimeError as ex:
+                print("OpenManager: %s can't follow the operator before it -> %s" % (item.get("class"), ex))
         first = first or op
         prev = op
     rt.setProperty(obj, prop, first)
@@ -408,7 +415,7 @@ def read_post(key, only_active=False):
         for name in model.LIGHTMIX_ARRAYS:
             try:
                 vals = list(rt.getProperty(r, name) or [])
-            except Exception:
+            except RuntimeError:  # a renderer without this array (not Corona)
                 continue
             if name == "colorMap_lightmixColors":
                 vals = [[float(c.r), float(c.g), float(c.b)] for c in vals]
@@ -459,14 +466,14 @@ def apply_tone(chain):
                 if isinstance(v, dict) and "$color" in v:
                     v = rt.Color(*v["$color"])
                 rt.setProperty(op, n, v)
-            except Exception as ex:
+            except (RuntimeError, TypeError) as ex:  # 3ds Max refuses the value; a stored colour that isn't a list
                 print("OpenManager: %s.%s -> %s" % (item["class"], n, ex))
     for op in live:
         if op not in used:
             try:
                 rt.setProperty(op, "colorMappingOperator_enabled", False)
-            except Exception:
-                pass
+            except RuntimeError:
+                pass  # an operator without that switch can't be switched off: it stays as it is
 
 
 def apply_lightmix(arrays):
@@ -478,7 +485,7 @@ def apply_lightmix(arrays):
             vals = [rt.Color(*c) for c in vals]
         try:
             rt.setProperty(r, name, vals)
-        except Exception as ex:
+        except RuntimeError as ex:  # a renderer without this array, or values it doesn't take
             print("OpenManager: %s -> %s" % (name, ex))
 
 
@@ -710,19 +717,19 @@ def run(acts, redraw=True):
         dialog_open = bool(rt.renderSceneDialog.isOpen())
         if dialog_open:
             rt.renderSceneDialog.commit()
-    except Exception:
-        pass
+    except RuntimeError:
+        pass  # Render Setup can't be asked: the changes are applied all the same
     with pymxs.undo(False):
         for a in acts:
             try:
                 _run_one(a)
-            except Exception as ex:  # one bad setting must not stop the rest
+            except Exception as ex:  # noqa: BLE001 - each change on its own: one that fails must not stop the rest
                 print("OpenManager: %s -> %s" % (str(a)[:160], ex))
     if dialog_open:
         try:
             rt.renderSceneDialog.update()
-        except Exception:
-            pass
+        except RuntimeError:
+            pass  # Render Setup was closed meanwhile: it shows the new values when it opens again
     if redraw:
         rt.redrawViews()
 
@@ -795,8 +802,8 @@ def _run_one(a):
                 continue
             try:
                 rt.setProperty(rt.renderers.current, name, v)
-            except Exception:
-                pass
+            except RuntimeError:
+                pass  # a renderer without that setting (stored by an older version for Corona): left as it is
     elif k == "posttone":
         apply_tone(json.loads(a[1]))
     elif k == "postlm":
@@ -829,14 +836,14 @@ def _stored(v, like):
     if isinstance(like, tuple) and like and like[0] == "$color":
         try:
             return ("$color", "#%02x%02x%02x" % (int(round(v.r)), int(round(v.g)), int(round(v.b))))
-        except Exception:
+        except (AttributeError, TypeError):  # the value read is not a colour
             return None
     if isinstance(like, tuple) and like and like[0] == "$texmap":
         if v is None:
             return ("$texmap", "")
         try:
             return ("$texmap", "%s|%s" % (rt.classOf(v), v.name))
-        except Exception:
+        except AttributeError:  # the value read is not a map: it has no name
             return None
     if isinstance(v, bool):
         return bool(v)
@@ -911,7 +918,9 @@ def capture(a):
             return ("posttone", json.dumps(read_post("tonemap")["ops"], sort_keys=True))
         if k == "postlm":
             return ("postlm", json.dumps(read_post("lightmix")["arrays"], sort_keys=True))
-    except Exception as ex:
+    # a MAXScript error; a value read that is not of the kind expected; or a change of the base stored in the file in
+    # a shape OpenManager never writes (a lightson without its list)
+    except (RuntimeError, TypeError, ValueError, IndexError) as ex:
         print("OpenManager: can't read %s to put it back later -> %s" % (str(a)[:120], ex))
     return None
 
@@ -942,7 +951,7 @@ def read_special(kind, a, prop, cls):
             return "#%02x%02x%02x" % (int(v.r), int(v.g), int(v.b))
         if cls == "Texturemap":
             return "" if v is None else "%s|%s" % (rt.classOf(v), v.name)
-    except Exception:
+    except (RuntimeError, AttributeError):  # no such property on it (or it is gone); a value not a colour or a map
         return None
     return None
 
@@ -1039,29 +1048,29 @@ def batch_view(cam, name, state, preset, out, w, h):
 def interactive_running():
     try:
         return int(rt.omgr_isRendering()) != 0
-    except Exception:
+    except RuntimeError:  # a MAXScript error: taken as not rendering
         return False
 
 
 def interactive_stop():
     try:
         rt.CoronaRenderer.CoronaFp.stopRender()
-    except Exception:
-        pass
+    except (AttributeError, RuntimeError):
+        pass  # no Corona in this 3ds Max (no such name), or nothing Corona can stop: nothing to do
 
 
 def interactive_start():
     try:
         rt.CoronaRenderer.CoronaFp.startInteractive()
-    except Exception:
-        pass
+    except (AttributeError, RuntimeError):
+        pass  # no Corona in this 3ds Max, or Corona can't start it now: the person starts it again
 
 
 def viewport_camera():
     try:
         c = rt.viewport.getCamera()
         return None if c is None else int(c.inode.handle)
-    except Exception:
+    except (RuntimeError, AttributeError):  # no view to ask, or what the view shows is not a node
         return None
 
 
@@ -1119,7 +1128,7 @@ def render_output():
     try:
         name = str(rt.rendOutputFilename or "")
         return name if (bool(rt.rendSaveFile) and name) else ""
-    except Exception:
+    except RuntimeError:  # MAXScript can't give them: taken as not saving, so nothing renders without a file
         return ""
 
 
@@ -1145,7 +1154,7 @@ def main_window():
         import qtmax
 
         return qtmax.GetQMaxMainWindow()
-    except Exception:
+    except ImportError:  # outside 3ds Max: the window floats on its own
         return None
 
 

@@ -1262,7 +1262,7 @@ def import_pulze(data, first_id):
     try:
         raw = base64.b64decode(data + "=" * (-len(data) % 4))
         lst = json.loads(raw.decode("utf-8"))
-    except Exception:
+    except ValueError:  # not base64, UTF-8 or JSON (binascii.Error and JSONDecodeError are ValueErrors)
         return None
     if not isinstance(lst, list):
         return None
